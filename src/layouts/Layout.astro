@@ -1,0 +1,135 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+
+const {
+  title = 'Luxury Rosettes',
+  description = 'Luxury Rosettes — TICA registered Bengal cat breeder in the UK. Champion bloodlines, health-tested kittens raised with love.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/png" href="/favicon.png" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+		<link
+			rel="preload"
+			as="style"
+			href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap"
+			onload="this.onload=null;this.rel='stylesheet'"
+		/>
+		<noscript>
+			<link
+				rel="stylesheet"
+				href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap"
+			/>
+		</noscript>
+		<meta name="generator" content={Astro.generator} />
+		<meta name="description" content={description} />
+		<title>{title}</title>
+		<ClientRouter fallback="none" />
+	</head>
+	<body>
+		<slot />
+
+		<!-- Gold trailing dot (desktop only) -->
+		<div id="cursor-dot" aria-hidden="true" transition:persist></div>
+
+
+		<!-- Cinematic page transition overlay -->
+		<div id="page-fade" transition:persist aria-hidden="true" style="position:fixed;inset:0;z-index:99999;background:#0d0d0d;opacity:0;pointer-events:none;will-change:opacity;"></div>
+
+		<script>
+			import gsap from 'gsap';
+			import { initLenis, destroyLenis } from '../scripts/lenis';
+
+			// ── Gold trailing dot (pure RAF, no GSAP) ─────────────────────
+			(function initCursor() {
+				if (!window.matchMedia('(pointer: fine)').matches) return;
+
+				const dot = document.getElementById('cursor-dot') as HTMLElement | null;
+				if (!dot) return;
+
+				const el = dot;
+				let mx = -100, my = -100;
+				let dx = mx,   dy = my;
+				const LERP = 0.1;
+
+				function tick() {
+					dx += (mx - dx) * LERP;
+					dy += (my - dy) * LERP;
+					el.style.transform = `translate(${dx - 3.5}px, ${dy - 3.5}px)`;
+					requestAnimationFrame(tick);
+				}
+				requestAnimationFrame(tick);
+
+				document.addEventListener('mousemove', (e) => {
+					mx = e.clientX;
+					my = e.clientY;
+					dot.classList.remove('is-hidden');
+				}, { passive: true });
+
+				document.addEventListener('mouseleave', () => dot.classList.add('is-hidden'));
+				document.addEventListener('mouseenter', () => dot.classList.remove('is-hidden'));
+			})();
+
+			const fade = () => document.getElementById('page-fade') as HTMLElement | null;
+
+			// Before navigation — fade to black
+			document.addEventListener('astro:before-preparation', (e) => {
+				const originalLoader = e.loader;
+				e.loader = async () => {
+					destroyLenis();
+					const f = fade();
+					if (f) {
+						f.style.pointerEvents = 'auto';
+						await gsap.to(f, { opacity: 1, duration: 0.9, ease: 'power2.in' });
+					}
+					await originalLoader();
+				};
+			});
+
+			// After DOM swap — scroll to top, wait for hero image, then fade in
+			document.addEventListener('astro:after-swap', async () => {
+				window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+				// Wait for hero image to be decoded before revealing the page
+				const heroImg = document.querySelector<HTMLImageElement>('.sh__img, .kh__img, .gh__img');
+				if (heroImg && !heroImg.complete) {
+					await Promise.race([
+						heroImg.decode().catch(() => {}),
+						new Promise(r => setTimeout(r, 1200)),
+					]);
+				}
+
+				const f = fade();
+				if (f) {
+					gsap.to(f, {
+						opacity: 0,
+						duration: 1.1,
+						delay: 0.05,
+						ease: 'power2.out',
+						onComplete: () => { f.style.pointerEvents = 'none'; },
+					});
+				}
+			});
+
+			// Cleanup during swap
+			document.addEventListener('astro:before-swap', () => {
+				destroyLenis();
+				document.body.classList.remove('no-scroll');
+				document.body.style.paddingRight = '';
+				const nav = document.getElementById('floatingNav');
+				if (nav) nav.style.paddingRight = '';
+			});
+
+			document.addEventListener('astro:page-load', () => {
+				initLenis();
+			});
+		</script>
+	</body>
+</html>

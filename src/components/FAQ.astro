@@ -1,0 +1,159 @@
+---
+const faqs = [
+  {
+    q: 'How much does a Bengal kitten cost?',
+    a: 'Pricing varies based on lineage, markings, and show potential. Please contact us directly for current availability and personalised pricing — each kitten is individually assessed for quality and temperament.',
+  },
+  {
+    q: 'Are your kittens health tested?',
+    a: 'Yes. All kittens receive comprehensive health testing including HCM and PK-Def screening, full veterinary examination, and age-appropriate vaccinations. Every kitten leaves with a written health guarantee.',
+  },
+  {
+    q: 'What is the adoption process?',
+    a: 'We begin with a short consultation to understand your lifestyle, followed by an application and contract. A deposit secures your chosen kitten, after which you receive regular updates, photos, and videos until collection day.',
+  },
+  {
+    q: 'Do you offer shipping and delivery?',
+    a: 'We offer ground transport within the UK and flight nanny service for international families. Personal collection at our location is always preferred. Contact us to discuss timing and logistics.',
+  },
+  {
+    q: 'What age do kittens go to their new homes?',
+    a: 'Our kittens are ready at 12–14 weeks. This ensures a complete vaccination course, proper socialisation with mother and littermates, and the confidence and independence your kitten needs to settle beautifully into your home.',
+  },
+  {
+    q: 'What care do Bengal cats require?',
+    a: 'Bengals thrive on high-quality protein-rich food, daily interactive play, and mental enrichment — climbing structures and puzzle toys are ideal. Weekly brushing keeps their stunning coat in condition. We provide a full care guide with every kitten.',
+  },
+  {
+    q: 'Can I visit your cattery before adopting?',
+    a: 'Approved applicants are warmly welcome to visit by appointment. You will meet our cats and kittens, see our home environment, and ask any questions in person. Biosecurity protocols are in place to protect our cats.',
+  },
+  {
+    q: 'What support do you offer after adoption?',
+    a: 'We remain available for guidance throughout your Bengal\'s lifetime — nutrition, behaviour, health, and anything else that arises. We also love receiving updates as your kitten grows.',
+  },
+];
+---
+
+<section class="bg-cream px-6 py-10 sm:px-10 sm:py-20 lg:px-16 lg:py-24">
+  <div class="mx-auto max-w-2xl">
+
+    <!-- Header -->
+    <header class="mb-12 text-center sm:mb-14">
+      <p class="font-body text-[0.65rem] font-semibold uppercase tracking-[2.8px] text-dark/45 sm:text-[0.72rem] lg:text-[0.76rem]">
+        Before You Decide
+      </p>
+      <h2 class="mt-3 font-heading text-[1.5rem] font-light leading-[1.1] tracking-tight text-gold-dark sm:text-[2rem] lg:text-[2.2rem] xl:text-[2.4rem]">
+        Common Questions
+      </h2>
+      <span class="mx-auto mt-4 block h-px w-16 bg-(--gold-line) sm:w-20"></span>
+    </header>
+
+    <!-- Accordion -->
+    <div class="divide-y divide-dark/8">
+      {faqs.map((faq, i) => (
+        <div class="faq-item">
+          <input type="checkbox" id={`faq-${i}`} class="faq-toggle sr-only" />
+          <label for={`faq-${i}`} class="faq-label">
+            <span class="font-heading text-[1.12rem] font-medium italic leading-[1.35] text-dark transition-colors duration-300 sm:text-[1.22rem] lg:text-[1.3rem]">
+              {faq.q}
+            </span>
+            <span class="faq-icon" aria-hidden="true"></span>
+          </label>
+          <div class="faq-body">
+            <p class="border-l border-gold-dark/25 pb-6 pl-4 pt-1 font-body text-[0.9rem] font-normal leading-[1.85] text-dark/65 sm:text-[0.95rem]">
+              {faq.a}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- CTA -->
+    <div class="mt-16 text-center sm:mt-20">
+      <h3 class="font-heading text-[1.5rem] font-light text-gold-dark sm:text-[1.8rem] lg:text-[2rem]">
+        Still have questions?
+      </h3>
+      <p class="mt-3 font-body text-[0.9rem] font-normal leading-[1.8] text-dark/60 sm:text-[0.95rem]">
+        We're happy to talk through anything before you decide.
+      </p>
+      <button
+        type="button"
+        data-contact-trigger
+        class="mt-8 inline-flex items-center rounded-none border border-dark/20 px-10 py-3.5 font-body text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-dark/70 transition-all duration-500 hover:border-gold/60 hover:text-gold"
+      >
+        Get in Touch
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .faq-toggle { position: absolute; opacity: 0; pointer-events: none; }
+
+  .faq-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.4rem 0;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .faq-label:hover span:first-child { color: var(--gold-dark); }
+
+  /* +/- icon */
+  .faq-icon {
+    flex-shrink: 0;
+    position: relative;
+    width: 18px;
+    height: 18px;
+  }
+
+  .faq-icon::before,
+  .faq-icon::after {
+    content: '';
+    position: absolute;
+    background: var(--gold-dark);
+    border-radius: 1px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .faq-icon::before { width: 18px; height: 1.5px; top: 50%; left: 0; transform: translateY(-50%); }
+  .faq-icon::after  { width: 1.5px; height: 18px; top: 0; left: 50%; transform: translateX(-50%); }
+
+  .faq-toggle:checked + .faq-label .faq-icon::after {
+    opacity: 0;
+    transform: translateX(-50%) rotate(90deg);
+  }
+
+  /* Content */
+  .faq-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+
+  .faq-toggle:checked ~ .faq-body {
+    max-height: 600px;
+  }
+
+  /* one open at a time via JS */
+</style>
+
+<script>
+  function initFaq() {
+    const toggles = document.querySelectorAll<HTMLInputElement>('.faq-toggle');
+    toggles.forEach((box) => {
+      box.addEventListener('change', () => {
+        if (box.checked) {
+          toggles.forEach((other) => { if (other !== box) other.checked = false; });
+        }
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initFaq);
+</script>

@@ -1,0 +1,215 @@
+---
+import { getImage } from 'astro:assets';
+import ourCatsImage  from '../../assets/img/Our_cats_main.webp';
+import ourCatsMobile from '../../assets/img/our_cats_MOBILEwebp.webp';
+
+const mobileImg  = await getImage({ src: ourCatsMobile, format: 'webp', widths: [640, 828, 1080] });
+const desktopImg = await getImage({ src: ourCatsImage,  format: 'webp', widths: [1024, 1536, 1920] });
+---
+
+<section class="sh subpage-hero-screen" data-nav-dark>
+
+  <!-- Left: dark text panel -->
+  <div class="sh__left">
+    <div class="sh__text">
+      <p class="sh__kicker">Meet the Pride</p>
+      <h1 class="sh__heading">Our <em>Cats</em></h1>
+      <p class="sh__desc">Grace and power in perfect balance.</p>
+    </div>
+  </div>
+
+  <!-- Right: image panel -->
+  <div class="sh__right" aria-hidden="true">
+    <picture>
+      <source media="(max-width: 1023px)" srcset={mobileImg.srcSet?.attribute || mobileImg.src} type="image/webp" />
+      <source media="(min-width: 1024px)"  srcset={desktopImg.srcSet?.attribute || desktopImg.src} type="image/webp" />
+      <img src={desktopImg.src} alt="" class="sh__img" loading="eager" decoding="async" fetchpriority="high" />
+    </picture>
+  </div>
+
+</section>
+
+<style>
+  /* ── HERO: base ──────────────────────────────────────────── */
+  .sh {
+    width: 100%;
+    background: #080706;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── Mobile: full-bleed overlay ──────────────────────────── */
+  .sh__right {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .sh__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 35%;
+    display: block;
+  }
+
+  .sh::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(to top,  rgba(8,7,6,0.92) 0%, rgba(8,7,6,0.55) 38%, transparent 65%),
+      linear-gradient(to bottom, rgba(8,7,6,0.55) 0%, transparent 22%);
+    pointer-events: none;
+  }
+
+  .sh__left {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 1.2rem 2.1rem;
+  }
+
+  .sh__text {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.12rem;
+    width: min(100%, 20.5rem);
+    padding: 0.82rem 0.9rem 0.9rem;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: shReveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sh__text { opacity: 1; transform: none; animation: none; }
+  }
+
+  @keyframes shReveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .sh__kicker {
+    font-family: var(--font-body);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 3.8px;
+    text-transform: uppercase;
+    color: rgba(232, 201, 111, 0.84);
+    margin: 0 0 0.45rem;
+  }
+
+  .sh__heading {
+    font-family: var(--font-heading);
+    font-size: clamp(2.7rem, 11.5vw, 3.5rem);
+    font-weight: 300;
+    line-height: 0.96;
+    letter-spacing: -0.02em;
+    color: #faf8f3;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .sh__heading em { font-style: italic; }
+
+  .sh__desc {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: rgba(250, 248, 243, 0.62);
+    margin: 0.55rem 0 0;
+    max-width: 25ch;
+  }
+
+  @media (max-width: 389px) {
+    .sh__left { padding: 0 0.9rem 1.7rem; }
+    .sh__text { width: 100%; padding: 0.78rem 0.8rem 0.84rem; }
+  }
+
+  /* ── Desktop: split row layout ───────────────────────────── */
+  @media (min-width: 1024px) {
+    .sh {
+      display: flex;
+      flex-direction: row;
+      min-height: 520px;
+    }
+
+    .sh::before { display: none; }
+
+    .sh__left {
+      position: relative;
+      bottom: auto;
+      left: auto;
+      right: auto;
+      flex: 0 0 38%;
+      background: #080706;
+      padding: 0 3.5rem 4.5rem 4rem;
+      align-items: flex-end;
+    }
+
+    .sh__text {
+      width: auto;
+      padding: 0;
+    }
+
+    .sh__kicker {
+      font-size: 0.70rem;
+      letter-spacing: 3.5px;
+      color: rgba(212, 175, 55, 0.75);
+      margin: 0 0 1rem;
+    }
+
+    .sh__heading {
+      font-size: clamp(3.5rem, 5.5vw, 8rem);
+      line-height: 0.90;
+      text-wrap: initial;
+    }
+
+    .sh__desc {
+      font-size: 0.75rem;
+      font-weight: 300;
+      line-height: 1.85;
+      color: rgba(250, 248, 243, 0.45);
+      margin: 1.5rem 0 0;
+      max-width: none;
+    }
+
+    .sh__heading,
+    .sh__desc {
+      white-space: nowrap;
+    }
+
+    .sh__right {
+      position: relative;
+      inset: auto;
+      flex: 1;
+      z-index: auto;
+      overflow: hidden;
+    }
+
+    .sh__img {
+      object-position: center 20%;
+    }
+
+    .sh__right::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 120px;
+      background: linear-gradient(to right, #080706 0%, transparent 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .sh__left { flex: 0 0 36%; padding: 0 4rem 5rem 5rem; }
+  }
+</style>

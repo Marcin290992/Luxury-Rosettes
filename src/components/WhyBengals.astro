@@ -1,0 +1,116 @@
+---
+import { Image } from 'astro:assets';
+import bengalImg from '../assets/img/Kita.webp';
+
+const traits = [
+  {
+    number: '01',
+    title: 'Rosette Markings',
+    body: 'A coat as unique as a fingerprint — wild-inspired patterns impossible to replicate.',
+  },
+  {
+    number: '02',
+    title: 'Wild by Nature',
+    body: 'Descended from Asian Leopard Cats, with an untamed spirit refined for home life.',
+  },
+  {
+    number: '03',
+    title: 'Remarkable Intelligence',
+    body: 'Quick to learn, endlessly curious, and deeply engaged with their world.',
+  },
+  {
+    number: '04',
+    title: 'Devoted Companions',
+    body: 'Bengals form lasting bonds — loyal, affectionate, and uniquely present.',
+  },
+];
+---
+
+<section class="wb-section relative mt-10 bg-cream px-6 py-10 sm:mt-18 sm:px-10 sm:py-16 lg:mt-20 lg:px-14 lg:py-16 xl:px-16 xl:py-20">
+
+  <!-- Mobile / tablet: stacked -->
+  <div class="lg:hidden mx-auto max-w-md">
+    <header class="wb-header mb-8 text-center sm:mb-10">
+      <p class="wb-eyebrow font-body text-[0.65rem] font-semibold uppercase tracking-[2.8px] text-dark/45 sm:text-[0.72rem] lg:text-[0.76rem]">
+        Bengal Excellence
+      </p>
+      <h2 class="wb-heading mt-3 font-heading text-[1.5rem] font-light leading-[1.1] tracking-tight text-gold-dark sm:text-[2rem]">
+        Why <span class="italic">Bengals?</span>
+      </h2>
+      <span class="wb-line mx-auto mt-4 block h-px w-16 bg-(--gold-line) sm:w-20"></span>
+    </header>
+
+    <div class="wb-traits divide-y divide-dark/8">
+      {traits.map((t) => (
+        <div class="wb-trait py-5 sm:py-6">
+          <div class="flex items-start gap-4">
+            <span class="mt-1 font-body text-[0.55rem] font-semibold uppercase tracking-[2.4px] text-gold-dark sm:text-[0.62rem]">
+              {t.number}
+            </span>
+            <div>
+              <h3 class="font-heading text-[1.25rem] font-normal text-dark sm:text-[1.4rem]">{t.title}</h3>
+              <p class="mt-1.5 font-body text-[0.9rem] font-normal leading-[1.8] text-dark/80 sm:text-[0.95rem]">{t.body}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Desktop: simple split -->
+  <div class="mx-auto hidden max-w-350 lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-8 xl:gap-12 2xl:gap-16">
+
+    <!-- Left: image -->
+    <div class="min-h-110 overflow-hidden rounded-md xl:min-h-130">
+      <Image
+        src={bengalImg}
+        alt="Bengal cat"
+        class="h-full w-full object-cover object-center"
+        widths={[640, 960, 1280]}
+        sizes="(max-width: 1400px) 50vw, 700px"
+        loading="lazy"
+        format="webp"
+      />
+    </div>
+
+    <!-- Right: content -->
+    <div class="flex flex-col justify-center py-4">
+      <div class="max-w-md xl:max-w-lg">
+
+        <header class="wb-header mb-10 xl:mb-12">
+          <p class="wb-eyebrow font-body text-[0.76rem] font-semibold uppercase tracking-[2.8px] text-dark/45">
+            Bengal Excellence
+          </p>
+          <h2 class="wb-heading mt-3 font-heading text-[2.2rem] font-light leading-[1.1] tracking-tight text-gold-dark xl:text-[2.5rem] 2xl:text-[2.8rem]">
+            Why <span class="italic">Bengals?</span>
+          </h2>
+          <span class="wb-line mt-5 block h-px w-20 bg-(--gold-line)"></span>
+        </header>
+
+        <div class="wb-traits divide-y divide-dark/8">
+          {traits.map((t) => (
+            <div class="wb-trait py-6 xl:py-7">
+              <div class="flex items-start gap-5">
+                <span class="mt-1 font-body text-[0.62rem] font-semibold uppercase tracking-[2.4px] text-gold-dark">
+                  {t.number}
+                </span>
+                <div>
+                  <h3 class="font-heading text-[1.3rem] font-normal text-dark xl:text-[1.45rem] 2xl:text-[1.55rem]">{t.title}</h3>
+                  <p class="mt-2 font-body text-[0.9rem] font-normal leading-[1.8] text-dark/80 xl:text-[0.95rem]">{t.body}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+<style>
+  .wb-trait { will-change: opacity, transform; }
+</style>
+

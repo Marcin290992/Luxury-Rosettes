@@ -1,0 +1,46 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LuxuryNavShell from '../components/navigation/LuxuryNavShell.astro';
+import Hero from '../components/Hero.astro';
+import WhyBengals from '../components/WhyBengals.astro';
+import AboutLuxuryRosettes from '../components/AboutLuxuryRosettes.astro';
+import Awards from '../components/Awards.astro';
+import BengalJourney from '../components/BengalJourney.astro';
+import FAQ from '../components/FAQ.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Luxury Rosettes">
+	<LuxuryNavShell deferInitialReveal={true} />
+	<Hero />
+	<WhyBengals />
+	<AboutLuxuryRosettes />
+	<Awards />
+	<BengalJourney />
+
+	<!-- Mid-page CTA -->
+	<section class="bg-cream border-t border-[rgba(212,175,55,0.12)] py-16 sm:py-20 text-center px-6">
+		<p class="font-body text-[0.62rem] font-semibold uppercase tracking-[2.8px] text-dark/40 mb-3">Your Bengal Awaits</p>
+		<h3 class="font-heading text-[1.6rem] sm:text-[2rem] font-light leading-tight tracking-tight text-gold-dark mb-7">
+			Ready to Meet Your Perfect Kitten?
+		</h3>
+		<div class="flex flex-wrap items-center justify-center gap-4">
+			<a
+				href="/available-kittens"
+				class="inline-flex items-center border border-[rgba(212,175,55,0.4)] px-8 py-3.5 font-body text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-gold-dark transition-all duration-500 hover:border-gold hover:bg-[rgba(212,175,55,0.06)]"
+			>
+				View Available Kittens
+			</a>
+			<button
+				type="button"
+				data-contact-trigger
+				class="inline-flex items-center border border-[rgba(26,26,26,0.15)] px-8 py-3.5 font-body text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-dark/55 transition-all duration-500 hover:border-[rgba(212,175,55,0.4)] hover:text-gold-dark cursor-pointer bg-transparent"
+			>
+				Get in Touch
+			</button>
+		</div>
+	</section>
+
+	<FAQ />
+	<Footer />
+</Layout>

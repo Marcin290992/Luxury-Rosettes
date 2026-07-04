@@ -1,0 +1,270 @@
+---
+import { Image } from 'astro:assets';
+import imgKittens   from '../assets/img/Your Bengal Journey Starts Here/Our Kittens.webp';
+import imgParents   from '../assets/img/Your Bengal Journey Starts Here/champion parent.webp';
+import imgCare      from '../assets/img/Your Bengal Journey Starts Here/premium care.webp';
+import imgStandards from '../assets/img/Your Bengal Journey Starts Here/our standards.webp';
+
+const items = [
+  {
+    id: 'kittens',
+    label: 'Our Kittens',
+    img: imgKittens,
+    heading: 'Exquisite Bengal Kittens',
+    body: 'Each kitten showcases stunning rosette patterns and wild beauty. Raised with love in our family home, well-socialized and ready to become a cherished member of your family.',
+    href: '/available-kittens',
+    cta: 'View Available Kittens',
+  },
+  {
+    id: 'parents',
+    label: 'Champion Parents',
+    img: imgParents,
+    heading: 'Champion Bloodlines',
+    body: 'Our breeding cats are carefully selected champions with exceptional pedigrees. TICA registered with proven show records — producing kittens with outstanding rosette clarity.',
+    href: '/our-cats',
+    cta: 'Meet Our Parents',
+  },
+  {
+    id: 'care',
+    label: 'Premium Care',
+    img: imgCare,
+    heading: 'Premium Care & Health',
+    body: 'Every kitten receives comprehensive veterinary care, premium nutrition, and early socialization. Health guarantees, vaccination records, and lifetime breeder support included.',
+  },
+  {
+    id: 'standards',
+    label: 'Our Standards',
+    img: imgStandards,
+    heading: 'Exceptional Standards',
+    body: 'We breed Bengals that exemplify the breed standard — spectacular rosettes, muscular builds, captivating wild appearance, and kittens of extraordinary quality.',
+  },
+];
+---
+
+<section class="bg-cream pt-10 sm:pt-20">
+
+  <!-- Header -->
+  <div class="mb-10 px-6 text-center sm:mb-12 sm:px-10 lg:px-16">
+    <p class="font-body text-[0.65rem] font-semibold uppercase tracking-[2.8px] text-dark/45 sm:text-[0.72rem] lg:text-[0.76rem]">
+      The Experience
+    </p>
+    <h2 class="mt-3 font-heading text-[1.5rem] font-light leading-[1.1] tracking-tight text-gold-dark sm:text-[2rem] lg:text-[2.2rem] xl:text-[2.4rem]">
+      Your Bengal Journey Starts Here
+    </h2>
+    <span class="mx-auto mt-4 block h-px w-16 bg-(--gold-line) sm:w-20"></span>
+  </div>
+
+  <!-- Showcase -->
+  <div class="showcase-grid">
+
+    <!-- Left: list -->
+    <nav class="showcase-list">
+      {items.map((item, i) => (
+        <button
+          type="button"
+          class:list={['showcase-item', i === 0 && 'active']}
+          data-target={item.id}
+          aria-label={`Show ${item.label}`}
+        >
+          <span class="showcase-title">{item.label}</span>
+        </button>
+      ))}
+    </nav>
+
+    <!-- Right: slides -->
+    <div class="showcase-content">
+      {items.map((item, i) => (
+        <div class:list={['content-slide', i === 0 && 'active']} id={`slide-${item.id}`}>
+          <Image
+            src={item.img}
+            alt={item.label}
+            class="content-bg-img"
+            widths={[640, 960, 1280]}
+            sizes="(max-width: 767px) 100vw, (max-width: 1199px) 60vw, 70vw"
+            loading={i === 0 ? 'eager' : 'lazy'}
+            format="webp"
+            quality={75}
+          />
+          <div class="content-overlay"></div>
+          <div class="content-inner">
+            <h3 class="font-heading text-[1.8rem] font-light leading-[1.15] text-cream sm:text-[2.2rem] lg:text-[2.6rem] xl:text-[3rem]">
+              {item.heading}
+            </h3>
+            <p class="mt-4 max-w-lg font-body text-[0.9rem] font-normal leading-[1.8] text-cream/85 sm:mt-5 sm:text-[0.95rem]">
+              {item.body}
+            </p>
+            {item.href && (
+              <a
+                href={item.href}
+                class="mt-8 inline-flex self-start border border-cream/40 px-8 py-3 font-body text-[0.58rem] font-semibold uppercase tracking-[0.3em] text-cream transition-all duration-500 hover:border-gold/60 hover:text-gold sm:mt-10 sm:text-[0.62rem]"
+              >
+                {item.cta}
+              </a>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  /* Grid */
+  .showcase-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    min-height: 75vh;
+  }
+
+  /* List */
+  .showcase-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 1px solid rgba(212, 175, 55, 0.15);
+  }
+
+  .showcase-item {
+    position: relative;
+    padding: 28px 44px;
+    text-align: left;
+    border: none;
+    border-left: 2px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 0.35s ease;
+  }
+
+  .showcase-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(212, 175, 55, 0.07);
+    width: 0;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .showcase-item:hover::before,
+  .showcase-item.active::before { width: 100%; }
+
+  .showcase-item:hover,
+  .showcase-item.active { border-left-color: var(--gold); }
+
+  .showcase-title {
+    font-family: var(--font-heading);
+    font-size: 1.9rem;
+    font-weight: 300;
+    color: var(--dark);
+    position: relative;
+    z-index: 1;
+    transition: color 0.3s ease, font-style 0.3s ease;
+  }
+
+  .showcase-item:hover .showcase-title,
+  .showcase-item.active .showcase-title {
+    color: var(--gold-dark);
+  }
+
+  /* Slides */
+  .showcase-content { position: relative; overflow: hidden; }
+
+  .content-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(1.04);
+    transition: opacity 0.6s ease, transform 0.6s ease, visibility 0.6s;
+  }
+
+  .content-slide.active {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+  }
+
+  .content-bg-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .content-slide.active .content-bg-img {
+    animation: kenBurns 20s ease-in-out infinite alternate;
+  }
+
+  @keyframes kenBurns {
+    from { transform: scale(1); }
+    to   { transform: scale(1.06); }
+  }
+
+  .content-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(10, 10, 10, 0.62) 0%, rgba(26, 26, 26, 0.32) 100%);
+  }
+
+  .content-inner {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8%;
+  }
+
+  /* Tablet */
+  @media (max-width: 1199px) {
+    .showcase-grid { grid-template-columns: 240px 1fr; }
+    .showcase-item { padding: 20px 28px; }
+    .showcase-title { font-size: 1.45rem; }
+  }
+
+  /* Mobile */
+  @media (max-width: 767px) {
+    .showcase-grid { grid-template-columns: 1fr; min-height: auto; }
+    .showcase-list { border-right: none; border-bottom: 1px solid rgba(212, 175, 55, 0.15); }
+    .showcase-item { padding: 16px 24px; }
+    .showcase-title { font-size: 1.2rem; }
+    .showcase-content { min-height: 70vw; }
+    .content-slide {
+      position: relative;
+      display: none;
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      min-height: 70vw;
+    }
+    .content-slide.active { display: block; }
+    .content-inner { padding: 10% 8%; }
+  }
+</style>
+
+<script>
+  function initJourney() {
+    const items = document.querySelectorAll<HTMLElement>('.showcase-item');
+    const slides = document.querySelectorAll<HTMLElement>('.content-slide');
+    if (!items.length || !slides.length) return;
+
+    function activate(target: string) {
+      items.forEach((i) => i.classList.remove('active'));
+      slides.forEach((s) => s.classList.remove('active'));
+      document.querySelector<HTMLElement>(`.showcase-item[data-target="${target}"]`)?.classList.add('active');
+      document.getElementById(`slide-${target}`)?.classList.add('active');
+    }
+
+    items.forEach((item) => {
+      if (window.innerWidth > 767) {
+        item.addEventListener('mouseenter', () => activate(item.dataset.target!));
+      }
+      item.addEventListener('click', () => activate(item.dataset.target!));
+    });
+  }
+
+  document.addEventListener('astro:page-load', initJourney);
+</script>

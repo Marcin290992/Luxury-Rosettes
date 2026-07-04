@@ -1,0 +1,454 @@
+---
+import { Image } from 'astro:assets';
+import awardsImage from '../assets/img/awards.webp';
+import award1 from '../assets/img/award1.webp';
+import award2 from '../assets/img/award2.webp';
+import award3 from '../assets/img/award3.webp';
+import award4 from '../assets/img/award4.webp';
+import award5 from '../assets/img/award5.webp';
+import award6 from '../assets/img/award6.webp';
+
+// Swiper + EffectExpo CSS — MUST live in the frontmatter so Astro includes
+// them in the page's CSS bundle and manages them during View Transitions.
+// When imported inside <script>, Vite injects <style> tags as a module
+// side-effect. After VT navigation the module is cached (ES module map)
+// and does NOT re-execute, so swapHeadElements() removes the styles and
+// they are never re-injected. Moving them here makes Astro treat them
+// the same as scoped component CSS: properly added/removed during VT swap.
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import '../assets/uiinitiative-expo-slider-c4e29dd4d6c81e6d2f6654e11d368cd46ea563ac/demo-vite/effect-expo.css';
+
+const awardSlides = [
+	{ src: award1.src, alt: 'Award gallery image 1' },
+	{ src: award2.src, alt: 'Award gallery image 2' },
+	{ src: award3.src, alt: 'Award gallery image 3' },
+	{ src: award4.src, alt: 'Award gallery image 4' },
+	{ src: award5.src, alt: 'Award gallery image 5' },
+	{ src: award6.src, alt: 'Award gallery image 6' },
+];
+---
+
+<section class="bg-cream py-10 sm:py-18 lg:py-24">
+	<div class="mx-auto w-full max-w-330 px-4 sm:px-8 lg:px-16">
+		<header class="text-center">
+			<p class="font-body text-[0.65rem] font-semibold uppercase tracking-[2.8px] text-dark/45 sm:text-[0.72rem] lg:text-[0.76rem]">
+				Championship Record
+			</p>
+			<h2 class="mt-3 font-heading text-[1.5rem] font-light leading-[1.1] tracking-tight text-gold-dark sm:text-[2rem] lg:text-[2.2rem] xl:text-[2.4rem]">
+				Awards
+			</h2>
+			<span class="mx-auto mt-4 block h-px w-16 bg-(--gold-line) sm:w-20"></span>
+		</header>
+
+		<div class="mt-10 grid grid-cols-1 items-start gap-8 sm:mt-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-10">
+			<figure class="overflow-hidden rounded-xl border border-gold/18 bg-[#f8f3eb]">
+				<Image
+					src={awardsImage}
+					alt="Luxury Rosettes award trophy"
+					class="h-64 w-full object-cover sm:h-80 lg:h-full lg:min-h-96"
+					widths={[640, 900, 1100]}
+					sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 46vw"
+					loading="lazy"
+					format="webp"
+					quality={72}
+				/>
+			</figure>
+
+			<div class="text-left">
+				<p class="font-body text-[0.55rem] font-semibold uppercase tracking-[2.6px] text-dark/45 sm:text-[0.62rem] lg:text-[0.65rem]">
+					Bengal Cat Association
+				</p>
+				<h3 class="mt-3 font-heading text-[1.3rem] font-light leading-tight tracking-tight text-gold-dark sm:text-[1.6rem] lg:text-[1.8rem]">
+					Brown (Black) Spotted Male Adult
+				</h3>
+
+				<div class="mt-5 space-y-5 font-body text-[0.9rem] leading-[1.76] text-dark/80 sm:text-[0.95rem]">
+					<p>
+						We are honored that our Bengals have been recognized with numerous prestigious awards from the Bengal Cat Association. Among the distinctions received are First Place in multiple classes, Best of Breed, Best in Show Adult, and the highly coveted title of Overall Best in Show Bengal 2024.
+					</p>
+					<p>
+						Each of these awards reflects the very best qualities of the Bengal breed striking beauty, exceptional coat pattern, robust health, and a gentle yet confident temperament. Such recognition is only given to cats that truly embody the breed standard and stand out in the eyes of international judges.
+					</p>
+					<p>
+						For us, these achievements go beyond trophies and ribbons. They are a testament to the years of dedication, care, and passion we have invested in our breeding program. They confirm that our Bengals are not only admired in the show hall but also respected within the wider Bengal community.
+					</p>
+					<p>
+						We are proud to share these accomplishments with families who welcome our Bengals into their homes, knowing they are bringing in a cat of outstanding quality and proven excellence.
+					</p>
+				</div>
+
+				<div class="mt-7 inline-flex rounded-md border border-gold/35 px-5 py-2.5" aria-label="Official recognition label">
+					<span class="font-body text-[0.7rem] font-semibold uppercase tracking-[2.6px] text-gold-dark/85">Official Recognition</span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="mt-8 border-t border-gold/15 pt-8 sm:mt-16 sm:pt-12">
+		<div class="mx-auto mb-6 w-full max-w-330 px-4 text-center sm:mb-8 sm:px-8 lg:px-16">
+			<p class="font-body text-[0.55rem] font-semibold uppercase tracking-[2.6px] text-dark/45 sm:text-[0.62rem] lg:text-[0.65rem]">
+				Awards Gallery
+			</p>
+			<h3 class="mt-2 font-heading text-[1.5rem] font-light tracking-tight text-gold-dark sm:text-[2rem] lg:text-[2.2rem]">
+				Show Highlights
+			</h3>
+		</div>
+
+		<div class="awards-expo-wrap relative overflow-x-hidden pb-6 sm:pb-8">
+			<div class="awards-expo-swiper swiper swiper-expo">
+				<div class="swiper-wrapper">
+					{awardSlides.map((slide) => (
+						<div class="swiper-slide">
+							<div class="expo-container">
+								<img class="expo-image" src={slide.src} alt={slide.alt} loading="lazy" />
+								<div class="expo-content"></div>
+							</div>
+						</div>
+					))}
+				</div>
+				<div class="awards-expo-nav awards-expo-prev" aria-label="Previous slide">
+					<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M11 14L6 9l5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+				</div>
+				<div class="awards-expo-nav awards-expo-next" aria-label="Next slide">
+					<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7 4l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+				</div>
+				<div class="awards-expo-pagination"></div>
+			</div>
+		</div>
+
+		<div class="awards-mob-btns">
+			<button class="awards-mob-btn awards-mob-prev" aria-label="Previous slide">
+				<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M11 14L6 9l5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+			</button>
+			<button class="awards-mob-btn awards-mob-next" aria-label="Next slide">
+				<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7 4l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+			</button>
+		</div>
+	</div>
+</section>
+
+<style>
+	.awards-expo-wrap {
+		--swiper-navigation-color: #9f7f2f;
+		--swiper-pagination-color: #b18b2f;
+	}
+
+	.awards-expo-wrap :global(.awards-expo-swiper) {
+		height: clamp(300px, 72vw, 520px);
+		overflow: visible;
+		transform: translateZ(0);
+		will-change: transform;
+	}
+
+	@media (min-width: 768px) {
+		.awards-expo-wrap :global(.awards-expo-swiper) {
+			height: clamp(400px, 52vw, 600px);
+		}
+	}
+
+	@media (min-width: 1280px) {
+		.awards-expo-wrap :global(.awards-expo-swiper) {
+			height: 100vh;
+		}
+	}
+
+	.awards-expo-wrap :global(.expo-container) {
+		transform-style: flat;
+		border-radius: var(--expo-image-border-radius, 16px);
+		will-change: transform;
+	}
+
+	.awards-expo-wrap :global(.expo-image) {
+		border-radius: var(--expo-image-border-radius, 16px);
+		will-change: transform;
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+	}
+
+	.awards-expo-wrap :global(.expo-content) {
+		display: none;
+	}
+
+	.awards-expo-wrap :global(.awards-expo-nav) {
+		position: absolute;
+		top: 50%;
+		z-index: 20;
+		display: grid;
+		height: 52px;
+		width: 52px;
+		place-items: center;
+		border: 1px solid rgba(212, 175, 55, 0.38);
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.90);
+		color: #9f7f2f;
+		transform: translateY(-50%);
+		cursor: pointer;
+		transition: background 0.2s ease, border-color 0.2s ease;
+	}
+
+	.awards-expo-wrap :global(.awards-expo-prev) {
+		left: 10px;
+	}
+
+	.awards-expo-wrap :global(.awards-expo-next) {
+		right: 10px;
+	}
+
+	.awards-expo-wrap :global(.awards-expo-nav)::after {
+		display: none;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.awards-expo-wrap :global(.awards-expo-nav:hover) {
+			background: rgba(212, 175, 55, 0.08);
+			border-color: rgba(212, 175, 55, 0.55);
+		}
+	}
+
+	.awards-expo-wrap :global(.awards-expo-pagination) {
+		margin-top: 14px;
+		position: static;
+		text-align: center;
+	}
+
+	@media (max-width: 767px) {
+		.awards-expo-wrap {
+			overflow: hidden;
+		}
+
+		.awards-expo-wrap :global(.awards-expo-swiper) {
+			height: clamp(300px, 74vw, 480px);
+			overflow: visible;
+		}
+
+		.awards-expo-wrap :global(.awards-expo-swiper .swiper-wrapper) {
+			display: flex;
+			gap: 12px;
+			overflow-x: auto;
+			overflow-y: hidden;
+			padding: 0 16px 8px;
+			scroll-snap-type: x mandatory;
+			scroll-behavior: smooth;
+			-webkit-overflow-scrolling: touch;
+			touch-action: pan-y;
+			scrollbar-width: none;
+		}
+
+		.awards-expo-wrap :global(.awards-expo-swiper .swiper-wrapper::-webkit-scrollbar) {
+			display: none;
+		}
+
+		.awards-expo-wrap :global(.awards-expo-swiper .swiper-slide) {
+			flex: 0 0 84%;
+			height: 100%;
+			scroll-snap-align: center;
+		}
+
+		.awards-expo-wrap :global(.awards-expo-swiper .expo-image) {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+		}
+
+		.awards-expo-wrap :global(.awards-expo-nav) {
+			display: none;
+		}
+
+		.awards-expo-wrap :global(.awards-expo-pagination) {
+			display: none;
+		}
+	}
+
+	/* ── Mobile nav buttons ───────────────────────────────────── */
+	.awards-mob-btns {
+		display: none;
+	}
+
+	@media (max-width: 767px) {
+		.awards-mob-btns {
+			display: flex;
+			justify-content: center;
+			gap: 2.5rem;
+			padding: 0.5rem 0 1rem;
+		}
+	}
+
+	.awards-mob-btn {
+		display: grid;
+		place-items: center;
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		border: 1px solid rgba(212, 175, 55, 0.38);
+		background: rgba(255, 255, 255, 0.90);
+		cursor: pointer;
+		color: #9f7f2f;
+		transition: background 0.2s ease, border-color 0.2s ease;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.awards-mob-btn:hover {
+			background: rgba(212, 175, 55, 0.08);
+			border-color: rgba(212, 175, 55, 0.55);
+		}
+	}
+</style>
+
+<script>
+	let swiperInstance: { destroy: (deleteInstance?: boolean, cleanStyles?: boolean) => void; update: () => void } | null = null;
+	let pristineHTML = '';
+	let viewportMql: MediaQueryList | null = null;
+	let mobileNavAC: AbortController | null = null;
+
+	function isMobileViewport() {
+		return window.matchMedia('(max-width: 767px)').matches;
+	}
+
+	function initMobileInitialSlide(el: HTMLElement) {
+		if (el.dataset.mobileInit === '1') return;
+
+		const wrapper = el.querySelector('.swiper-wrapper') as HTMLElement | null;
+		if (!wrapper) return;
+
+		const secondSlide = wrapper.children[1] as HTMLElement | undefined;
+		if (!secondSlide) return;
+
+		requestAnimationFrame(() => {
+			const targetLeft = secondSlide.offsetLeft - (wrapper.clientWidth - secondSlide.clientWidth) / 2;
+			wrapper.scrollTo({ left: Math.max(0, targetLeft), behavior: 'auto' });
+			el.dataset.mobileInit = '1';
+		});
+	}
+
+	async function createSwiper(el: HTMLElement) {
+		const [{ default: Swiper }, { Navigation, Pagination }, { default: EffectExpo }] = await Promise.all([
+			import('swiper'),
+			import('swiper/modules'),
+			// @ts-ignore
+			import('../assets/uiinitiative-expo-slider-c4e29dd4d6c81e6d2f6654e11d368cd46ea563ac/demo-vite/effect-expo.esm.js'),
+		]);
+
+		if (!el.isConnected || isMobileViewport()) return;
+
+		swiperInstance = new Swiper(el, {
+			modules: [Navigation, Pagination, EffectExpo],
+			effect: 'expo',
+			initialSlide: 1,
+			slidesPerView: 1.18,
+			spaceBetween: 10,
+			speed: 1000,
+			grabCursor: true,
+			expoEffect: {
+				imageScale: 1.03,
+				imageOffset: 0.6,
+				scale: 1.05,
+				rotate: 0,
+				grayscale: true,
+			},
+			navigation: {
+				nextEl: el.querySelector('.awards-expo-next'),
+				prevEl: el.querySelector('.awards-expo-prev'),
+			},
+			pagination: {
+				el: el.querySelector('.awards-expo-pagination'),
+				clickable: true,
+			},
+			breakpoints: {
+				640: { slidesPerView: 1.35, spaceBetween: 12 },
+				768: { slidesPerView: 1.25, spaceBetween: 14 },
+				1024: { slidesPerView: 1.35, spaceBetween: 16 },
+				1280: { slidesPerView: 1.55, spaceBetween: 16 },
+			},
+		});
+	}
+
+	function destroyAwardsExpo() {
+		if (swiperInstance) {
+			try { swiperInstance.destroy(true, true); } catch (e) { /* noop */ }
+			swiperInstance = null;
+		}
+		mobileNavAC?.abort();
+		mobileNavAC = null;
+	}
+
+	function needsPristineRestore(wrap: Element) {
+		const el = wrap.querySelector('.awards-expo-swiper');
+		if (!el) return false;
+		if (el.classList.contains('swiper-initialized')) return true;
+		if (el.getAttribute('style')) return true;
+		return wrap.querySelector('.swiper-wrapper[style], .swiper-slide[style]') !== null;
+	}
+
+	function initAwardsExpo() {
+		destroyAwardsExpo();
+
+		const wrap = document.querySelector('.awards-expo-wrap');
+		if (!wrap) return;
+
+		const mobile = isMobileViewport();
+
+		// First run: snapshot server-rendered markup before Swiper mutates it.
+		if (!pristineHTML) {
+			pristineHTML = wrap.innerHTML;
+		} else if (!mobile || needsPristineRestore(wrap)) {
+			// Restore pristine DOM after VT or when coming back from desktop Swiper state.
+			wrap.innerHTML = pristineHTML;
+		}
+
+		const el = wrap.querySelector('.awards-expo-swiper') as HTMLElement | null;
+		if (!el) return;
+
+		if (mobile) {
+			initMobileInitialSlide(el);
+
+			mobileNavAC?.abort();
+			mobileNavAC = new AbortController();
+			const { signal } = mobileNavAC;
+
+			const wrapper = el.querySelector('.swiper-wrapper') as HTMLElement | null;
+			const prevBtn = document.querySelector('.awards-mob-prev');
+			const nextBtn = document.querySelector('.awards-mob-next');
+
+			prevBtn?.addEventListener('click', () => {
+				if (!wrapper) return;
+				wrapper.scrollBy({ left: -(wrapper.clientWidth * 0.84 + 12), behavior: 'smooth' });
+			}, { signal });
+
+			nextBtn?.addEventListener('click', () => {
+				if (!wrapper) return;
+				wrapper.scrollBy({ left: wrapper.clientWidth * 0.84 + 12, behavior: 'smooth' });
+			}, { signal });
+
+			return;
+		}
+
+		delete el.dataset.mobileInit;
+
+		// Single rAF: let the browser lay out the restored DOM.
+		// CSS is now managed by Astro's pipeline (frontmatter imports),
+		// so it's guaranteed to be in <head> before astro:page-load fires.
+		requestAnimationFrame(async () => {
+			if (!el!.isConnected) return;
+			await createSwiper(el!);
+
+			// Safety net: force EffectExpo.setSize() recalc after layout settles.
+			// Harmless if dimensions are already correct.
+			setTimeout(() => {
+				if (swiperInstance) swiperInstance.update();
+			}, 200);
+		});
+	}
+
+	function handleViewportChange() {
+		// Re-init only when crossing the breakpoint, not on mobile URL-bar resize while scrolling.
+		initAwardsExpo();
+	}
+
+	document.addEventListener('astro:page-load', initAwardsExpo);
+	viewportMql = window.matchMedia('(max-width: 767px)');
+	viewportMql.addEventListener('change', handleViewportChange);
+	document.addEventListener('astro:before-swap', destroyAwardsExpo);
+</script>

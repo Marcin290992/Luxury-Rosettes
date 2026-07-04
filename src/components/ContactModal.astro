@@ -1,0 +1,281 @@
+---
+---
+
+<div
+  id="contactModal"
+  class="contact-modal fixed inset-0 z-1200 flex items-center justify-center"
+  aria-hidden="true"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Contact Us"
+>
+  <div id="contactModalBackdrop" class="contact-modal-backdrop absolute inset-0"></div>
+
+  <div id="contactModalPanel" class="contact-modal-panel relative z-10 mx-4 w-full max-w-md rounded-[20px] px-8 py-11 text-center max-h-[calc(100svh-2rem)] overflow-y-auto sm:px-12 sm:py-12 sm:max-h-none sm:overflow-visible">
+
+    <button
+      id="closeContactModal"
+      type="button"
+      aria-label="Close contact"
+      class="absolute right-4 top-4 flex h-11 w-11 items-center justify-center text-dark/35 transition-colors duration-200 hover:text-dark sm:right-5 sm:top-5 sm:h-9 sm:w-9"
+    >
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <line x1="1" y1="1" x2="15" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="15" y1="1" x2="1" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <span class="mx-auto mb-8 block h-px w-10 bg-(--gold-line)"></span>
+
+    <h2 class="font-heading text-[1.95rem] font-light leading-tight text-gold-dark sm:text-[2.2rem]">
+      Get In Touch
+    </h2>
+    <p class="mt-2 font-body text-[0.65rem] font-semibold uppercase tracking-[2.8px] text-dark/45">
+      We'd love to hear from you
+    </p>
+
+    <div class="mt-9 space-y-3">
+      <a
+        href="https://wa.me/447514951289"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex w-full items-center justify-center gap-3 border border-dark/18 px-8 py-3.5 font-body text-[0.62rem] font-semibold uppercase tracking-[0.28em] text-dark/72 transition-all duration-500 hover:border-gold-dark/45 hover:text-gold-dark"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+        WhatsApp Us
+      </a>
+
+      <div class="flex items-center justify-center gap-2">
+        <a
+          href="tel:+447514951289"
+          class="font-body text-[0.75rem] text-dark/45 transition-colors duration-300 hover:text-gold-dark"
+        >
+          07514 951 289
+        </a>
+        <button
+          id="copyPhoneBtn"
+          type="button"
+          aria-label="Copy phone number"
+          class="copy-phone-btn text-dark/30 transition-colors duration-200 hover:text-gold-dark"
+          title="Copy number"
+        >
+          <svg id="copyIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <svg id="checkIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="mt-7 flex items-center justify-center gap-3.5">
+        <a
+          href="https://www.facebook.com/people/Luxuryrosettes-Bengal-cattery/100091469460702/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Facebook"
+          class="contact-social"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+          </svg>
+        </a>
+
+        <a
+          href="https://www.instagram.com/luxuryrosettes"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram"
+          class="contact-social"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <circle cx="12" cy="12" r="4"/>
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="my-8 h-px w-full bg-dark/8"></div>
+
+    <a
+      href="mailto:sylwiab21@yahoo.co.uk"
+      class="font-body text-[0.82rem] text-dark/55 transition-colors duration-300 hover:text-gold-dark"
+    >
+      sylwiab21@yahoo.co.uk
+    </a>
+
+    <p class="mt-4 font-body text-[0.55rem] font-semibold uppercase tracking-[2px] text-dark/30">
+      By appointment only &middot; United Kingdom
+    </p>
+
+  </div>
+</div>
+
+<script>
+  import { getLenis } from '../scripts/lenis';
+
+  let isContactModalInitialized = false;
+  let contactModalController: AbortController | null = null;
+
+  function initContactModal() {
+    if (isContactModalInitialized) return;
+
+    const modal = document.getElementById('contactModal');
+    const backdrop = document.getElementById('contactModalBackdrop');
+    const closeBtn = document.getElementById('closeContactModal');
+
+    if (!modal) return;
+
+    isContactModalInitialized = true;
+
+    if (contactModalController) {
+      contactModalController.abort();
+    }
+    contactModalController = new AbortController();
+    const { signal } = contactModalController;
+
+    const openModal = () => {
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('no-scroll');
+      const lenis = getLenis();
+      if (lenis) lenis.stop();
+    };
+
+    const closeModal = () => {
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      window.setTimeout(() => {
+        document.body.classList.remove('no-scroll');
+        const lenis = getLenis();
+        if (lenis) lenis.start();
+      }, 400);
+    };
+
+    const copyBtn = document.getElementById('copyPhoneBtn');
+    const copyIcon = document.getElementById('copyIcon');
+    const checkIcon = document.getElementById('checkIcon');
+    copyBtn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText('07514951289');
+        if (copyIcon) copyIcon.style.display = 'none';
+        if (checkIcon) checkIcon.style.display = '';
+        setTimeout(() => {
+          if (copyIcon) copyIcon.style.display = '';
+          if (checkIcon) checkIcon.style.display = 'none';
+        }, 2000);
+      } catch {}
+    }, { signal });
+
+    document.addEventListener('open-contact-modal', openModal, { signal });
+
+    backdrop?.addEventListener('click', closeModal, { signal });
+    closeBtn?.addEventListener('click', closeModal, { signal });
+
+    document.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+          closeModal();
+        }
+      },
+      { signal }
+    );
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    isContactModalInitialized = false;
+    initContactModal();
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initContactModal);
+  } else {
+    initContactModal();
+  }
+</script>
+
+<style>
+  .contact-modal {
+    visibility: hidden;
+    pointer-events: none;
+    transition: visibility 0s linear var(--motion-slow), pointer-events 0s linear var(--motion-slow);
+  }
+
+  .contact-modal.active {
+    visibility: visible;
+    pointer-events: auto;
+    transition: visibility 0s linear 0s, pointer-events 0s linear 0s;
+  }
+
+  .contact-modal-backdrop {
+    background: transparent;
+    backdrop-filter: blur(var(--fx-overlay-blur)) saturate(var(--fx-overlay-saturate));
+    -webkit-backdrop-filter: blur(var(--fx-overlay-blur)) saturate(var(--fx-overlay-saturate));
+    opacity: 0;
+    transition: opacity var(--motion-base) ease;
+  }
+
+  .contact-modal.active .contact-modal-backdrop {
+    opacity: 1;
+  }
+
+  .contact-modal-panel {
+    background:
+      linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(250, 248, 243, 0.84) 52%, rgba(246, 241, 231, 0.8));
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    backdrop-filter: blur(var(--fx-panel-blur)) saturate(var(--fx-panel-saturate));
+    -webkit-backdrop-filter: blur(var(--fx-panel-blur)) saturate(var(--fx-panel-saturate));
+    box-shadow:
+      0 24px 56px rgba(24, 18, 12, 0.22),
+      0 1px 0 rgba(255, 255, 255, 0.45) inset;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform var(--motion-slow) var(--ease-premium), opacity var(--motion-base) ease-out;
+  }
+
+  .contact-social {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(26, 26, 26, 0.18);
+    background: transparent;
+    color: rgba(26, 26, 26, 0.56);
+    transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease;
+  }
+
+  @media (max-width: 767px) {
+    .contact-social {
+      border-color: rgba(26, 26, 26, 0.14);
+      color: rgba(26, 26, 26, 0.46);
+    }
+  }
+
+  .contact-social:hover {
+    border-color: rgba(184, 148, 31, 0.56);
+    color: var(--gold-dark);
+  }
+
+  .copy-phone-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .contact-modal.active .contact-modal-panel {
+    transform: translateY(0);
+    opacity: 1;
+  }
+</style>

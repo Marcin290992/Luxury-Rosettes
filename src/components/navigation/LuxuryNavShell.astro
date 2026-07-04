@@ -1,0 +1,454 @@
+---
+import logoImage from '../../assets/img/bengal-logo-web.webp';
+import ContactModal from '../ContactModal.astro';
+
+const { deferInitialReveal = false } = Astro.props;
+const pathname = Astro.url.pathname;
+---
+
+<!-- Shared stack: mobile-menu is positioned via top:100% off floatingNav's
+     real rendered height, so the gap below it is correct at every width
+     with no measured/hardcoded offset. -->
+<div class="nav-stack fixed z-1001">
+  <nav
+    id="floatingNav"
+    class:list={[
+      'floating-nav pointer-events-auto',
+      deferInitialReveal && 'nav-hidden',
+    ]}
+  >
+    <div class="nav-glass relative px-5 py-2.5 md:px-8 md:py-3 lg:px-5 lg:py-1.5">
+      <div class="relative z-10 flex items-center">
+
+        <a href="/" class="flex items-center shrink-0">
+          <img
+            src={logoImage.src}
+            alt="Luxury Rosettes"
+            width={logoImage.width}
+            height={logoImage.height}
+            class="nav-logo h-12 w-auto sm:h-14"
+          />
+        </a>
+
+        <div class="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-5 xl:gap-6">
+          <a href="/"                  class="nav-link" aria-current={pathname === '/' ? 'page' : undefined}>Home</a>
+          <a href="/our-cats"          class="nav-link" aria-current={pathname.startsWith('/our-cats') ? 'page' : undefined}>Our Cats</a>
+          <a href="/available-kittens" class="nav-link" aria-current={pathname.startsWith('/available-kittens') ? 'page' : undefined}>Kittens</a>
+          <a href="/gallery"           class="nav-link" aria-current={pathname.startsWith('/gallery') ? 'page' : undefined}>Gallery</a>
+        </div>
+
+        <div class="ml-auto flex items-center gap-3">
+          <button type="button" data-contact-trigger class="nav-cta hidden lg:inline-flex">Contact</button>
+
+          <button
+            id="menuBtn"
+            type="button"
+            class="group lg:hidden relative z-10 flex items-center bg-transparent px-3 py-2 outline-none cursor-pointer"
+            aria-label="Open menu"
+            aria-expanded="false"
+          >
+            <span class="relative flex h-5 w-6 flex-col justify-between">
+              <span class="menu-line menu-line-top nav-menu-line block h-0.5 w-full"></span>
+              <span class="menu-line menu-line-bottom nav-menu-line ml-auto block h-0.5 w-3/5 group-hover:w-full"></span>
+            </span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile dropdown -->
+  <div id="mobileMenu" class="mobile-menu lg:hidden" aria-hidden="true">
+    <!-- backdrop-filter lives here — same element as opacity, so iOS/Android work correctly -->
+    <div class="mobile-panel">
+      <a href="/"                  class="mobile-link" aria-current={pathname === '/' ? 'page' : undefined}>Home</a>
+      <a href="/our-cats"          class="mobile-link" aria-current={pathname.startsWith('/our-cats') ? 'page' : undefined}>Our Cats</a>
+      <a href="/available-kittens" class="mobile-link" aria-current={pathname.startsWith('/available-kittens') ? 'page' : undefined}>Kittens</a>
+      <a href="/gallery"           class="mobile-link" aria-current={pathname.startsWith('/gallery') ? 'page' : undefined}>Gallery</a>
+      <div class="mobile-cta-row">
+        <button type="button" data-contact-trigger class="mobile-cta">Contact</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile overlay — solid dark, no backdrop-filter to avoid compositing conflict -->
+<div id="menuBackdrop" class="menu-backdrop fixed inset-0 lg:hidden" aria-hidden="true"></div>
+
+<script>
+  import { navigate } from 'astro:transitions/client';
+  import { getLenis } from '../../scripts/lenis';
+
+  let navAC: AbortController | null = null;
+
+  function initNav() {
+    navAC?.abort();
+    navAC = new AbortController();
+    const { signal } = navAC;
+
+    const floatingNav  = document.getElementById('floatingNav');
+    const menuBtn      = document.getElementById('menuBtn');
+    const mobileMenu   = document.getElementById('mobileMenu');
+    const menuBackdrop = document.getElementById('menuBackdrop');
+
+    if (!floatingNav) return;
+
+    // is-scrolled: switch glass tint when leaving dark hero
+    const darkHero = document.querySelector('[data-nav-dark]');
+    const handleScroll = () => {
+      const bottom = darkHero?.getBoundingClientRect().bottom ?? 0;
+      floatingNav.classList.toggle('is-scrolled', bottom < 60);
+    };
+
+    if (darkHero) {
+      window.addEventListener('scroll', handleScroll, { passive: true, signal });
+      handleScroll();
+    } else {
+      floatingNav.classList.add('is-scrolled');
+    }
+
+    // Mobile menu
+    let menuOpen = false;
+
+    const openMenu = () => {
+      if (menuOpen || !mobileMenu) return;
+      menuOpen = true;
+      menuBtn?.setAttribute('aria-expanded', 'true');
+      menuBtn?.classList.add('active');
+      mobileMenu.setAttribute('aria-hidden', 'false');
+      mobileMenu.classList.add('is-open');
+      menuBackdrop?.classList.add('is-open');
+      getLenis()?.stop();
+    };
+
+    const closeMenu = () => {
+      if (!menuOpen || !mobileMenu) return;
+      menuOpen = false;
+      menuBtn?.setAttribute('aria-expanded', 'false');
+      menuBtn?.classList.remove('active');
+      mobileMenu.setAttribute('aria-hidden', 'true');
+      mobileMenu.classList.remove('is-open');
+      menuBackdrop?.classList.remove('is-open');
+      getLenis()?.start();
+    };
+
+    (window as any).closeLuxuryMenu = closeMenu;
+
+    menuBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      menuOpen ? closeMenu() : openMenu();
+    }, { signal });
+
+    mobileMenu?.querySelectorAll('a').forEach(el =>
+      el.addEventListener('click', (e) => {
+        const href = (el as HTMLAnchorElement).href;
+        e.preventDefault();
+        closeMenu();
+        setTimeout(() => { navigate(href); }, 300);
+      }, { signal })
+    );
+
+    document.addEventListener('click', (e) => {
+      if (menuOpen &&
+          !floatingNav.contains(e.target as Node) &&
+          !mobileMenu?.contains(e.target as Node)) {
+        closeMenu();
+      }
+    }, { signal });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menuOpen) closeMenu();
+    }, { signal });
+
+    document.querySelectorAll('[data-contact-trigger]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        closeMenu();
+        setTimeout(() => document.dispatchEvent(new CustomEvent('open-contact-modal')), 120);
+      }, { signal });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNav, { once: true });
+  } else {
+    initNav();
+  }
+
+  document.addEventListener('astro:after-swap', initNav);
+</script>
+
+<style>
+  /* ── Nav: reveal via transform, not opacity ─────────────────────
+     opacity on a parent of backdrop-filter breaks blur on mobile
+     (iOS Safari + Android Chrome compositing isolation bug)        */
+  .nav-stack {
+    top: 0;
+    left: clamp(20px, 15vw, 220px);
+    right: clamp(20px, 15vw, 220px);
+  }
+
+  .floating-nav {
+    transform: translateY(0);
+    transition: transform var(--motion-nav) var(--ease-premium);
+  }
+  .floating-nav.nav-hidden {
+    transform: translateY(-110%);
+  }
+
+  /* ── Glass pill ─────────────────────────────────────────────── */
+  .nav-glass {
+    background: rgba(11, 9, 7, 0.72);
+    border-radius: 0 0 10px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.26);
+    overflow: clip;
+    transition: background var(--motion-base) ease, border-color var(--motion-base) ease, box-shadow var(--motion-base) ease;
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .nav-glass {
+      background: rgba(11, 9, 7, 0.52);
+      backdrop-filter: blur(var(--fx-glass-blur)) saturate(var(--fx-glass-saturate));
+      -webkit-backdrop-filter: blur(var(--fx-glass-blur)) saturate(var(--fx-glass-saturate));
+    }
+  }
+
+  /* Scrolled state: warmer tint over light content */
+  #floatingNav.is-scrolled .nav-glass {
+    background: rgba(62, 55, 49, 0.72);
+    border-color: rgba(255, 255, 255, 0.24);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    #floatingNav.is-scrolled .nav-glass {
+      background: rgba(62, 55, 49, 0.46);
+      backdrop-filter: blur(var(--fx-glass-blur-strong)) saturate(var(--fx-glass-saturate));
+      -webkit-backdrop-filter: blur(var(--fx-glass-blur-strong)) saturate(var(--fx-glass-saturate));
+    }
+  }
+
+  /* ── Label & hamburger lines ────────────────────────────────── */
+  .nav-logo {
+    transform: scale(1.32);
+    transform-origin: left center;
+    transition: transform var(--motion-base) ease;
+  }
+
+  @media (min-width: 640px) {
+    .nav-logo {
+      transform: scale(1.42);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .nav-logo {
+      transform: scale(0.98);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .nav-logo {
+      transform: scale(1.04);
+    }
+  }
+
+  .nav-label {
+    color: rgba(250, 248, 243, 0.82);
+    transition: color 0.5s ease;
+  }
+
+  .nav-menu-line {
+    background: rgba(250, 248, 243, 0.70);
+    transition: background var(--motion-base) ease, width var(--motion-fast) ease, transform var(--motion-base) ease;
+  }
+
+  #floatingNav.is-scrolled .nav-label     { color: rgba(250, 248, 243, 0.90); }
+  #floatingNav.is-scrolled .nav-menu-line { background: rgba(250, 248, 243, 0.82); }
+
+  /* ── Desktop nav link ───────────────────────────────────────── */
+  .nav-link {
+    position: relative;
+    font-family: var(--font-body);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(250, 248, 243, 0.70);
+    text-decoration: none;
+    transition: color var(--motion-fast) ease;
+  }
+  .nav-link:hover { color: rgba(250, 248, 243, 1); }
+
+  .nav-link[aria-current="page"] {
+    color: rgba(250, 248, 243, 0.96);
+  }
+  .nav-link[aria-current="page"]::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(212, 175, 55, 0.65);
+  }
+
+  /* ── Desktop CTA ────────────────────────────────────────────── */
+  .nav-cta {
+    font-family: var(--font-body);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(250, 248, 243, 0.88);
+    background: rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 0;
+    padding: 0.35rem 0.9rem;
+    cursor: pointer;
+    transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease;
+    white-space: nowrap;
+  }
+  .nav-cta:hover {
+    background: rgba(212, 175, 55, 0.14);
+    border-color: rgba(212, 175, 55, 0.40);
+    color: #faf8f3;
+  }
+
+  /* ── Mobile overlay ─────────────────────────────────────────── */
+  .menu-backdrop {
+    z-index: 999;
+    background: transparent;
+    backdrop-filter: blur(var(--fx-overlay-blur)) saturate(var(--fx-overlay-saturate));
+    -webkit-backdrop-filter: blur(var(--fx-overlay-blur)) saturate(var(--fx-overlay-saturate));
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--motion-fast) ease, visibility var(--motion-fast) ease;
+  }
+  .menu-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ── Mobile dropdown wrapper ────────────────────────────────── */
+  /* No opacity here — opacity on a parent breaks child backdrop-filter.
+     The panel handles its own opacity instead.                    */
+  .mobile-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    right: 0;
+    visibility: hidden;
+    transform: translateY(-110%);
+    transition: transform var(--motion-fast) ease-in, visibility 0s linear var(--motion-fast);
+  }
+  .mobile-menu.is-open {
+    visibility: visible;
+    transform: translateY(0);
+    transition: transform var(--motion-base) var(--ease-premium), visibility 0s linear 0s;
+  }
+
+  /* ── Mobile glass panel ─────────────────────────────────────── */
+  /* backdrop-filter and opacity are on the SAME element — this is
+     the correct pattern: opacity on the bf element itself is fine,
+     opacity on an ANCESTOR breaks it.                             */
+  .mobile-panel {
+    background: rgba(14, 11, 9, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+    overflow: clip;
+    padding: 0.5rem 0;
+    opacity: 0;
+    transition: opacity var(--motion-fast) ease;
+  }
+
+  .mobile-menu.is-open .mobile-panel {
+    opacity: 1;
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .mobile-panel {
+      background: rgba(14, 11, 9, 0.62);
+      backdrop-filter: blur(var(--fx-glass-blur)) saturate(var(--fx-glass-saturate));
+      -webkit-backdrop-filter: blur(var(--fx-glass-blur)) saturate(var(--fx-glass-saturate));
+    }
+  }
+
+  /* ── Mobile links ───────────────────────────────────────────── */
+  .mobile-link {
+    display: block;
+    min-height: 44px;
+    font-family: var(--font-heading);
+    font-size: 1.7rem;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: rgba(250, 248, 243, 0.82);
+    padding: 0.7rem 1.5rem;
+    text-align: center;
+    text-decoration: none;
+    transition: color var(--motion-fast) ease, background var(--motion-fast) ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .mobile-link:hover {
+      color: var(--gold);
+      background: rgba(212, 175, 55, 0.05);
+    }
+  }
+
+  .mobile-link[aria-current="page"] {
+    color: var(--gold);
+  }
+
+  /* ── Mobile CTA ─────────────────────────────────────────────── */
+  .mobile-cta-row {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 1.25rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    margin-top: 0.25rem;
+  }
+
+  .mobile-cta {
+    min-height: 44px;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(250, 248, 243, 0.88);
+    background: rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 0;
+    padding: 0.65rem 2.5rem;
+    cursor: pointer;
+    transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease;
+    white-space: nowrap;
+  }
+  .mobile-cta:hover {
+    background: rgba(212, 175, 55, 0.14);
+    border-color: rgba(212, 175, 55, 0.40);
+    color: #faf8f3;
+  }
+
+  /* ── Hamburger active ───────────────────────────────────────── */
+  #menuBtn.active .menu-line-top {
+    transform: translateY(9px) rotate(45deg);
+  }
+  #menuBtn.active .menu-line-bottom {
+    width: 100%;
+    transform: translateY(-9px) rotate(-45deg);
+  }
+</style>
+
+<noscript>
+  <style>
+    #floatingNav.nav-hidden { transform: translateY(0) !important; }
+  </style>
+</noscript>
+
+<ContactModal />

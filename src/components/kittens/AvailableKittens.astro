@@ -1,0 +1,539 @@
+---
+import { Image } from 'astro:assets';
+import kittensHero from '../../assets/img/kittens.webp';
+import candyImg   from '../../assets/img/gallery/Candy/Candy-2.webp';
+import cosmoImg   from '../../assets/img/gallery/Cosmo/Cosmo-1-webp.webp';
+import charlieImg from '../../assets/img/gallery/Charlie/desktop.webp';
+import chesterImg from '../../assets/img/gallery/Chester/kitten-2-web.webp';
+
+const kittens = [
+  {
+    name: 'Candy',
+    gender: 'Girl',
+    description:
+      'Candy is our sweet Bengal girl with a glittering coat and beautifully defined rosettes. She is curious about everything around her and loves to explore, making her a lively and fun companion. Candy enjoys interactive play but also has a soft, affectionate side. She loves to curl up next to you after her adventures. Raised in a family home with other cats and a big dog, she is confident, well-socialised, and ready to adapt to her forever family.',
+    main: candyImg,
+  },
+  {
+    name: 'Cosmo',
+    gender: 'Boy',
+    description:
+      'Cosmo is a bold little explorer with a true Bengal spirit. He loves climbing, jumping, and discovering new places, always showing his adventurous side. His sparkling coat and striking markings make him just as beautiful as he is charming. Cosmo is playful and energetic, but he is also very people-oriented and enjoys following you around the house. Growing up around a large dog, he is fearless and will easily fit into a home with other pets.',
+    main: cosmoImg,
+  },
+  {
+    name: 'Charlie',
+    gender: 'Boy',
+    description:
+      "Charlie is our cheeky boy with a mischievous sparkle in his eyes. Always up to something funny, he has a clever and sneaky side that makes him absolutely entertaining to be around. He's the one who figures out toys first and finds new ways to play. Despite his cheekiness, Charlie is affectionate and enjoys attention, often looking for cuddles after his playful antics. With his strong rosettes and glittered coat, he's both handsome and full of character.",
+    main: charlieImg,
+  },
+  {
+    name: 'Chester',
+    gender: 'Boy',
+    description:
+      "Chester is the friendliest of the bunch and always eager to interact with people. He has a gentle, loving nature and loves being part of whatever you're doing. Playful and full of energy, Chester enjoys chasing toys and wrestling with his siblings, but he's equally happy sitting with you and purring away. His affectionate personality, combined with his stunning Bengal looks, makes him the perfect all-around family kitten.",
+    main: chesterImg,
+  },
+];
+---
+
+<!-- ── HERO ──────────────────────────────────────────────────────── -->
+<section class="kh subpage-hero-screen" data-nav-dark>
+
+  <!-- Left: dark text panel -->
+  <div class="kh__left">
+    <div class="kh__text">
+      <p class="kh__kicker">Champion Bloodlines</p>
+      <h1 class="kh__heading" id="kh-title">Available <em>Kittens</em></h1>
+      <p class="kh__desc">Raised with love, ready to enchant.</p>
+    </div>
+  </div>
+
+  <!-- Right: image panel -->
+  <div class="kh__right" aria-hidden="true">
+    <Image
+      src={kittensHero}
+      alt=""
+      class="kh__img"
+      loading="eager"
+      fetchpriority="high"
+      widths={[640, 1024, 1440, 1920]}
+      sizes="60vw"
+      format="webp"
+    />
+  </div>
+
+</section>
+
+<!-- ── INTRO ─────────────────────────────────────────────────────── -->
+<section class="ak-intro">
+  <div class="ak-intro__inner">
+    <p class="ak-intro__kicker">Our Litter</p>
+    <h2 class="ak-intro__heading">Meet the Kittens</h2>
+    <p class="ak-intro__sub">Each kitten is unique, beautifully marked, and full of character.</p>
+  </div>
+</section>
+
+<!-- ── KITTEN PROFILES ───────────────────────────────────────────-- -->
+{ kittens.map((kitten, i) => (
+  <section class={`ak-profile${i % 2 !== 0 ? ' ak-profile--reverse' : ''}`}>
+    <div class="ak-profile__grid">
+      <div class="ak-img-wrap overflow-hidden rounded-md shadow-[0_8px_48px_rgba(0,0,0,0.13)] w-full lg:flex-1 lg:min-w-0">
+        <Image
+          src={kitten.main}
+          alt={`${kitten.name} — Bengal kitten`}
+          class="block w-full h-auto object-cover"
+          widths={[640, 960, 1280]}
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          format="webp"
+          loading={i < 2 ? 'eager' : 'lazy'}
+        />
+      </div>
+      <div class="flex flex-col items-start lg:flex-1 lg:min-w-0">
+        <p class="font-body text-[0.65rem] font-semibold uppercase tracking-[3px] text-dark/45 mb-1">
+          {kitten.gender === 'Girl' ? 'Bengal Girl' : 'Bengal Boy'}
+        </p>
+        <h2 class="font-heading text-[2rem] sm:text-[2.6rem] lg:text-[2.8rem] 2xl:text-[3.4rem] font-light leading-[1.12] tracking-[-0.015em] text-gold-dark mb-0">{kitten.name}</h2>
+        <p class="font-body text-[0.9rem] sm:text-[0.95rem] 2xl:text-[1.05rem] leading-[1.82] 2xl:leading-[1.85] tracking-[0.003em] text-text-primary mt-5">{kitten.description}</p>
+      </div>
+    </div>
+  </section>
+)) }
+
+<!-- ── GOLD SEPARATOR ────────────────────────────────────────────── -->
+<div class="ak-sep">
+  <span class="ak-sep__line" aria-hidden="true"></span>
+</div>
+
+<!-- ── HERITAGE ──────────────────────────────────────────────────── -->
+<section class="ak-heritage">
+  <div class="ak-heritage__card">
+    <p class="ak-heritage__kicker">Champion Bloodlines</p>
+    <h2 class="ak-heritage__heading">Quality You Can Trust</h2>
+    <p class="ak-heritage__text">
+      All four kittens come from <strong>Champion bloodlines</strong>. Dad Draco is a GCCF Champion, mum Kita is a wonderful, attentive queen. Both parents are health-tested and clear of genetic diseases. Kittens go to their new families TICA-registered, fully vaccinated, vet-checked, and with a thoughtful starter pack (food, toys, blanket). Playful, well-socialised, used to a big dog, and raised with lots of love and care in our home.
+    </p>
+  </div>
+</section>
+
+<!-- ── CTA ───────────────────────────────────────────────────────── -->
+<section class="ak-cta">
+  <h3 class="ak-cta__title">Found Your Perfect Kitten?</h3>
+  <p class="ak-cta__sub">Tell us which one caught your eye — we'll guide you through every step.</p>
+  <button type="button" data-contact-trigger class="ak-cta__btn">Get in Touch</button>
+</section>
+
+<style>
+/* ── HERO: base ───────────────────────────────────────────────────── */
+.kh {
+  width: 100%;
+  background: #080706;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Mobile: full-bleed overlay ───────────────────────────────────── */
+.kh__right {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.kh__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 60%;
+  display: block;
+}
+
+.kh::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(to top,  rgba(8,7,6,0.92) 0%, rgba(8,7,6,0.55) 38%, transparent 65%),
+    linear-gradient(to bottom, rgba(8,7,6,0.55) 0%, transparent 22%);
+  pointer-events: none;
+}
+
+.kh__left {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 1.2rem 2.1rem;
+}
+
+.kh__text {
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.12rem;
+  width: min(100%, 20.5rem);
+  padding: 0.82rem 0.9rem 0.9rem;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: khReveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kh__text { opacity: 1; transform: none; animation: none; }
+}
+
+@keyframes khReveal {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kh__kicker {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 3.8px;
+  text-transform: uppercase;
+  color: rgba(232, 201, 111, 0.84);
+  margin: 0 0 0.45rem;
+}
+
+.kh__heading {
+  font-family: var(--font-heading);
+  font-size: clamp(2.7rem, 11.5vw, 3.5rem);
+  font-weight: 300;
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  color: #faf8f3;
+  margin: 0;
+}
+
+.kh__heading em { font-style: italic; }
+
+.kh__desc {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: rgba(250, 248, 243, 0.62);
+  margin: 0.55rem 0 0;
+  max-width: 25ch;
+}
+
+@media (max-width: 389px) {
+  .kh__left { padding: 0 0.9rem 1.7rem; }
+  .kh__text { width: 100%; padding: 0.78rem 0.8rem 0.84rem; }
+}
+
+/* ── Desktop: split row layout ────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .kh {
+    display: flex;
+    flex-direction: row;
+    min-height: 520px;
+  }
+
+  .kh::before { display: none; }
+
+  .kh__left {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    flex: 0 0 38%;
+    background: #080706;
+    padding: 0 3.5rem 4.5rem 4rem;
+    align-items: flex-end;
+  }
+
+  .kh__text {
+    width: auto;
+    padding: 0;
+  }
+
+  .kh__kicker {
+    font-size: 0.70rem;
+    letter-spacing: 3.5px;
+    color: rgba(212, 175, 55, 0.75);
+    margin: 0 0 1rem;
+  }
+
+  .kh__heading {
+    font-size: clamp(3.5rem, 5.5vw, 8rem);
+    line-height: 0.90;
+  }
+
+  .kh__desc {
+    font-size: 0.75rem;
+    font-weight: 300;
+    line-height: 1.85;
+    color: rgba(250, 248, 243, 0.45);
+    margin: 1.5rem 0 0;
+    max-width: none;
+  }
+
+  .kh__heading,
+  .kh__desc {
+    white-space: nowrap;
+  }
+
+  .kh__right {
+    position: relative;
+    inset: auto;
+    flex: 1;
+    z-index: auto;
+    overflow: hidden;
+  }
+
+  .kh__img {
+    object-position: center 40%;
+  }
+
+  .kh__right::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 120px;
+    background: linear-gradient(to right, #080706 0%, transparent 100%);
+    z-index: 1;
+    pointer-events: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .kh__left { flex: 0 0 36%; padding: 0 4rem 5rem 5rem; }
+}
+
+/* ── INTRO ────────────────────────────────────────────────────────── */
+.ak-intro {
+  background: #faf8f3;
+  padding: 5rem 1.5rem 4rem;
+}
+
+.ak-intro__inner {
+  max-width: 620px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.ak-intro__kicker {
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(26, 26, 26, 0.45);
+  margin: 0 0 0.875rem;
+}
+
+.ak-intro__heading {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  color: var(--color-gold-dark);
+  margin: 0;
+}
+
+.ak-intro__sub {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.82;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .ak-intro { padding: 4rem 1.25rem 2.5rem; }
+}
+
+/* ── KITTEN PROFILES ─────────────────────────────────────────────── */
+.ak-profile {
+  background: #faf8f3;
+  padding: 5rem 1.5rem;
+}
+
+.ak-profile__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3.5rem;
+  max-width: 1536px;
+  margin: 0 auto;
+}
+
+.ak-profile--reverse .ak-profile__grid {
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .ak-profile {
+    padding: 7rem 3.5rem;
+  }
+
+  .ak-profile__name { font-size: 2.8rem; }
+
+  .ak-profile__grid {
+    flex-direction: row;
+    align-items: center;
+    gap: 5rem;
+  }
+
+  .ak-profile--reverse .ak-profile__grid {
+    flex-direction: row-reverse;
+  }
+}
+
+@media (min-width: 1280px) {
+  .ak-profile { padding: 7rem 4rem; }
+  .ak-profile__grid { gap: 7rem; }
+}
+
+@media (min-width: 1536px) {
+  .ak-profile { padding: 8rem 4rem; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ak-img-wrap {
+    transition: box-shadow 0.5s ease;
+  }
+  .ak-img-wrap:hover {
+    box-shadow: 0 16px 64px rgba(0, 0, 0, 0.22);
+  }
+  .ak-img-wrap :global(img) {
+    transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .ak-img-wrap:hover :global(img) {
+    transform: scale(1.04);
+  }
+}
+
+/* ── GOLD SEPARATOR ──────────────────────────────────────────────── */
+.ak-sep {
+  background: #faf8f3;
+  display: flex;
+  justify-content: center;
+  padding: 0 1.5rem;
+}
+
+.ak-sep__line {
+  width: 6rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #d4af37 20%, #d4af37 80%, transparent 100%);
+  opacity: 0.35;
+}
+
+/* ── HERITAGE ───────────────────────────────────────────────────── */
+.ak-heritage {
+  background: #faf8f3;
+  padding: 2rem 1.5rem 5rem;
+}
+
+.ak-heritage__card {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 3rem 2.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  border: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.ak-heritage__kicker {
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(26, 26, 26, 0.45);
+  margin: 0 0 0.75rem;
+}
+
+.ak-heritage__heading {
+  font-family: var(--font-heading);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--color-gold-dark);
+  margin: 0;
+}
+
+.ak-heritage__text {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.88;
+  color: var(--color-text-primary);
+  margin: 0;
+  text-align: left;
+}
+
+.ak-heritage__text strong {
+  color: #b8941f;
+  font-weight: 400;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .ak-heritage__card { padding: 2rem 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+  .ak-heritage { padding: 2rem 4rem 6rem; }
+}
+
+/* ── CTA ─────────────────────────────────────────────────────────── */
+.ak-cta {
+  background: #faf8f3;
+  text-align: center;
+  padding: 5rem 2rem 6rem;
+  border-top: 1px solid rgba(212, 175, 55, 0.12);
+}
+
+
+.ak-cta__title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.5rem, 5vw, 1.8rem);
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  color: var(--color-gold-dark);
+  margin: 0;
+}
+
+.ak-cta__sub {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--color-text-secondary);
+  margin: 0.75rem 0 1.5rem;
+}
+
+.ak-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: 1px solid rgba(26, 26, 26, 0.2);
+  padding: 0.95rem 2.75rem;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(26, 26, 26, 0.7);
+  cursor: pointer;
+  background: transparent;
+  transition: border-color 0.5s ease, color 0.5s ease;
+}
+
+.ak-cta__btn:hover {
+  border-color: rgba(212, 175, 55, 0.6);
+  color: var(--color-gold);
+}
+
+@media (min-width: 1024px) {
+  .ak-cta { padding: 4rem 4rem 7rem; }
+}
+</style>
+
+

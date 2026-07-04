@@ -1,12 +1,5 @@
 ---
-import { Image } from 'astro:assets';
-import awardsImage from '../assets/img/awards.webp';
-import award1 from '../assets/img/award1.webp';
-import award2 from '../assets/img/award2.webp';
-import award3 from '../assets/img/award3.webp';
-import award4 from '../assets/img/award4.webp';
-import award5 from '../assets/img/award5.webp';
-import award6 from '../assets/img/award6.webp';
+import { getAwardHighlight, getAwardGalleryImages, responsiveImage } from '../lib/sanity';
 
 // Swiper + EffectExpo CSS — MUST live in the frontmatter so Astro includes
 // them in the page's CSS bundle and manages them during View Transitions.
@@ -20,14 +13,14 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import '../assets/uiinitiative-expo-slider-c4e29dd4d6c81e6d2f6654e11d368cd46ea563ac/demo-vite/effect-expo.css';
 
-const awardSlides = [
-	{ src: award1.src, alt: 'Award gallery image 1' },
-	{ src: award2.src, alt: 'Award gallery image 2' },
-	{ src: award3.src, alt: 'Award gallery image 3' },
-	{ src: award4.src, alt: 'Award gallery image 4' },
-	{ src: award5.src, alt: 'Award gallery image 5' },
-	{ src: award6.src, alt: 'Award gallery image 6' },
-];
+const highlight = await getAwardHighlight();
+const highlightPhoto = highlight ? responsiveImage(highlight.image, [640, 900, 1100]) : null;
+
+const awardGalleryImages = await getAwardGalleryImages();
+const awardSlides = awardGalleryImages.map((img) => ({
+	src: responsiveImage(img.image, [700, 1000, 1400]).src,
+	alt: img.alt,
+}));
 ---
 
 <section class="bg-cream py-10 sm:py-18 lg:py-24">
@@ -43,46 +36,39 @@ const awardSlides = [
 		</header>
 
 		<div class="mt-10 grid grid-cols-1 items-start gap-8 sm:mt-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-10">
-			<figure class="overflow-hidden rounded-xl border border-gold/18 bg-[#f8f3eb]">
-				<Image
-					src={awardsImage}
-					alt="Luxury Rosettes award trophy"
-					class="h-64 w-full object-cover sm:h-80 lg:h-full lg:min-h-96"
-					widths={[640, 900, 1100]}
-					sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 46vw"
-					loading="lazy"
-					format="webp"
-					quality={72}
-				/>
-			</figure>
+			{highlight && highlightPhoto && (
+				<>
+				<figure class="overflow-hidden rounded-xl border border-gold/18 bg-[#f8f3eb]">
+					<img
+						src={highlightPhoto.src}
+						srcset={highlightPhoto.srcset}
+						alt={`${highlight.organisation} award trophy`}
+						class="h-64 w-full object-cover sm:h-80 lg:h-full lg:min-h-96"
+						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 46vw"
+						loading="lazy"
+					/>
+				</figure>
 
-			<div class="text-left">
-				<p class="font-body text-[0.55rem] font-semibold uppercase tracking-[2.6px] text-dark/45 sm:text-[0.62rem] lg:text-[0.65rem]">
-					Bengal Cat Association
-				</p>
-				<h3 class="mt-3 font-heading text-[1.3rem] font-light leading-tight tracking-tight text-gold-dark sm:text-[1.6rem] lg:text-[1.8rem]">
-					Brown (Black) Spotted Male Adult
-				</h3>
+				<div class="text-left">
+					<p class="font-body text-[0.55rem] font-semibold uppercase tracking-[2.6px] text-dark/45 sm:text-[0.62rem] lg:text-[0.65rem]">
+						{highlight.organisation}
+					</p>
+					<h3 class="mt-3 font-heading text-[1.3rem] font-light leading-tight tracking-tight text-gold-dark sm:text-[1.6rem] lg:text-[1.8rem]">
+						{highlight.title}
+					</h3>
 
-				<div class="mt-5 space-y-5 font-body text-[0.9rem] leading-[1.76] text-dark/80 sm:text-[0.95rem]">
-					<p>
-						We are honored that our Bengals have been recognized with numerous prestigious awards from the Bengal Cat Association. Among the distinctions received are First Place in multiple classes, Best of Breed, Best in Show Adult, and the highly coveted title of Overall Best in Show Bengal 2024.
-					</p>
-					<p>
-						Each of these awards reflects the very best qualities of the Bengal breed striking beauty, exceptional coat pattern, robust health, and a gentle yet confident temperament. Such recognition is only given to cats that truly embody the breed standard and stand out in the eyes of international judges.
-					</p>
-					<p>
-						For us, these achievements go beyond trophies and ribbons. They are a testament to the years of dedication, care, and passion we have invested in our breeding program. They confirm that our Bengals are not only admired in the show hall but also respected within the wider Bengal community.
-					</p>
-					<p>
-						We are proud to share these accomplishments with families who welcome our Bengals into their homes, knowing they are bringing in a cat of outstanding quality and proven excellence.
-					</p>
+					<div class="mt-5 space-y-5 font-body text-[0.9rem] leading-[1.76] text-dark/80 sm:text-[0.95rem]">
+						{highlight.body.map((paragraph) => <p>{paragraph}</p>)}
+					</div>
+
+					{highlight.recognitionLabel && (
+						<div class="mt-7 inline-flex rounded-md border border-gold/35 px-5 py-2.5" aria-label="Official recognition label">
+							<span class="font-body text-[0.7rem] font-semibold uppercase tracking-[2.6px] text-gold-dark/85">{highlight.recognitionLabel}</span>
+						</div>
+					)}
 				</div>
-
-				<div class="mt-7 inline-flex rounded-md border border-gold/35 px-5 py-2.5" aria-label="Official recognition label">
-					<span class="font-body text-[0.7rem] font-semibold uppercase tracking-[2.6px] text-gold-dark/85">Official Recognition</span>
-				</div>
-			</div>
+				</>
+			)}
 		</div>
 	</div>
 

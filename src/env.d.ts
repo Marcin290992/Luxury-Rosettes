@@ -1,4 +1,5 @@
 /// <reference types="astro/client" />
+/// <reference types="@sanity/astro/module" />
 
 declare module 'swiper' {
 	import Swiper from 'swiper/types';

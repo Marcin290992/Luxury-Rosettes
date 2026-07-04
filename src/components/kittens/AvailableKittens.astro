@@ -1,41 +1,9 @@
 ---
 import { Image } from 'astro:assets';
 import kittensHero from '../../assets/img/kittens.webp';
-import candyImg   from '../../assets/img/gallery/Candy/Candy-2.webp';
-import cosmoImg   from '../../assets/img/gallery/Cosmo/Cosmo-1-webp.webp';
-import charlieImg from '../../assets/img/gallery/Charlie/desktop.webp';
-import chesterImg from '../../assets/img/gallery/Chester/kitten-2-web.webp';
+import { getKittens, responsiveImage } from '../../lib/sanity';
 
-const kittens = [
-  {
-    name: 'Candy',
-    gender: 'Girl',
-    description:
-      'Candy is our sweet Bengal girl with a glittering coat and beautifully defined rosettes. She is curious about everything around her and loves to explore, making her a lively and fun companion. Candy enjoys interactive play but also has a soft, affectionate side. She loves to curl up next to you after her adventures. Raised in a family home with other cats and a big dog, she is confident, well-socialised, and ready to adapt to her forever family.',
-    main: candyImg,
-  },
-  {
-    name: 'Cosmo',
-    gender: 'Boy',
-    description:
-      'Cosmo is a bold little explorer with a true Bengal spirit. He loves climbing, jumping, and discovering new places, always showing his adventurous side. His sparkling coat and striking markings make him just as beautiful as he is charming. Cosmo is playful and energetic, but he is also very people-oriented and enjoys following you around the house. Growing up around a large dog, he is fearless and will easily fit into a home with other pets.',
-    main: cosmoImg,
-  },
-  {
-    name: 'Charlie',
-    gender: 'Boy',
-    description:
-      "Charlie is our cheeky boy with a mischievous sparkle in his eyes. Always up to something funny, he has a clever and sneaky side that makes him absolutely entertaining to be around. He's the one who figures out toys first and finds new ways to play. Despite his cheekiness, Charlie is affectionate and enjoys attention, often looking for cuddles after his playful antics. With his strong rosettes and glittered coat, he's both handsome and full of character.",
-    main: charlieImg,
-  },
-  {
-    name: 'Chester',
-    gender: 'Boy',
-    description:
-      "Chester is the friendliest of the bunch and always eager to interact with people. He has a gentle, loving nature and loves being part of whatever you're doing. Playful and full of energy, Chester enjoys chasing toys and wrestling with his siblings, but he's equally happy sitting with you and purring away. His affectionate personality, combined with his stunning Bengal looks, makes him the perfect all-around family kitten.",
-    main: chesterImg,
-  },
-];
+const kittens = await getKittens();
 ---
 
 <!-- ── HERO ──────────────────────────────────────────────────────── -->
@@ -76,17 +44,18 @@ const kittens = [
 </section>
 
 <!-- ── KITTEN PROFILES ───────────────────────────────────────────-- -->
-{ kittens.map((kitten, i) => (
+{ kittens.map((kitten, i) => {
+  const { src, srcset } = responsiveImage(kitten.mainImage, [640, 960, 1280]);
+  return (
   <section class={`ak-profile${i % 2 !== 0 ? ' ak-profile--reverse' : ''}`}>
     <div class="ak-profile__grid">
       <div class="ak-img-wrap overflow-hidden rounded-md shadow-[0_8px_48px_rgba(0,0,0,0.13)] w-full lg:flex-1 lg:min-w-0">
-        <Image
-          src={kitten.main}
+        <img
+          src={src}
+          srcset={srcset}
           alt={`${kitten.name} — Bengal kitten`}
           class="block w-full h-auto object-cover"
-          widths={[640, 960, 1280]}
           sizes="(max-width: 1024px) 100vw, 50vw"
-          format="webp"
           loading={i < 2 ? 'eager' : 'lazy'}
         />
       </div>
@@ -99,7 +68,8 @@ const kittens = [
       </div>
     </div>
   </section>
-)) }
+  );
+}) }
 
 <!-- ── GOLD SEPARATOR ────────────────────────────────────────────── -->
 <div class="ak-sep">

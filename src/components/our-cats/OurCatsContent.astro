@@ -1,8 +1,13 @@
 ---
 import { Image } from 'astro:assets';
-import kitaImage from '../../assets/img/Kita.webp';
-import dracoImage from '../../assets/img/Draco.webp';
 import awardsImage from '../../assets/img/awards.webp';
+import { getParentCats, responsiveImage } from '../../lib/sanity';
+
+const parentCats = await getParentCats();
+const kita = parentCats.find((c) => c.role === 'Queen');
+const draco = parentCats.find((c) => c.role === 'King');
+const kitaPhoto = kita ? responsiveImage(kita.image, [640, 960, 1280]) : null;
+const dracoPhoto = draco ? responsiveImage(draco.image, [640, 960, 1280]) : null;
 ---
 
 <div class="bg-cream">
@@ -13,29 +18,27 @@ import awardsImage from '../../assets/img/awards.webp';
 
       <div class="w-full lg:w-1/2">
         <div class="oc-image overflow-hidden rounded-md">
-          <Image
-            src={kitaImage}
-            alt="Kita — Bengal Queen"
-            class="w-full object-cover"
-            widths={[640, 960, 1280]}
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            format="webp"
-            loading="eager"
-            fetchpriority="high"
-          />
+          {kitaPhoto && (
+            <img
+              src={kitaPhoto.src}
+              srcset={kitaPhoto.srcset}
+              alt="Kita — Bengal Queen"
+              class="w-full object-cover"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              loading="eager"
+              fetchpriority="high"
+            />
+          )}
         </div>
       </div>
 
       <div class="w-full lg:w-1/2">
         <p class="oc-kicker font-body text-[0.65rem] font-semibold uppercase tracking-[2.8px] text-dark/45 sm:text-[0.72rem] lg:text-[0.76rem]">The Queen</p>
-        <h2 class="oc-heading mt-3 font-heading text-[2rem] font-light leading-[1.1] tracking-tight text-gold-dark sm:text-[2.6rem] lg:text-[2.8rem] 2xl:text-[3.4rem]"><span class="italic">Kita</span></h2>
+        <h2 class="oc-heading mt-3 font-heading text-[2rem] font-light leading-[1.1] tracking-tight text-gold-dark sm:text-[2.6rem] lg:text-[2.8rem] 2xl:text-[3.4rem]"><span class="italic">{kita?.name ?? 'Kita'}</span></h2>
         <span class="oc-line mb-8 mt-4 block h-px w-20 bg-(--gold-line)"></span>
         <div class="oc-text space-y-5 font-body text-[0.9rem] leading-[1.82] tracking-[0.003em] text-dark/80 sm:text-[0.95rem] 2xl:text-[1.05rem] 2xl:leading-[1.85]">
-          <p>Kita is our stunning golden queen, radiating elegance, intelligence, and gentle charm. Her warm, golden coat with rich, beautifully contrasted rosettes and a silky glittered texture makes her truly eye-catching. She has a refined wild expression balanced with a soft, affectionate nature, giving her both beauty and soul.</p>
-          <p>Kita moves with grace and confidence, always observing her surroundings with curiosity and keen awareness. She loves to be close to her family, offering affectionate head rubs, soft purrs, and warm companionship. Calm, loving, and deeply bonded with her humans, she brings harmony and warmth to our home.</p>
-          <p>As a mother, she is exceptional, nurturing, patient, and attentive, teaching her kittens both confidence and gentle manners. Her kittens inherit her stunning looks, sweet disposition, and balanced temperament, making them wonderful companions and show quality prospects.</p>
-          <p>Kita comes from carefully selected lines known for health, temperament, and excellent type. With her expressive eyes, elegant structure, and affectionate personality, she represents everything we strive for in our breeding program: beauty, intelligence, and a loving, family-friendly temperament.</p>
-          <p class="font-medium italic text-dark/75">A true queen in every sense, graceful, kind, and absolutely captivating.</p>
+          {kita?.bio.map((paragraph) => <p>{paragraph}</p>)}
+          {kita?.closingQuote && <p class="font-medium italic text-dark/75">{kita.closingQuote}</p>}
         </div>
       </div>
 
@@ -51,28 +54,27 @@ import awardsImage from '../../assets/img/awards.webp';
 
       <div class="w-full lg:w-1/2">
         <div class="oc-image overflow-hidden rounded-md">
-          <Image
-            src={dracoImage}
-            alt="Draco — Bengal King"
-            class="w-full object-cover"
-            widths={[640, 960, 1280]}
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            format="webp"
-            loading="eager"
-            fetchpriority="high"
-          />
+          {dracoPhoto && (
+            <img
+              src={dracoPhoto.src}
+              srcset={dracoPhoto.srcset}
+              alt="Draco — Bengal King"
+              class="w-full object-cover"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              loading="eager"
+              fetchpriority="high"
+            />
+          )}
         </div>
       </div>
 
       <div class="w-full lg:w-1/2">
         <p class="oc-kicker font-body text-[0.65rem] font-semibold uppercase tracking-[2.8px] text-dark/45 sm:text-[0.72rem] lg:text-[0.76rem]">The King</p>
-        <h2 class="oc-heading mt-3 font-heading text-[2rem] font-light leading-[1.1] tracking-tight text-gold-dark sm:text-[2.6rem] lg:text-[2.8rem] 2xl:text-[3.4rem]"><span class="italic">Draco</span></h2>
+        <h2 class="oc-heading mt-3 font-heading text-[2rem] font-light leading-[1.1] tracking-tight text-gold-dark sm:text-[2.6rem] lg:text-[2.8rem] 2xl:text-[3.4rem]"><span class="italic">{draco?.name ?? 'Draco'}</span></h2>
         <span class="oc-line mb-8 mt-4 block h-px w-20 bg-(--gold-line)"></span>
         <div class="oc-text space-y-5 font-body text-[0.9rem] leading-[1.82] tracking-[0.003em] text-dark/80 sm:text-[0.95rem] 2xl:text-[1.05rem] 2xl:leading-[1.85]">
-          <p>Draco is an outstanding silver Bengal male with a breathtaking, high-contrast pattern and strong wild expression. His muscular body, sleek coat, and intense eyes give him a majestic presence. He looks like a miniature leopard in the home. His coat shimmers beautifully in the light, and his rosettes are bold and perfectly defined, showcasing exceptional breed quality.</p>
-          <p>Beyond his impressive looks, Draco has a confident and affectionate personality. He loves attention, enjoys interacting with people, and proudly shows off his elegance and power. Despite his strong appearance, he is gentle and loving, showing the balanced temperament we value in our breeding program.</p>
-          <p>Draco comes from excellent Champion bloodlines and has proven himself in the show ring. He consistently passes on his striking features, structure, and confident, social temperament to his kittens. All health tests are clear, ensuring that he produces healthy, strong, and stunning offspring.</p>
-          <p class="font-medium italic text-dark/75">A true example of the Bengal breed: elegant, athletic, intelligent, and affectionate. Draco is a king in every way.</p>
+          {draco?.bio.map((paragraph) => <p>{paragraph}</p>)}
+          {draco?.closingQuote && <p class="font-medium italic text-dark/75">{draco.closingQuote}</p>}
         </div>
       </div>
 

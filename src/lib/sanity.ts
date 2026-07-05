@@ -59,6 +59,16 @@ export interface Faq {
   answer: string;
 }
 
+export interface BlogPost {
+  _id: string;
+  title: string;
+  slug: { current: string };
+  excerpt: string;
+  coverImage: SanityImageSource;
+  publishedAt: string;
+  body?: any[];
+}
+
 export async function getKittens(): Promise<Kitten[]> {
   return sanityClient.fetch(`*[_type == "kitten"] | order(order asc)`);
 }
@@ -81,4 +91,19 @@ export async function getAwardGalleryImages(): Promise<AwardGalleryImage[]> {
 
 export async function getFaqs(): Promise<Faq[]> {
   return sanityClient.fetch(`*[_type == "faq"] | order(order asc)`);
+}
+
+export async function getBlogPosts(): Promise<BlogPost[]> {
+  return sanityClient.fetch(
+    `*[_type == "blogPost"] | order(publishedAt desc) {
+      _id, title, slug, excerpt, coverImage, publishedAt
+    }`
+  );
+}
+
+export async function getBlogPost(slug: string): Promise<BlogPost | null> {
+  return sanityClient.fetch(
+    `*[_type == "blogPost" && slug.current == $slug][0]`,
+    { slug }
+  );
 }

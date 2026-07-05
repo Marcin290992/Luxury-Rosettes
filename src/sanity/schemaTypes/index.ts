@@ -4,6 +4,7 @@ import galleryPhoto from './galleryPhoto';
 import awardHighlight from './awardHighlight';
 import awardGalleryImage from './awardGalleryImage';
 import faq from './faq';
+import blogPost from './blogPost';
 
 export const schemaTypes = [
   kitten,
@@ -12,4 +13,5 @@ export const schemaTypes = [
   awardHighlight,
   awardGalleryImage,
   faq,
+  blogPost,
 ];

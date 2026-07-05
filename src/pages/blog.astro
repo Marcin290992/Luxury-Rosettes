@@ -1,0 +1,175 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LuxuryNavShell from '../components/navigation/LuxuryNavShell.astro';
+import Footer from '../components/Footer.astro';
+import { getBlogPosts, responsiveImage } from '../lib/sanity';
+
+const posts = await getBlogPosts();
+
+const formatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+
+<Layout title="Blog | Luxury Rosettes">
+  <LuxuryNavShell />
+
+  <section class="blog-intro">
+    <div class="blog-intro__inner">
+      <p class="blog-intro__kicker">From the Cattery</p>
+      <h1 class="blog-intro__heading">Blog</h1>
+      <p class="blog-intro__sub">Stories, updates, and insights from life with our Bengals.</p>
+    </div>
+  </section>
+
+  <section class="blog-section">
+    <div class="blog-grid">
+      {posts.map((post) => {
+        const { src, srcset } = responsiveImage(post.coverImage, [400, 600, 800]);
+        return (
+          <a href={`/blog/${post.slug.current}`} class="blog-card">
+            <div class="blog-card__img-wrap">
+              <img
+                src={src}
+                srcset={srcset}
+                alt=""
+                sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
+                loading="lazy"
+              />
+            </div>
+            <div class="blog-card__body">
+              <p class="blog-card__date">{formatter.format(new Date(post.publishedAt))}</p>
+              <h2 class="blog-card__title">{post.title}</h2>
+              <p class="blog-card__excerpt">{post.excerpt}</p>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<style>
+  .blog-intro {
+    background: #faf8f3;
+    padding: clamp(7rem, 16vw, 9rem) 1.5rem 0;
+  }
+
+  .blog-intro__inner {
+    max-width: 620px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .blog-intro__kicker {
+    font-family: var(--font-body);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(26, 26, 26, 0.45);
+    margin: 0 0 0.875rem;
+  }
+
+  .blog-intro__heading {
+    font-family: var(--font-heading);
+    font-size: clamp(2.4rem, 6vw, 3.8rem);
+    font-weight: 300;
+    letter-spacing: -0.015em;
+    color: var(--color-gold-dark);
+    margin: 0;
+  }
+
+  .blog-intro__sub {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    line-height: 1.82;
+    color: var(--color-text-secondary);
+    margin: 0.5rem 0 0;
+  }
+
+  .blog-section {
+    background: #faf8f3;
+    padding: 4rem 1.5rem 6rem;
+  }
+
+  .blog-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .blog-card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .blog-card__img-wrap {
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  .blog-card__img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .blog-card:hover .blog-card__img-wrap img {
+      transform: scale(1.04);
+    }
+  }
+
+  .blog-card__body {
+    padding: 1.25rem 0.25rem 0;
+  }
+
+  .blog-card__date {
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(26, 26, 26, 0.4);
+    margin: 0 0 0.5rem;
+  }
+
+  .blog-card__title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--color-gold-dark);
+    margin: 0 0 0.6rem;
+    transition: color 0.3s ease;
+  }
+
+  .blog-card:hover .blog-card__title {
+    color: var(--color-gold);
+  }
+
+  .blog-card__excerpt {
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    line-height: 1.75;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    .blog-section { padding: 5rem 2rem 7rem; }
+    .blog-grid { grid-template-columns: repeat(2, 1fr); gap: 3rem 2rem; }
+  }
+
+  @media (min-width: 1280px) {
+    .blog-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>

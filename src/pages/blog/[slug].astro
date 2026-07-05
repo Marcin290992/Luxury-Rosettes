@@ -1,0 +1,159 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import LuxuryNavShell from '../../components/navigation/LuxuryNavShell.astro';
+import Footer from '../../components/Footer.astro';
+import { PortableText } from '@portabletext/react';
+import { getBlogPosts, getBlogPost, responsiveImage } from '../../lib/sanity';
+import type { BlogPost } from '../../lib/sanity';
+import { portableTextComponents } from '../../lib/portableTextComponents';
+
+export async function getStaticPaths() {
+  const posts = await getBlogPosts();
+  const full = await Promise.all(posts.map((post) => getBlogPost(post.slug.current)));
+  return full
+    .filter((post): post is BlogPost => post !== null)
+    .map((post) => ({ params: { slug: post.slug.current }, props: { post } }));
+}
+
+const { post } = Astro.props as { post: BlogPost };
+
+const { src, srcset } = responsiveImage(post.coverImage, [640, 960, 1280]);
+const formatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+
+<Layout title={`${post.title} | Luxury Rosettes`}>
+  <LuxuryNavShell />
+
+  <article class="blog-post">
+    <header class="blog-post__header">
+      <p class="blog-post__date">{formatter.format(new Date(post.publishedAt))}</p>
+      <h1 class="blog-post__title">{post.title}</h1>
+    </header>
+
+    <div class="blog-post__cover">
+      <img src={src} srcset={srcset} alt="" sizes="(max-width: 900px) 100vw, 900px" loading="eager" fetchpriority="high" />
+    </div>
+
+    <div class="blog-post__body">
+      <PortableText value={post.body ?? []} components={portableTextComponents} />
+    </div>
+
+    <div class="blog-post__back">
+      <a href="/blog" class="blog-post__back-link">&larr; Back to Blog</a>
+    </div>
+  </article>
+
+  <Footer />
+</Layout>
+
+<style>
+  .blog-post {
+    background: #faf8f3;
+    padding: clamp(7rem, 16vw, 9rem) 1.5rem 5rem;
+  }
+
+  .blog-post__header {
+    max-width: 780px;
+    margin: 0 auto 2rem;
+    text-align: center;
+  }
+
+  .blog-post__date {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: rgba(26, 26, 26, 0.4);
+    margin: 0 0 0.75rem;
+  }
+
+  .blog-post__title {
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 300;
+    letter-spacing: -0.015em;
+    color: var(--color-gold-dark);
+    margin: 0;
+  }
+
+  .blog-post__cover {
+    max-width: 900px;
+    margin: 0 auto 3rem;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .blog-post__cover img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .blog-post__body {
+    max-width: 720px;
+    margin: 0 auto;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.85;
+    color: var(--color-text-primary);
+  }
+
+  .blog-post__body :global(h2) {
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--color-gold-dark);
+    margin: 2.5rem 0 1rem;
+  }
+
+  .blog-post__body :global(h3) {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: var(--color-gold-dark);
+    margin: 2rem 0 0.85rem;
+  }
+
+  .blog-post__body :global(p) {
+    margin: 0 0 1.4rem;
+  }
+
+  .blog-post__body :global(a) {
+    color: var(--color-gold-dark);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .blog-post__body :global(strong) {
+    font-weight: 600;
+  }
+
+  .blog-post__body :global(blockquote) {
+    border-left: 2px solid rgba(212, 175, 55, 0.5);
+    padding-left: 1.25rem;
+    margin: 1.75rem 0;
+    font-style: italic;
+    color: var(--color-text-secondary);
+  }
+
+  .blog-post__back {
+    max-width: 720px;
+    margin: 3rem auto 0;
+  }
+
+  .blog-post__back-link {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--color-gold-dark);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .blog-post__back-link:hover {
+    color: var(--color-gold);
+  }
+</style>

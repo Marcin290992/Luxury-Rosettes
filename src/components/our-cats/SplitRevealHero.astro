@@ -51,6 +51,8 @@ const desktopImg = await getImage({ src: ourCatsImage,  format: 'webp', widths: 
     object-fit: cover;
     object-position: center 35%;
     display: block;
+    transform: scale(1.15);
+    transform-origin: 50% 100%;
   }
 
   .sh::before {
@@ -196,6 +198,7 @@ const desktopImg = await getImage({ src: ourCatsImage,  format: 'webp', widths: 
 
     .sh__img {
       object-position: center 20%;
+      transform: none;
     }
 
     .sh__right::before {

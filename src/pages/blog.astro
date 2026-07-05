@@ -2,6 +2,8 @@
 import Layout from '../layouts/Layout.astro';
 import LuxuryNavShell from '../components/navigation/LuxuryNavShell.astro';
 import Footer from '../components/Footer.astro';
+import { Image } from 'astro:assets';
+import blogHeroImg from '../assets/img/bengal blog.webp';
 import { getBlogPosts, responsiveImage } from '../lib/sanity';
 
 const posts = await getBlogPosts();
@@ -12,11 +14,33 @@ const formatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'lon
 <Layout title="Blog | Luxury Rosettes">
   <LuxuryNavShell />
 
+  <section class="bh subpage-hero-screen" data-nav-dark>
+    <div class="bh__left">
+      <div class="bh__text">
+        <p class="bh__kicker">From the Cattery</p>
+        <h1 class="bh__heading">Blog</h1>
+        <p class="bh__desc">Stories, updates, and life with our Bengals.</p>
+      </div>
+    </div>
+    <div class="bh__right" aria-hidden="true">
+      <Image
+        src={blogHeroImg}
+        alt=""
+        class="bh__img"
+        loading="eager"
+        fetchpriority="high"
+        widths={[640, 1024, 1440, 1920]}
+        sizes="60vw"
+        format="webp"
+      />
+    </div>
+  </section>
+
   <section class="blog-intro">
     <div class="blog-intro__inner">
-      <p class="blog-intro__kicker">From the Cattery</p>
-      <h1 class="blog-intro__heading">Blog</h1>
-      <p class="blog-intro__sub">Stories, updates, and insights from life with our Bengals.</p>
+      <p class="blog-intro__kicker">Stories &amp; Updates</p>
+      <h2 class="blog-intro__heading">Read the Latest</h2>
+      <p class="blog-intro__sub">Insights, tips, and updates from life with our Bengal family.</p>
     </div>
   </section>
 
@@ -50,9 +74,188 @@ const formatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'lon
 </Layout>
 
 <style>
+  /* ── HERO: base ───────────────────────────────────────────────────── */
+  .bh {
+    width: 100%;
+    background: #080706;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── Mobile: full-bleed overlay ───────────────────────────────────── */
+  .bh__right {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .bh__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 55%;
+    display: block;
+  }
+
+  .bh::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(to top,  rgba(8,7,6,0.92) 0%, rgba(8,7,6,0.55) 38%, transparent 65%),
+      linear-gradient(to bottom, rgba(8,7,6,0.55) 0%, transparent 22%);
+    pointer-events: none;
+  }
+
+  .bh__left {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 1.2rem 2.1rem;
+  }
+
+  .bh__text {
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.12rem;
+    width: min(100%, 20.5rem);
+    padding: 0.82rem 0.9rem 0.9rem;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: bhReveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bh__text { opacity: 1; transform: none; animation: none; }
+  }
+
+  @keyframes bhReveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .bh__kicker {
+    font-family: var(--font-body);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 3.8px;
+    text-transform: uppercase;
+    color: rgba(232, 201, 111, 0.84);
+    margin: 0 0 0.45rem;
+  }
+
+  .bh__heading {
+    font-family: var(--font-heading);
+    font-size: clamp(2.7rem, 11.5vw, 3.5rem);
+    font-weight: 300;
+    line-height: 0.96;
+    letter-spacing: -0.02em;
+    color: #faf8f3;
+    margin: 0;
+  }
+
+  .bh__desc {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: rgba(250, 248, 243, 0.62);
+    margin: 0.55rem 0 0;
+    max-width: 25ch;
+  }
+
+  @media (max-width: 389px) {
+    .bh__left { padding: 0 0.9rem 1.7rem; }
+    .bh__text { width: 100%; padding: 0.78rem 0.8rem 0.84rem; }
+  }
+
+  /* ── Desktop: split row layout ────────────────────────────────────── */
+  @media (min-width: 1024px) {
+    .bh {
+      display: flex;
+      flex-direction: row;
+      min-height: 520px;
+    }
+
+    .bh::before { display: none; }
+
+    .bh__left {
+      position: relative;
+      bottom: auto;
+      left: auto;
+      right: auto;
+      flex: 0 0 38%;
+      background: #080706;
+      padding: 0 3.5rem 4.5rem 4rem;
+      align-items: flex-end;
+    }
+
+    .bh__text {
+      width: auto;
+      padding: 0;
+    }
+
+    .bh__kicker {
+      font-size: 0.70rem;
+      letter-spacing: 3.5px;
+      color: rgba(212, 175, 55, 0.75);
+      margin: 0 0 1rem;
+    }
+
+    .bh__heading {
+      font-size: clamp(3.5rem, 5.5vw, 8rem);
+      line-height: 0.90;
+    }
+
+    .bh__desc {
+      font-size: 0.75rem;
+      font-weight: 300;
+      line-height: 1.85;
+      color: rgba(250, 248, 243, 0.45);
+      margin: 1.5rem 0 0;
+      max-width: none;
+    }
+
+    .bh__heading,
+    .bh__desc {
+      white-space: nowrap;
+    }
+
+    .bh__right {
+      position: relative;
+      inset: auto;
+      flex: 1;
+      z-index: auto;
+      overflow: hidden;
+    }
+
+    .bh__img {
+      object-position: center 40%;
+    }
+
+    .bh__right::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 120px;
+      background: linear-gradient(to right, #080706 0%, transparent 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .bh__left { flex: 0 0 36%; padding: 0 4rem 5rem 5rem; }
+  }
+
+  /* ── INTRO (secondary recap below hero) ────────────────────────────── */
   .blog-intro {
     background: #faf8f3;
-    padding: clamp(7rem, 16vw, 9rem) 1.5rem 0;
+    padding: 5rem 1.5rem 0;
   }
 
   .blog-intro__inner {
@@ -73,7 +276,7 @@ const formatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'lon
 
   .blog-intro__heading {
     font-family: var(--font-heading);
-    font-size: clamp(2.4rem, 6vw, 3.8rem);
+    font-size: clamp(2rem, 5vw, 3.4rem);
     font-weight: 300;
     letter-spacing: -0.015em;
     color: var(--color-gold-dark);
@@ -85,7 +288,11 @@ const formatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'lon
     font-size: 0.9rem;
     line-height: 1.82;
     color: var(--color-text-secondary);
-    margin: 0.5rem 0 0;
+    margin: 0;
+  }
+
+  @media (max-width: 640px) {
+    .blog-intro { padding: 4rem 1.25rem 0; }
   }
 
   .blog-section {

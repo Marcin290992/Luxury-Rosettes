@@ -98,7 +98,7 @@ const {
 				window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 
 				// Wait for hero image to be decoded before revealing the page
-				const heroImg = document.querySelector<HTMLImageElement>('.sh__img, .kh__img, .gh__img');
+				const heroImg = document.querySelector<HTMLImageElement>('.sh__img, .kh__img, .gh__img, .bh__img');
 				if (heroImg && !heroImg.complete) {
 					await Promise.race([
 						heroImg.decode().catch(() => {}),

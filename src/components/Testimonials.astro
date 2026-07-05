@@ -1,0 +1,247 @@
+---
+// Real Facebook reviews. Long quotes are intentionally left verbatim —
+// visual consistency across cards comes from CSS line-clamp, not editing.
+const testimonials = [
+  {
+    name: 'Lesley F.',
+    context: 'Facebook Review',
+    quote: "I highly recommend Sylwia 110%. Not only is she a superb breeder but a person who truly loves what she does and deeply cares for her cats. We bought our little boy (who won't be little for long, if his gorgeous dad is anything to go by 😂). He has been handled since a baby and brought up in a loving, caring home. He is the most gorgeous, loving, purring machine. He's strong, healthy and happy. He's been fed on a good quality diet and he's been properly litter trained. On top of all that Sylwia gives you a kitten pack to take home. If you want a loving Bengal that fits into your family life from day 1 then you will have no issues buying one from Sylwia. I can't thank her enough. Oh yes, on top of that she is a cat behaviourist and gave us advice on how to introduce him to our other Bengal girl kitten. They are now best buddies 😻. Thank you Sylwia",
+  },
+  {
+    name: 'Marcin K.',
+    context: 'Facebook Review',
+    quote: "You can truly see that Sylvia does what she does with passion and love ❤️ Amazing knowledge and understanding of cats' behaviour. Very open, helpful, and patient — we spent hours on the phone discussing our needs and getting answers to all our questions. 100% recommended! Our cat is healthy, chipped, and fully vaccinated 🐾 We also received toys and 24/7 support. Thank you so much, Sylvia! 🙌",
+  },
+  {
+    name: 'Bernard O.',
+    context: 'Facebook Review',
+    quote: "Very happy to have recently bought Bruno and Bibi from Sylwia. Sylwia engaged from the off, and was happy for me to see the kittens with the mother. She has been patient, informative and a source of advice both during and after the process. Communications have been excellent and Sylwia was very accommodating for a delayed pick-up at my end. It is obvious that Sylwia cares for her cats and wants them to go to good homes. At their first routine veterinary health check both passed with flying colours. Meanwhile all the staff were literally gushing over their friendliness and looks - I think that says it all.",
+  },
+  {
+    name: 'Kelly L.',
+    context: 'Facebook Review',
+    quote: "We recently brought home our gorgeous kitten, Draco, and we couldn't be happier! The entire experience with Luxury Rosettes Bengal cattery was exceptional from beginning to end. Draco is healthy, playful, and clearly came from a loving and well-cared-for environment. What truly set this experience apart was the amazing generosity and thoughtfulness. When we picked up Draco, the breeder provided us with so many helpful items — food, toys, a cosy blanket, bed, and more — to make his transition into his new home as smooth and comfortable as possible. It was clear that she genuinely cares not only for her cats but also for the families they go to. We are so grateful for everything and highly recommend to anyone looking for a responsible and caring cat breeder. Thank you again for helping us welcome Draco into our lives!",
+  },
+  {
+    name: 'Julius C.',
+    context: 'Facebook Review',
+    quote: 'We brought our boy home last week, and he has been an absolute joy! He is incredibly friendly and handsome, and he bonded with our first cat in no time — it took them less than a week to share a bed and groom each other. Sylwia is a responsible and caring breeder. You can tell how much she loves her cats by how well they are raised. She was very helpful and informative throughout the process. Highly recommend!',
+  },
+  {
+    name: 'Nastja S.',
+    context: 'Facebook Review',
+    quote: "I highly recommend Sylwia and her kitties! Our kitten from her is lovely, very friendly, confident, and absolutely gorgeous! Sylwia herself is very friendly and helpful, clearly wanting the best for her animals and their new siblings. She guided us through the process of introducing our new kitten to our older cat, and now they're friends after not even a week; without her sage advice, I don't think this would have been possible (at least not this quickly!). My partner and I are infinitely grateful and adjusting well to life as a family of four 😄🐈🐈‍⬛",
+  },
+  {
+    name: 'Holly S.',
+    context: 'Facebook Review',
+    quote: "Sylwia's kittens are simply adorable. I honestly was overwhelmed when I saw the litter as they were all stand-outs in both looks and personality, and I didn't know how I could possibly choose just one. I wish I could have had them all! I am so happy with the boy I have chosen as we have already created such a strong bond after only a couple of days. He was not scared on his first night, has not had any toilet accidents, and has eaten well. He is a bundle of cuddly and playful joy who won't stop purring, and that is all thanks to the way he has been handled and trained by the breeder beforehand. I cannot thank Sylwia enough. If you want a well-tempered (and gorgeous) Bengal, please go to this cattery and don't settle for anything less!",
+  },
+  {
+    name: 'Minimi J.',
+    context: 'Facebook Review',
+    quote: "I cannot recommend Luxury Rosettes highly enough! The care, love, and dedication Sylwia put into raising her kittens is evident. Our new little kitten is not only healthy and well-socialized but also incredibly affectionate, cuddly, and well-behaved. From the first inquiry to bringing our kitten home, Sylwia was professional, knowledgeable, and always available to answer any questions. She provided detailed information, health records, and guidance, ensuring a smooth transition for our new furry family member. I had cats previously and they never behaved as well as our new member of the family. She is toilet trained, doesn't scratch, or bite and is truly a little gem. Couldn't be happier ❤️",
+  },
+  {
+    name: 'Laura G.',
+    context: 'Facebook Review',
+    quote: 'Picked up our boy just yesterday. He is the sweetest 🥰 very playful, confident (zooms around the house like he always lived here!) and absolutely gorgeous!! I met Sylvia a year ago and always wanted one of her babies, because of how she raises them and how cuddly and well socialised they are. So when the time was right — got one. Highly recommended!!!',
+  },
+  {
+    name: 'Dominika K.',
+    context: 'Facebook Review',
+    quote: 'Dziękuję za informację ☺️ Profesjonalne podejście, dostałam dużo informacji odnośnie rasy i dbania o te koty. Serdecznie polecam 😁',
+  },
+  {
+    name: 'Zoe T.',
+    context: 'Facebook Review',
+    quote: '5-star service ⭐⭐⭐⭐⭐ Fantastic communication, I bought my first Snow Bengal from Sylwia, she was very helpful with care and what they require: healthy kitten, full papers and support. Thank you.',
+  },
+  {
+    name: 'Robert S.',
+    context: 'Facebook Review',
+    quote: 'Sylwia has been great with us and we are so happy with our beautiful Bengal boys 😃 We were shown all the details of our cats and their lineage and were very confident that we were getting our cats from the right person. Highly recommend Luxury Rosettes 👌',
+  },
+  {
+    name: 'Robert W.',
+    context: 'Facebook Review',
+    quote: 'Piękne kociaki, profesjonalna hodowla. Polecam wam!',
+  },
+  {
+    name: "Lyla D.",
+    context: 'Facebook Review',
+    quote: "Sylwia is highly professional and yet extremely loving breeder. In all my years, I've never met such super happy, confident and loving cats. Our Rajeev has settled in so well which is a true testament to Sylwia. I highly recommend her and her bengals. Stunning inside and out xx",
+  },
+];
+---
+
+<section class="bg-cream py-10 sm:py-18 lg:py-24">
+  <div class="mx-auto w-full max-w-330 px-4 sm:px-8 lg:px-16">
+    <header class="text-center">
+      <p class="font-body text-[0.65rem] font-semibold uppercase tracking-[2.8px] text-dark/45 sm:text-[0.72rem] lg:text-[0.76rem]">
+        Client Love
+      </p>
+      <h2 class="mt-3 font-heading text-[1.5rem] font-light leading-[1.1] tracking-tight text-gold-dark sm:text-[2rem] lg:text-[2.2rem] xl:text-[2.4rem]">
+        Loved by Our Bengal Families
+      </h2>
+      <span class="mx-auto mt-4 block h-px w-16 bg-(--gold-line) sm:w-20"></span>
+    </header>
+
+    <div class="testi-wrap relative mt-10 sm:mt-14">
+      <div class="testi-track" id="testiTrack">
+        {testimonials.map((t) => (
+          <div class="testi-card">
+            <div class="testi-stars" aria-hidden="true">★★★★★</div>
+            <p class="testi-quote">&ldquo;{t.quote}&rdquo;</p>
+            <div class="testi-name">{t.name}</div>
+            <div class="testi-context">{t.context}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="testi-controls">
+      <button type="button" class="testi-btn" id="testiPrev" aria-label="Previous testimonial">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M11 14L6 9l5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" class="testi-btn" id="testiNext" aria-label="Next testimonial">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7 4l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .testi-wrap {
+    overflow: hidden;
+  }
+
+  .testi-track {
+    display: flex;
+    gap: 1.75rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    padding: 0.25rem 0.25rem 1rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .testi-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .testi-card {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    padding: 2rem 1.75rem;
+    text-align: left;
+    box-sizing: border-box;
+  }
+
+  .testi-stars {
+    color: var(--color-gold);
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    margin-bottom: 1.1rem;
+  }
+
+  /* Fixed to 7 lines (min-height reserves the space, line-clamp caps the
+     overflow) so every card is the same height regardless of how long the
+     original review is — long reviews truncate with an ellipsis. */
+  .testi-quote {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1.08rem;
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    margin: 0 0 1.5rem;
+    min-height: 11.2em;
+    display: -webkit-box;
+    -webkit-line-clamp: 7;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .testi-name {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-gold-dark);
+    margin-top: auto;
+  }
+
+  .testi-context {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    color: var(--color-text-secondary);
+    margin-top: 0.2rem;
+  }
+
+  @media (min-width: 640px) {
+    .testi-card { flex: 0 0 calc(50% - 0.875rem); }
+  }
+
+  @media (min-width: 1024px) {
+    .testi-card { flex: 0 0 calc(33.333% - (1.75rem * 2 / 3)); }
+  }
+
+  .testi-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .testi-btn {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(212, 175, 55, 0.38);
+    background: rgba(255, 255, 255, 0.9);
+    color: #9f7f2f;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .testi-btn:hover {
+      background: rgba(212, 175, 55, 0.08);
+      border-color: rgba(212, 175, 55, 0.55);
+    }
+  }
+</style>
+
+<script>
+  function initTestimonials() {
+    const track = document.getElementById('testiTrack');
+    const prevBtn = document.getElementById('testiPrev');
+    const nextBtn = document.getElementById('testiNext');
+    if (!track || !prevBtn || !nextBtn) return;
+
+    const getScrollAmount = () => {
+      const card = track.querySelector('.testi-card') as HTMLElement | null;
+      const gap = parseInt(window.getComputedStyle(track).getPropertyValue('gap')) || 0;
+      return card ? card.offsetWidth + gap : track.clientWidth;
+    };
+
+    prevBtn.addEventListener('click', () => {
+      track.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
+    });
+
+    nextBtn.addEventListener('click', () => {
+      track.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initTestimonials);
+</script>

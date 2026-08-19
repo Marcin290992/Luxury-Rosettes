@@ -36,46 +36,12 @@ const {
 	<body>
 		<slot />
 
-		<!-- Gold trailing dot (desktop only) -->
-		<div id="cursor-dot" aria-hidden="true" transition:persist></div>
-
-
 		<!-- Cinematic page transition overlay -->
 		<div id="page-fade" transition:persist aria-hidden="true" style="position:fixed;inset:0;z-index:99999;background:#0d0d0d;opacity:0;pointer-events:none;will-change:opacity;"></div>
 
 		<script>
 			import gsap from 'gsap';
 			import { initLenis, destroyLenis } from '../scripts/lenis';
-
-			// ── Gold trailing dot (pure RAF, no GSAP) ─────────────────────
-			(function initCursor() {
-				if (!window.matchMedia('(pointer: fine)').matches) return;
-
-				const dot = document.getElementById('cursor-dot') as HTMLElement | null;
-				if (!dot) return;
-
-				const el = dot;
-				let mx = -100, my = -100;
-				let dx = mx,   dy = my;
-				const LERP = 0.1;
-
-				function tick() {
-					dx += (mx - dx) * LERP;
-					dy += (my - dy) * LERP;
-					el.style.transform = `translate(${dx - 3.5}px, ${dy - 3.5}px)`;
-					requestAnimationFrame(tick);
-				}
-				requestAnimationFrame(tick);
-
-				document.addEventListener('mousemove', (e) => {
-					mx = e.clientX;
-					my = e.clientY;
-					dot.classList.remove('is-hidden');
-				}, { passive: true });
-
-				document.addEventListener('mouseleave', () => dot.classList.add('is-hidden'));
-				document.addEventListener('mouseenter', () => dot.classList.remove('is-hidden'));
-			})();
 
 			const fade = () => document.getElementById('page-fade') as HTMLElement | null;
 
@@ -87,7 +53,7 @@ const {
 					const f = fade();
 					if (f) {
 						f.style.pointerEvents = 'auto';
-						await gsap.to(f, { opacity: 1, duration: 0.9, ease: 'power2.in' });
+						await gsap.to(f, { opacity: 1, duration: 0.45, ease: 'power2.in' });
 					}
 					await originalLoader();
 				};
@@ -102,18 +68,17 @@ const {
 				if (heroImg && !heroImg.complete) {
 					await Promise.race([
 						heroImg.decode().catch(() => {}),
-						new Promise(r => setTimeout(r, 1200)),
+						new Promise(r => setTimeout(r, 500)),
 					]);
 				}
 
 				const f = fade();
 				if (f) {
+					f.style.pointerEvents = 'none';
 					gsap.to(f, {
 						opacity: 0,
-						duration: 1.1,
-						delay: 0.05,
+						duration: 0.55,
 						ease: 'power2.out',
-						onComplete: () => { f.style.pointerEvents = 'none'; },
 					});
 				}
 			});

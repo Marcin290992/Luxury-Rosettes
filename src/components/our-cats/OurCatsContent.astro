@@ -17,7 +17,7 @@ const dracoPhoto = draco ? responsiveImage(draco.image, [640, 960, 1280]) : null
     <div class="flex flex-col-reverse items-center gap-8 lg:flex-row lg:gap-8 xl:gap-12">
 
       <div class="w-full lg:w-1/2">
-        <div class="oc-image overflow-hidden rounded-md">
+        <div class="oc-image overflow-hidden rounded-[10px]">
           {kitaPhoto && (
             <img
               src={kitaPhoto.src}
@@ -53,7 +53,7 @@ const dracoPhoto = draco ? responsiveImage(draco.image, [640, 960, 1280]) : null
     <div class="flex flex-col-reverse items-center gap-8 lg:flex-row-reverse lg:gap-8 xl:gap-12">
 
       <div class="w-full lg:w-1/2">
-        <div class="oc-image overflow-hidden rounded-md">
+        <div class="oc-image overflow-hidden rounded-[10px]">
           {dracoPhoto && (
             <img
               src={dracoPhoto.src}
@@ -106,7 +106,7 @@ const dracoPhoto = draco ? responsiveImage(draco.image, [640, 960, 1280]) : null
       </div>
 
       <div class="w-full lg:w-1/2 lg:max-w-2xl lg:mx-auto">
-        <div class="oc-image overflow-hidden rounded-md">
+        <div class="oc-image overflow-hidden rounded-[10px]">
           <Image
             src={awardsImage}
             alt="Luxury Rosettes — Awards & Achievements"

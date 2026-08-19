@@ -38,7 +38,7 @@ const awardSlides = awardGalleryImages.map((img) => ({
 		<div class="mt-10 grid grid-cols-1 items-start gap-8 sm:mt-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-10">
 			{highlight && highlightPhoto && (
 				<>
-				<figure class="overflow-hidden rounded-xl border border-gold/18 bg-[#f8f3eb]">
+				<figure class="overflow-hidden rounded-[10px] border border-gold/18 bg-[#f8f3eb]">
 					<img
 						src={highlightPhoto.src}
 						srcset={highlightPhoto.srcset}
@@ -62,7 +62,7 @@ const awardSlides = awardGalleryImages.map((img) => ({
 					</div>
 
 					{highlight.recognitionLabel && (
-						<div class="mt-7 inline-flex rounded-md border border-gold/35 px-5 py-2.5" aria-label="Official recognition label">
+						<div class="mt-7 inline-flex rounded-[10px] border border-gold/35 px-5 py-2.5" aria-label="Official recognition label">
 							<span class="font-body text-[0.7rem] font-semibold uppercase tracking-[2.6px] text-gold-dark/85">{highlight.recognitionLabel}</span>
 						</div>
 					)}
@@ -142,12 +142,12 @@ const awardSlides = awardGalleryImages.map((img) => ({
 
 	.awards-expo-wrap :global(.expo-container) {
 		transform-style: flat;
-		border-radius: var(--expo-image-border-radius, 16px);
+		border-radius: var(--expo-image-border-radius, 10px);
 		will-change: transform;
 	}
 
 	.awards-expo-wrap :global(.expo-image) {
-		border-radius: var(--expo-image-border-radius, 16px);
+		border-radius: var(--expo-image-border-radius, 10px);
 		will-change: transform;
 		backface-visibility: hidden;
 		-webkit-backface-visibility: hidden;

@@ -296,6 +296,13 @@ const pathname = Astro.url.pathname;
   }
   .nav-link:hover { color: rgba(250, 248, 243, 1); }
 
+  @media (min-width: 1024px) {
+    .nav-link {
+      font-size: 0.8rem;
+      letter-spacing: 1.2px;
+    }
+  }
+
   .nav-link[aria-current="page"] {
     color: rgba(250, 248, 243, 0.96);
   }
@@ -329,6 +336,14 @@ const pathname = Astro.url.pathname;
     background: rgba(212, 175, 55, 0.14);
     border-color: rgba(212, 175, 55, 0.40);
     color: #faf8f3;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-cta {
+      font-size: 0.78rem;
+      letter-spacing: 1.2px;
+      padding: 0.45rem 1.1rem;
+    }
   }
 
   /* ── Mobile overlay ─────────────────────────────────────────── */

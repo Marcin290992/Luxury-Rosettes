@@ -12,6 +12,7 @@ import Story from './Story.astro';
 <div id="stage">
   <Hero />
   <Story />
+  <div class="stage-dim" aria-hidden="true"></div>
 </div>
 
 <script>
@@ -74,9 +75,7 @@ import Story from './Story.astro';
   const FIRST_STEP = 5.8; // when step 01 → 02 starts
   const STEP_GAP = 4; // distance between transitions
   const STEP_DUR = 1.6;
-  const EXIT_AT = 14.2;
-  const EXIT_DUR = 2;
-  const TOTAL = EXIT_AT + EXIT_DUR;
+  const HOLD_END = 14.2; // step 03 stays until here; the last screen of the pin is the next section covering it
 
   const mm = gsap.matchMedia();
   mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
@@ -137,12 +136,22 @@ import Story from './Story.astro';
     gsap.set('.progress', { autoAlpha: 0 });
     gsap.set('.fill', { scaleX: 0 });
 
+    // First real section after the stage (Astro can put <script>/<style> tags in between). Found before the
+    // pin exists — pinning wraps the stage in a spacer element. It starts one screen early (margin-top: -100vh)
+    // so that it slides over the last step instead of following it.
+    let next = stage.nextElementSibling as HTMLElement | null;
+    while (next && /^(SCRIPT|STYLE|LINK)$/.test(next.tagName)) next = next.nextElementSibling as HTMLElement | null;
+    if (next) gsap.set(next, { marginTop: '-100vh' });
+
+    // pin length = the sequence + one screen of scrolling during which the next section covers the stage
+    const total = HOLD_END + window.innerHeight / PX_PER_SEC;
+
     const tl = gsap.timeline({
       defaults: { immediateRender: false },
       scrollTrigger: {
         trigger: stage,
         start: 'top top',
-        end: `+=${TOTAL * PX_PER_SEC}`,
+        end: `+=${total * PX_PER_SEC}`,
         pin: true,
         anticipatePin: 1,
         scrub: 1.6, // how long the animation trails behind the scroll position
@@ -171,7 +180,7 @@ import Story from './Story.astro';
       .fromTo('.progress', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8, ease: 'none' }, INTRO + 0.9);
 
     // progress line fills across all steps
-    tl.fromTo('.fill', { scaleX: 0 }, { scaleX: 1, duration: EXIT_AT - (INTRO + 1.5), ease: 'none' }, INTRO + 1.5);
+    tl.fromTo('.fill', { scaleX: 0 }, { scaleX: 1, duration: HOLD_END - (INTRO + 1.5), ease: 'none' }, INTRO + 1.5);
 
     // 3. Step transitions 01→02→03: text swaps, photos cross-fade, shapes morph, counter flips
     for (let i = 0; i < last; i++) {
@@ -196,13 +205,17 @@ import Story from './Story.astro';
         .fromTo(nums[next], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.5 }, s + 0.2);
     }
 
-    // 4. Exit: everything dissolves, then the page continues
-    tl.fromTo('.texts', { opacity: 1, y: 0 }, { opacity: 0, y: -30, duration: EXIT_DUR, ease: 'sine.inOut' }, EXIT_AT)
-      // on the clipped shapes themselves: opacity on the zero-height .photos wrapper makes Chrome drop them
-      .fromTo('.big, .small', { opacity: 1 }, { opacity: 0, duration: EXIT_DUR, ease: 'sine.inOut' }, EXIT_AT)
-      .fromTo('.progress', { opacity: 1 }, { opacity: 0, duration: EXIT_DUR, ease: 'sine.inOut' }, EXIT_AT);
+    // The timeline simply holds on step 03 for the last screen of the pin — that is where the next section
+    // slides over the stage (it has margin-top: -100vh, see ScrollExpand). The parallax below is tied 1:1 to
+    // that section's position (no scrub lag), so the stage drifts up and dims exactly as it is being covered.
+    tl.set({}, {}, total);
 
-    tl.set({}, {}, TOTAL); // pin the timeline length
+    if (next) {
+      gsap
+        .timeline({ scrollTrigger: { trigger: next, start: 'top bottom', end: 'top top', scrub: true } })
+        .fromTo(story, { y: 0 }, { y: -window.innerHeight * 0.22, ease: 'none' }, 0)
+        .fromTo('.stage-dim', { opacity: 0 }, { opacity: 0.5, ease: 'none' }, 0);
+    }
   }
 </script>
 
@@ -214,9 +227,27 @@ import Story from './Story.astro';
     overflow: hidden;
     background: #faf8f3;
   }
+  /* darkens the stage while the next section slides over it */
+  .stage-dim {
+    display: none;
+  }
+  #stage[data-stage] .stage-dim {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    background: #14110d;
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* explicit layer order: hero (its own stacking context, so the cream wash can't climb above the story) → story → dim */
   #stage[data-stage] :global(.hero) {
     position: absolute;
     inset: 0;
     height: 100%;
+    z-index: 0;
+  }
+  #stage[data-stage] :global(.story) {
+    z-index: 1;
   }
 </style>

@@ -3,6 +3,9 @@ import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
 import CursorTrail from '../components/CursorTrail.astro';
 import Stage from '../components/Stage.astro';
+import ScrollExpand from '../components/ScrollExpand.astro';
+import CatsRow from '../components/CatsRow.astro';
+import expandImg from '../assets/img/expand.webp';
 
 // Placeholder copy — to be replaced with real content
 const pillars = [
@@ -16,6 +19,11 @@ const pillars = [
   <NavPill />
   <CursorTrail />
   <Stage />
+  <ScrollExpand image={expandImg} alt="Bengal kittens" title="Meet our kittens" scrollHint="Scroll" holdDistance={2.5}>
+    <h2 class="expand-title">Every kitten, a story</h2>
+    <p class="expand-text">Placeholder text. A calm sentence or two that appears once the photo has filled the screen.</p>
+  </ScrollExpand>
+  <CatsRow />
   <main class="content">
 
     <section class="pillars">
@@ -58,6 +66,19 @@ const pillars = [
 </script>
 
 <style>
+  .expand-title {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(2.2rem, 5vw, 4.5rem);
+    line-height: 1.05;
+    margin: 0 0 1rem;
+  }
+  .expand-text {
+    max-width: 34rem;
+    font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+    line-height: 1.5;
+    margin: 0;
+  }
   .content {
     background: #faf8f3;
     font-family: var(--font-heading);

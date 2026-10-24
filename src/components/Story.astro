@@ -1,0 +1,293 @@
+---
+import { Image } from 'astro:assets';
+import kittens from '../assets/img/kittens.webp';
+import ourCats from '../assets/img/our_cats.webp';
+import hero from '../assets/img/hero_img.webp';
+
+// Placeholder copy + photos — to be replaced with real content
+const steps = [
+  {
+    eyebrow: 'Luxury Rosettes Bengals',
+    heading: 'Bengal cats bred with devotion, from champion bloodlines raised at the heart of our home.',
+    cta: 'Meet our cats',
+  },
+  {
+    eyebrow: 'Our philosophy',
+    heading: 'Every litter is planned, every kitten socialised among people, and we stay close long after they leave.',
+    cta: 'How we breed',
+  },
+  {
+    eyebrow: 'Your new family member',
+    heading: 'Health-tested, TICA registered and ready to bring a little wild elegance into your home.',
+    cta: 'See available kittens',
+  },
+];
+// [image, crop] — crop: our_cats is a two-cat diptych
+const big = [
+  { src: kittens, alt: 'Three Bengal kittens', crop: '' },
+  { src: ourCats, alt: 'Bengal cat in profile', crop: 'half-right' },
+  { src: hero, alt: 'Bengal cat looking up', crop: '' },
+];
+const small = [
+  { src: ourCats, alt: 'Bengal cat in profile', crop: 'half-left' },
+  { src: hero, alt: 'Bengal cat looking up', crop: '' },
+  { src: kittens, alt: 'Three Bengal kittens', crop: '' },
+];
+---
+
+<section class="story" id="story">
+  <!-- morphing shapes the photos are clipped to (paths are filled in by the script) -->
+  <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <clipPath id="clipBig" clipPathUnits="objectBoundingBox"><path d=""></path></clipPath>
+      <clipPath id="clipSmall" clipPathUnits="objectBoundingBox"><path d=""></path></clipPath>
+    </defs>
+  </svg>
+
+  <div class="texts">
+    {
+      steps.map((s, i) => {
+        const Heading = i === 0 ? 'h1' : 'h2';
+        return (
+          <div class="step" data-step={i}>
+            <p class="eyebrow">{s.eyebrow}</p>
+            <Heading class="heading">{s.heading}</Heading>
+            <a class="cta" href="#">
+              {s.cta}
+            </a>
+          </div>
+        );
+      })
+    }
+  </div>
+
+  <div class="photos">
+    <div class="shape big">
+      {
+        big.map((p) => (
+          <div class="layer">
+            <Image
+              class={p.crop}
+              src={p.src}
+              alt={p.alt}
+              widths={[700, 1100, 1600]}
+              sizes="(min-width:1024px) 45vw, 90vw"
+              loading="eager"
+            />
+          </div>
+        ))
+      }
+    </div>
+    <div class="shape small" aria-hidden="true">
+      {
+        small.map((p) => (
+          <div class="layer">
+            <Image
+              class={p.crop}
+              src={p.src}
+              alt=""
+              widths={[500, 800]}
+              sizes="(min-width:1024px) 20vw, 50vw"
+              loading="eager"
+            />
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="progress" aria-hidden="true">
+    <div class="line"><div class="fill"></div></div>
+    <div class="nums">
+      {steps.map((_, i) => <span class="num" data-num={i}>{String(i + 1).padStart(2, '0')}</span>)}
+    </div>
+  </div>
+</section>
+
+
+<style>
+  .story {
+    background: #faf8f3;
+    font-family: var(--font-heading);
+    padding: clamp(4rem, 12vh, 8rem) 1.5rem;
+    display: grid;
+    gap: 3rem;
+  }
+  .defs {
+    position: absolute;
+  }
+  .texts {
+    display: grid;
+    gap: 3rem;
+  }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin: 0 0 1.5rem;
+    opacity: 0.65;
+  }
+  .heading {
+    font-size: clamp(2.1rem, 8vw, 3rem);
+    font-weight: 400;
+    line-height: 1.08;
+    margin: 0 0 2rem;
+  }
+  .cta {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: inherit;
+    text-decoration: none;
+    border: 1px solid rgba(26, 26, 26, 0.45);
+    border-radius: 999px;
+    padding: 1rem 1.75rem;
+    transition: background 0.3s, color 0.3s;
+  }
+  .cta:hover {
+    background: #1a1a1a;
+    color: #faf8f3;
+  }
+  .photos {
+    display: grid;
+    gap: 1.5rem;
+  }
+  .small {
+    display: none;
+  }
+  .big {
+    display: grid;
+    gap: 1.5rem;
+  }
+  .layer {
+    overflow: hidden;
+    border-radius: 6px;
+    aspect-ratio: 4 / 3;
+  }
+  .layer :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* our_cats is a two-cat diptych: show one cat at a time */
+  .layer :global(img.half-right),
+  .layer :global(img.half-left) {
+    width: 200%;
+    max-width: none;
+  }
+  .layer :global(img.half-right) {
+    margin-left: -101%;
+  }
+  .layer :global(img.half-left) {
+    margin-left: -1%;
+  }
+  .progress {
+    display: none;
+  }
+  /* split words (created by the script) */
+  .story :global(.w) {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding-bottom: 0.14em;
+    margin-bottom: -0.14em;
+  }
+  .story :global(.wi) {
+    display: inline-block;
+    will-change: transform;
+  }
+
+  /* ---- Desktop pinned layout (script sets data-pinned) ---- */
+  /* lies on top of the hero inside the pinned stage; transparent so the hero shows through until the cream wash */
+  .story[data-pinned] {
+    position: absolute;
+    inset: 0;
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+  }
+  .story[data-pinned] .texts {
+    position: absolute;
+    left: 4.5vw;
+    top: 15vh;
+    width: 40vw;
+    display: grid;
+    gap: 0;
+    z-index: 3;
+  }
+  .story[data-pinned] .step {
+    grid-area: 1 / 1;
+  }
+  .story[data-pinned] .heading {
+    font-size: clamp(2.4rem, 4vw, 4.6rem);
+    line-height: 1.04;
+    margin-bottom: 3rem;
+  }
+  .story[data-pinned] .photos {
+    display: block;
+  }
+  .story[data-pinned] .shape {
+    position: absolute;
+    display: block;
+    overflow: hidden;
+  }
+  .story[data-pinned] .big {
+    right: 3vw;
+    top: 6vh;
+    width: 32vw;
+    height: 91vh;
+    clip-path: url(#clipBig);
+    z-index: 1;
+  }
+  .story[data-pinned] .small {
+    left: 46.5vw;
+    bottom: 3vh;
+    width: 16.5vw;
+    height: 46vh;
+    clip-path: url(#clipSmall);
+    z-index: 2;
+  }
+  .story[data-pinned] .layer {
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
+    aspect-ratio: auto;
+  }
+  .story[data-pinned] .progress {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: absolute;
+    left: 4.5vw;
+    bottom: 6vh;
+    z-index: 3;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+  }
+  .line {
+    width: 18rem;
+    height: 1px;
+    background: rgba(26, 26, 26, 0.2);
+  }
+  .fill {
+    height: 100%;
+    background: #1a1a1a;
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  .nums {
+    position: relative;
+    width: 2ch;
+    height: 1em;
+    line-height: 1;
+  }
+  .num {
+    position: absolute;
+    inset: 0;
+  }
+</style>

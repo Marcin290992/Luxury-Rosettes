@@ -1,0 +1,52 @@
+---
+import { Image } from 'astro:assets';
+import hero from '../assets/img/hero_img.webp';
+---
+
+<header class="hero" id="hero">
+  <Image
+    class="hero-img"
+    src={hero}
+    alt="Bengal cat looking up"
+    widths={[800, 1600, 2400]}
+    sizes="100vw"
+    loading="eager"
+  />
+  <!-- page-coloured wash that takes over at full zoom (desktop intro) -->
+  <div class="hero-fade" aria-hidden="true"></div>
+</header>
+
+
+<style>
+  .hero {
+    height: 100svh;
+    position: relative;
+    overflow: hidden;
+    background: #111;
+  }
+  .hero :global(.hero-img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 25%;
+    will-change: transform;
+  }
+  .hero-fade {
+    position: absolute;
+    inset: 0;
+    background: #faf8f3; /* same as body */
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1; /* above the static overlay */
+  }
+  /* Static dark overlay: even tint + heavier top (nav) and bottom edges */
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(to bottom, rgba(8, 7, 6, 0.55) 0%, rgba(8, 7, 6, 0.2) 35%, rgba(8, 7, 6, 0.65) 100%),
+      rgba(8, 7, 6, 0.3);
+  }
+</style>

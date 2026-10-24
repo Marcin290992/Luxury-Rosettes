@@ -1,11 +1,104 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import NavPill from '../components/NavPill.astro';
+import CursorTrail from '../components/CursorTrail.astro';
+import Stage from '../components/Stage.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// Placeholder copy — to be replaced with real content
+const pillars = [
+  { title: 'Champion bloodlines', text: 'Placeholder text about the lineage and the cats behind every litter.' },
+  { title: 'Health tested', text: 'Placeholder text about the screening and care each kitten receives.' },
+  { title: 'Raised with love', text: 'Placeholder text about kittens growing up in our home, among people.' },
+];
 ---
 
 <Layout>
-	<Welcome />
+  <NavPill />
+  <CursorTrail />
+  <Stage />
+  <main class="content">
+
+    <section class="pillars">
+      {
+        pillars.map((p) => (
+          <article class="pillar" data-reveal>
+            <h2>{p.title}</h2>
+            <p>{p.text}</p>
+          </article>
+        ))
+      }
+    </section>
+
+    <section class="closing">
+      <h2 data-reveal>Meet our kittens</h2>
+      <p data-reveal>Placeholder call to action.</p>
+    </section>
+  </main>
 </Layout>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Content slides up and fades in as it scrolls into view
+  const mm = gsap.matchMedia();
+  mm.add('(prefers-reduced-motion: no-preference)', () => {
+    gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((el) => {
+      gsap.from(el, {
+        y: 48,
+        opacity: 0,
+        duration: 1,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none reverse' },
+      });
+    });
+  });
+</script>
+
+<style>
+  .content {
+    background: #faf8f3;
+    font-family: var(--font-heading);
+  }
+  section {
+    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 2.5rem;
+  }
+  .pillar {
+    border-top: 1px solid rgba(26, 26, 26, 0.25);
+    padding-top: 1.5rem;
+  }
+  .pillar h2 {
+    font-size: 1.75rem;
+    font-weight: 400;
+    margin: 0 0 0.75rem;
+  }
+  .pillar p {
+    font-size: 1.15rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .closing {
+    text-align: center;
+    min-height: 60vh;
+    display: grid;
+    align-content: center;
+  }
+  .closing h2 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    margin: 0 0 1rem;
+  }
+  .closing p {
+    font-size: 1.25rem;
+    margin: 0;
+  }
+</style>

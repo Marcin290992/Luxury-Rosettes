@@ -1,0 +1,222 @@
+---
+import Hero from './Hero.astro';
+import Story from './Story.astro';
+---
+
+<!--
+  Desktop: hero + story share one pinned stage. A SINGLE scroll-scrubbed timeline drives everything
+  (zoom into the eye → cream wash → photos/text enter → steps 01-03 → fade out), so scroll position is
+  the only state: wheel, scrollbar, keys and touch all behave the same, and going back is the exact reverse.
+  Mobile / reduced motion: no pin — plain hero followed by the stacked story.
+-->
+<div id="stage">
+  <Hero />
+  <Story />
+</div>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { initLenis } from '../scripts/lenis';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  // ---- photo shapes ------------------------------------------------------------------------------
+  // Rounded polygon as a path with a fixed command structure, so GSAP can tween one shape into another.
+  // Coordinates are 0..1 (objectBoundingBox), t = how much of each edge the rounded corner eats.
+  type Pt = [number, number];
+  const rounded = (pts: Pt[], t = 0.12) => {
+    const n = pts.length;
+    const lerp = (a: Pt, b: Pt, k: number): Pt => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    const f = (p: Pt) => `${p[0].toFixed(4)} ${p[1].toFixed(4)}`;
+    const s = pts.map((v, i) => lerp(v, pts[(i + n - 1) % n], t));
+    const e = pts.map((v, i) => lerp(v, pts[(i + 1) % n], t));
+    return `M ${f(e[n - 1])}` + pts.map((v, i) => ` L ${f(s[i])} Q ${f(v)} ${f(e[i])}`).join('') + ' Z';
+  };
+  const bigShapes = [
+    rounded([[0.2, 0], [1, 0], [0.9, 1], [0, 0.72]]),
+    rounded([[0, 0.05], [0.88, 0], [1, 0.76], [0.12, 1]]),
+    rounded([[0.12, 0], [1, 0.12], [0.86, 1], [0, 0.88]]),
+  ];
+  const smallShapes = [
+    rounded([[0, 0], [0.55, 0.1], [1, 0.85], [0.1, 1]]),
+    rounded([[0.1, 0.05], [1, 0], [0.9, 0.9], [0, 1]]),
+    rounded([[0, 0.12], [0.9, 0], [1, 1], [0.15, 0.9]]),
+  ];
+
+  // Wrap every word in a masked span so it can slide up out of a clip
+  const splitWords = (el: HTMLElement) => {
+    const words = (el.textContent ?? '').trim().split(/\s+/);
+    el.setAttribute('aria-label', words.join(' '));
+    el.innerHTML = words
+      .map((w) => `<span class="w" aria-hidden="true"><span class="wi">${w}</span></span>`)
+      .join(' ');
+    return Array.from(el.querySelectorAll<HTMLElement>('.wi'));
+  };
+  // Delay per word: lines cascade, words cascade a little within each line
+  const lineOf = (el: HTMLElement) => el.parentElement!.offsetTop;
+  const wordDelays = (words: HTMLElement[], perLine = 0.14, perWord = 0.035) => {
+    const tops = [...new Set(words.map(lineOf))].sort((a, b) => a - b);
+    return {
+      lines: tops.length,
+      delays: words.map((w, i) => {
+        const first = words.findIndex((x) => lineOf(x) === lineOf(w));
+        return tops.indexOf(lineOf(w)) * perLine + (i - first) * perWord;
+      }),
+    };
+  };
+
+  // ---- timeline layout (seconds; the scroll distance is PX_PER_SEC × total length) -----------------
+  const PX_PER_SEC = 720; // higher = the whole sequence is spread over more scrolling (slower)
+  const ZOOM = 2.4; // zoom into the eye
+  const WASH = 1.7; // cream wash starts (ends with the zoom)
+  const INTRO = ZOOM + 0.25; // photos + text enter only once the screen is fully cream — never over the eye, in either direction
+  const FIRST_STEP = 5.8; // when step 01 → 02 starts
+  const STEP_GAP = 4; // distance between transitions
+  const STEP_DUR = 1.6;
+  const EXIT_AT = 14.2;
+  const EXIT_DUR = 2;
+  const TOTAL = EXIT_AT + EXIT_DUR;
+
+  const mm = gsap.matchMedia();
+  mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+    initLenis(); // smooth wheel only — it never changes where the page is
+
+    const stage = document.getElementById('stage')!;
+    const story = document.getElementById('story')!;
+    let ctx: gsap.Context | undefined;
+    let cancelled = false;
+
+    stage.dataset.stage = '';
+    story.dataset.pinned = '';
+
+    // Line breaks depend on the web font, so build once fonts are ready
+    document.fonts.ready.then(() => {
+      if (cancelled) return;
+      ctx = gsap.context(() => build(stage, story), stage);
+    });
+
+    return () => {
+      cancelled = true;
+      ctx?.revert();
+      delete stage.dataset.stage;
+      delete story.dataset.pinned;
+    };
+  });
+
+  function build(stage: HTMLElement, story: HTMLElement) {
+    const q = <T extends HTMLElement>(sel: string) => gsap.utils.toArray<T>(sel, story);
+
+    const heroImg = stage.querySelector<HTMLElement>('.hero-img')!;
+    const fade = stage.querySelector<HTMLElement>('.hero-fade')!;
+    const steps = q('.step');
+    const bigLayers = q('.big .layer');
+    const smallLayers = q('.small .layer');
+    const nums = q('.num');
+    const bigPath = story.querySelector('#clipBig path')!;
+    const smallPath = story.querySelector('#clipSmall path')!;
+    const words = steps.map((s) => splitWords(s.querySelector<HTMLElement>('.heading')!));
+    const extras = steps.map((s) => gsap.utils.toArray<HTMLElement>('.eyebrow, .cta', s));
+    const firstImgs = [bigLayers[0], smallLayers[0]].map((l) => l.querySelector('img')!);
+    const last = steps.length - 1;
+
+    // ---- starting state (everything the timeline animates *from*) ----
+    bigPath.setAttribute('d', bigShapes[0]);
+    smallPath.setAttribute('d', smallShapes[0]);
+    gsap.set(heroImg, { transformOrigin: '37% 48%' });
+    gsap.set(steps, { autoAlpha: 0 });
+    gsap.set(steps[0], { autoAlpha: 1 });
+    gsap.set(words.flat(), { yPercent: 115 });
+    gsap.set(extras.flat(), { autoAlpha: 0, y: 16 });
+    gsap.set([bigLayers.slice(1), smallLayers.slice(1)], { autoAlpha: 0 });
+    gsap.set(bigLayers[0], { clipPath: 'inset(0% 100% 0% 0%)' });
+    gsap.set(smallLayers[0], { clipPath: 'inset(100% 0% 0% 0%)' });
+    gsap.set(firstImgs, { scale: 1.3 });
+    gsap.set(nums, { autoAlpha: 0, y: 12 });
+    gsap.set(nums[0], { autoAlpha: 1, y: 0 }); // the counter rides in with the progress line
+    gsap.set('.progress', { autoAlpha: 0 });
+    gsap.set('.fill', { scaleX: 0 });
+
+    const tl = gsap.timeline({
+      defaults: { immediateRender: false },
+      scrollTrigger: {
+        trigger: stage,
+        start: 'top top',
+        end: `+=${TOTAL * PX_PER_SEC}`,
+        pin: true,
+        anticipatePin: 1,
+        scrub: 1.6, // how long the animation trails behind the scroll position
+      },
+    });
+
+    // 1. Zoom into the eye, then the screen turns cream
+    tl.fromTo(
+      heroImg,
+      { scale: 1, xPercent: 0, yPercent: 0 },
+      { scale: 7, xPercent: 13, yPercent: 2, duration: ZOOM, ease: 'power3.inOut' },
+      0,
+    ).fromTo(fade, { opacity: 0 }, { opacity: 1, duration: ZOOM - WASH, ease: 'power1.in' }, WASH);
+
+    // 2. Entrance: masks open, images settle from a slow zoom, heading rises line by line
+    tl.fromTo(bigLayers[0], { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.4, ease: 'power3.out' }, INTRO)
+      .fromTo(firstImgs[0], { scale: 1.3 }, { scale: 1, duration: 2.2, ease: 'power2.out' }, INTRO)
+      .fromTo(smallLayers[0], { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.3, ease: 'power3.out' }, INTRO + 0.15)
+      .fromTo(firstImgs[1], { scale: 1.3 }, { scale: 1, duration: 2, ease: 'power2.out' }, INTRO + 0.15)
+      .fromTo(extras[0][0], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.8 }, INTRO + 0.05);
+    const intro = wordDelays(words[0]);
+    words[0].forEach((w, i) =>
+      tl.fromTo(w, { yPercent: 115 }, { yPercent: 0, duration: 0.9, ease: 'power3.out' }, INTRO + 0.12 + intro.delays[i]),
+    );
+    tl.fromTo(extras[0][1], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power3.out' }, INTRO + 0.12 + intro.lines * 0.14 + 0.35)
+      .fromTo('.progress', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8, ease: 'none' }, INTRO + 0.9);
+
+    // progress line fills across all steps
+    tl.fromTo('.fill', { scaleX: 0 }, { scaleX: 1, duration: EXIT_AT - (INTRO + 1.5), ease: 'none' }, INTRO + 1.5);
+
+    // 3. Step transitions 01→02→03: text swaps, photos cross-fade, shapes morph, counter flips
+    for (let i = 0; i < last; i++) {
+      const s = FIRST_STEP + i * STEP_GAP;
+      const next = i + 1;
+      // text
+      tl.fromTo(words[i], { yPercent: 0 }, { yPercent: -115, duration: 0.5, stagger: 0.015, ease: 'power2.in' }, s)
+        .fromTo(extras[i], { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -12, duration: 0.35 }, s)
+        .fromTo(steps[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.01 }, s + 0.6)
+        .fromTo(steps[next], { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.01 }, s + 0.05)
+        .fromTo(words[next], { yPercent: 115 }, { yPercent: 0, duration: 0.9, stagger: 0.04, ease: 'power3.out' }, s + 0.4)
+        .fromTo(extras[next], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, s + 0.8);
+      // photos
+      [bigLayers, smallLayers].forEach((layers) => {
+        tl.fromTo(layers[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.9, ease: 'power1.inOut' }, s)
+          .fromTo(layers[next], { autoAlpha: 0, scale: 1.12 }, { autoAlpha: 1, scale: 1, duration: STEP_DUR - 0.3, ease: 'power2.out' }, s);
+      });
+      tl.fromTo(bigPath, { attr: { d: bigShapes[i] } }, { attr: { d: bigShapes[next] }, duration: STEP_DUR - 0.3, ease: 'power3.inOut' }, s)
+        .fromTo(smallPath, { attr: { d: smallShapes[i] } }, { attr: { d: smallShapes[next] }, duration: STEP_DUR - 0.3, ease: 'power3.inOut' }, s);
+      // counter
+      tl.fromTo(nums[i], { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -12, duration: 0.4 }, s)
+        .fromTo(nums[next], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.5 }, s + 0.2);
+    }
+
+    // 4. Exit: everything dissolves, then the page continues
+    tl.fromTo('.texts', { opacity: 1, y: 0 }, { opacity: 0, y: -30, duration: EXIT_DUR, ease: 'sine.inOut' }, EXIT_AT)
+      // on the clipped shapes themselves: opacity on the zero-height .photos wrapper makes Chrome drop them
+      .fromTo('.big, .small', { opacity: 1 }, { opacity: 0, duration: EXIT_DUR, ease: 'sine.inOut' }, EXIT_AT)
+      .fromTo('.progress', { opacity: 1 }, { opacity: 0, duration: EXIT_DUR, ease: 'sine.inOut' }, EXIT_AT);
+
+    tl.set({}, {}, TOTAL); // pin the timeline length
+  }
+</script>
+
+<style>
+  /* Pinned stage: hero and story stacked in one viewport */
+  #stage[data-stage] {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    background: #faf8f3;
+  }
+  #stage[data-stage] :global(.hero) {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+  }
+</style>

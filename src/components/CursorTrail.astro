@@ -1,0 +1,151 @@
+---
+// Ribbon cursor: a bundle of thin gold spring-lines that swirl after the pointer.
+// Desktop (hover + fine pointer) only; skipped for reduced-motion users.
+---
+
+<canvas id="cursor-canvas" aria-hidden="true"></canvas>
+
+<script>
+  const canvas = document.getElementById('cursor-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+
+  const enabled =
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!enabled) {
+    canvas.remove();
+  } else {
+    const config = {
+      friction: 0.5,
+      lines: 20, // how many thin lines are in the bundle
+      size: 11, // nodes per line = how long the ribbon is
+      dampening: 0.25,
+      tension: 0.98,
+    };
+    const color = '186, 142, 71'; // gold from the logo (#ba8e47)
+    const alpha = 0.09; // per line; overlap near the head builds up brightness
+
+    type Node = { x: number; y: number; vx: number; vy: number };
+
+    let width = 0;
+    let height = 0;
+    const pos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+    class Line {
+      spring: number;
+      friction: number;
+      nodes: Node[];
+
+      constructor(spring: number) {
+        // small random spread per line is what makes the bundle fan out
+        this.spring = spring + 0.1 * Math.random() - 0.05;
+        this.friction = config.friction + 0.01 * Math.random() - 0.005;
+        this.nodes = Array.from({ length: config.size }, () => ({ x: pos.x, y: pos.y, vx: 0, vy: 0 }));
+      }
+
+      // returns true while the line is still moving
+      update(): boolean {
+        let spring = this.spring;
+        let moving = false;
+        const first = this.nodes[0];
+        first.vx += (pos.x - first.x) * spring;
+        first.vy += (pos.y - first.y) * spring;
+
+        for (let i = 0; i < this.nodes.length; i++) {
+          const n = this.nodes[i];
+          if (i > 0) {
+            const prev = this.nodes[i - 1];
+            n.vx += (prev.x - n.x) * spring;
+            n.vy += (prev.y - n.y) * spring;
+            n.vx += prev.vx * config.dampening;
+            n.vy += prev.vy * config.dampening;
+          }
+          n.vx *= this.friction;
+          n.vy *= this.friction;
+          n.x += n.vx;
+          n.y += n.vy;
+          spring *= config.tension;
+          if (Math.abs(n.vx) + Math.abs(n.vy) > 0.02) moving = true;
+        }
+        return moving;
+      }
+
+      draw() {
+        const nodes = this.nodes;
+        ctx.beginPath();
+        ctx.moveTo(nodes[0].x, nodes[0].y);
+        for (let i = 1; i < nodes.length - 2; i++) {
+          const a = nodes[i];
+          const b = nodes[i + 1];
+          ctx.quadraticCurveTo(a.x, a.y, 0.5 * (a.x + b.x), 0.5 * (a.y + b.y));
+        }
+        const a = nodes[nodes.length - 2];
+        const b = nodes[nodes.length - 1];
+        ctx.quadraticCurveTo(a.x, a.y, b.x, b.y);
+        ctx.stroke();
+      }
+    }
+
+    const lines: Line[] = [];
+    const makeLines = () => {
+      lines.length = 0;
+      for (let i = 0; i < config.lines; i++) lines.push(new Line(0.45 + (i / config.lines) * 0.025));
+    };
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    window.addEventListener('resize', resize);
+    resize();
+
+    let running = false;
+
+    const frame = () => {
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(${color}, ${alpha})`;
+      ctx.lineWidth = 1;
+
+      let moving = false;
+      for (const line of lines) {
+        if (line.update()) moving = true;
+        line.draw();
+      }
+
+      // Stop once everything has settled; the next mouse move restarts it
+      if (moving) {
+        requestAnimationFrame(frame);
+      } else {
+        running = false;
+        ctx.clearRect(0, 0, width, height);
+      }
+    };
+
+    window.addEventListener('mousemove', (e) => {
+      pos.x = e.clientX;
+      pos.y = e.clientY;
+      if (!lines.length) makeLines(); // start at the first pointer position
+      if (!running) {
+        running = true;
+        requestAnimationFrame(frame);
+      }
+    });
+  }
+</script>
+
+<style>
+  #cursor-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    pointer-events: none;
+    z-index: 2000; /* above the nav (1000) */
+  }
+</style>

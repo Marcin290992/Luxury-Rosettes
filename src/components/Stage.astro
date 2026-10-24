@@ -122,7 +122,9 @@ import Story from './Story.astro';
     // ---- starting state (everything the timeline animates *from*) ----
     bigPath.setAttribute('d', bigShapes[0]);
     smallPath.setAttribute('d', smallShapes[0]);
-    gsap.set(heroImg, { transformOrigin: '37% 48%' });
+    // the spot of the eye on screen is worked out by the hero (it depends on how the photo is cropped)
+    const eye = () => JSON.parse(heroImg.dataset.eye ?? '{"ox":37,"oy":48}') as { ox: number; oy: number };
+    gsap.set(heroImg, { transformOrigin: () => `${eye().ox}% ${eye().oy}%` });
     gsap.set(steps, { autoAlpha: 0 });
     gsap.set(steps[0], { autoAlpha: 1 });
     gsap.set(words.flat(), { yPercent: 115 });
@@ -134,7 +136,7 @@ import Story from './Story.astro';
     gsap.set(nums, { autoAlpha: 0, y: 12 });
     gsap.set(nums[0], { autoAlpha: 1, y: 0 }); // the counter rides in with the progress line
     gsap.set('.progress', { autoAlpha: 0 });
-    gsap.set('.fill', { scaleX: 0 });
+    gsap.set('.fill', { clipPath: 'inset(0% 100% 0% 0%)' });
 
     // First real section after the stage (Astro can put <script>/<style> tags in between). Found before the
     // pin exists — pinning wraps the stage in a spacer element. It starts one screen early (margin-top: -100vh)
@@ -154,6 +156,7 @@ import Story from './Story.astro';
         end: `+=${total * PX_PER_SEC}`,
         pin: true,
         anticipatePin: 1,
+        invalidateOnRefresh: true, // the eye's spot depends on the window size
         scrub: 1.6, // how long the animation trails behind the scroll position
       },
     });
@@ -161,10 +164,20 @@ import Story from './Story.astro';
     // 1. Zoom into the eye, then the screen turns cream
     tl.fromTo(
       heroImg,
-      { scale: 1, xPercent: 0, yPercent: 0 },
-      { scale: 7, xPercent: 13, yPercent: 2, duration: ZOOM, ease: 'power3.inOut' },
+      { scale: 1, xPercent: 0, yPercent: 0, transformOrigin: () => `${eye().ox}% ${eye().oy}%` },
+      {
+        scale: 7,
+        xPercent: () => 50 - eye().ox,
+        yPercent: () => 50 - eye().oy,
+        transformOrigin: () => `${eye().ox}% ${eye().oy}%`,
+        duration: ZOOM,
+        ease: 'power3.inOut',
+      },
       0,
     ).fromTo(fade, { opacity: 0 }, { opacity: 1, duration: ZOOM - WASH, ease: 'power1.in' }, WASH);
+
+    // the opening text and scroll cue leave as soon as the dive begins
+    tl.fromTo('.hero-content', { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -40, duration: 0.9, ease: 'power2.in' }, 0);
 
     // 2. Entrance: masks open, images settle from a slow zoom, heading rises line by line
     tl.fromTo(bigLayers[0], { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.4, ease: 'power3.out' }, INTRO)
@@ -180,7 +193,12 @@ import Story from './Story.astro';
       .fromTo('.progress', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8, ease: 'none' }, INTRO + 0.9);
 
     // progress line fills across all steps
-    tl.fromTo('.fill', { scaleX: 0 }, { scaleX: 1, duration: HOLD_END - (INTRO + 1.5), ease: 'none' }, INTRO + 1.5);
+    tl.fromTo(
+      '.fill',
+      { clipPath: 'inset(0% 100% 0% 0%)' },
+      { clipPath: 'inset(0% 0% 0% 0%)', duration: HOLD_END - (INTRO + 1.5), ease: 'none' },
+      INTRO + 1.5,
+    );
 
     // 3. Step transitions 01→02→03: text swaps, photos cross-fade, shapes morph, counter flips
     for (let i = 0; i < last; i++) {

@@ -153,7 +153,11 @@ const cats = [
         const range = { trigger: section, start: at(arrival()), end: () => pin.end - hold(), scrub: SMOOTH, invalidateOnRefresh: true };
         const move = gsap.to(track, { x: () => -distance(), ease: 'none', scrollTrigger: range });
         gsap.fromTo(photos, { xPercent: 7 }, { xPercent: -7, ease: 'none', scrollTrigger: range });
-        gsap.fromTo('.cats-fill', { scaleX: 0 }, { scaleX: 1, ease: 'none', scrollTrigger: range });
+        gsap.fromTo(
+          '.cats-fill',
+          { clipPath: 'inset(0% 100% 0% 0%)' },
+          { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none', scrollTrigger: range },
+        );
 
         // 3. Each photo is revealed like in the story chapter: a mask opens while the image settles from a slow zoom
         const hide = (card: HTMLElement) => {
@@ -184,12 +188,14 @@ const cats = [
         // while the pin holds on the calendar, a line draws across the months — the page is "doing" something,
         // and the scroll that remains is clearly part of this screen rather than dead space
         const lines = gsap.utils.toArray<HTMLElement>('.cal-line', panel);
-        gsap.set(lines, { scaleX: 0 });
+        gsap.set(lines, { clipPath: 'inset(0% 100% 0% 0%)' });
         const draw = gsap.timeline({
           defaults: { ease: 'none', immediateRender: false },
           scrollTrigger: { trigger: section, start: () => pin.end - hold(), end: () => pin.end, scrub: SMOOTH, invalidateOnRefresh: true },
         });
-        lines.forEach((l, i) => draw.fromTo(l, { scaleX: 0 }, { scaleX: 1, duration: 1.5 }, i * 0.5)); // one after another
+        lines.forEach((l, i) =>
+          draw.fromTo(l, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.5 }, i * 0.5),
+        ); // one after another
 
         ScrollTrigger.create({
           trigger: panel,
@@ -343,18 +349,17 @@ const cats = [
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    border-top: 1px solid rgba(26, 26, 26, 0.18);
+    border-top: 1px dashed rgba(26, 26, 26, 0.22);
     padding-top: 1rem;
   }
-  /* dark line over the light one; drawn left to right during the hold (desktop) */
+  /* dark dashes over the light ones; revealed left to right during the hold (desktop) */
   .cal-line {
     position: absolute;
     top: -1px;
     left: 0;
     right: 0;
-    height: 1px;
-    background: #1a1a1a;
-    transform-origin: left;
+    height: 0;
+    border-top: 1px dashed #1a1a1a;
   }
   .cal-name {
     font-size: 1.75rem;
@@ -372,11 +377,12 @@ const cats = [
     font-size: 0.8rem;
     line-height: 1.4;
     padding: 0.7rem 0.85rem;
-    border: 1px dashed rgba(26, 26, 26, 0.3);
+    background: rgba(26, 26, 26, 0.05);
     border-radius: 4px;
   }
   .cal-slot--ghost {
-    opacity: 0.4;
+    opacity: 0.55;
+    background: rgba(26, 26, 26, 0.03);
   }
   .cal-foot {
     display: flex;
@@ -513,14 +519,17 @@ const cats = [
     left: 6vw;
     right: 6vw;
     bottom: 6vh;
-    height: 1px;
-    background: rgba(26, 26, 26, 0.18);
+    height: 0;
+    border-top: 1px dashed rgba(26, 26, 26, 0.28);
   }
   .cats[data-pinned] .cats-fill {
-    height: 100%;
-    background: #1a1a1a;
-    transform: scaleX(0);
-    transform-origin: left;
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: 1px dashed #1a1a1a;
+    clip-path: inset(0% 100% 0% 0%);
   }
 
   /* Desktop: starts two screens early. The expanding photo (held 1 screen longer, see holdDistance in index)

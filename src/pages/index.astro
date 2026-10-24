@@ -38,6 +38,7 @@ const pillars = [
     </section>
 
     <section class="closing">
+      <i class="dash" data-dash aria-hidden="true" />
       <h2 data-reveal>Meet our kittens</h2>
       <p data-reveal>Placeholder call to action.</p>
     </section>
@@ -61,6 +62,19 @@ const pillars = [
         ease: 'power3.out',
         scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none reverse' },
       });
+    });
+    // dashed rules draw themselves in from the left
+    gsap.utils.toArray<HTMLElement>('[data-dash]').forEach((el) => {
+      gsap.fromTo(
+        el,
+        { clipPath: 'inset(0% 100% 0% 0%)' },
+        {
+          clipPath: 'inset(0% 0% 0% 0%)',
+          duration: 1.4,
+          ease: 'power3.inOut',
+          scrollTrigger: { trigger: el, start: 'top 92%', toggleActions: 'play none none reverse' },
+        },
+      );
     });
   });
 </script>
@@ -93,9 +107,8 @@ const pillars = [
     grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
     gap: 2.5rem;
   }
-  .pillar {
-    border-top: 1px solid rgba(26, 26, 26, 0.25);
-    padding-top: 1.5rem;
+  .closing .dash {
+    margin-bottom: 4rem;
   }
   .pillar h2 {
     font-size: 1.75rem;

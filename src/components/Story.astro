@@ -269,16 +269,22 @@ const small = [
     font-family: var(--font-body);
     font-size: 0.75rem;
   }
+  /* dashed like every other rule on the page; the dark dashes are revealed over the light ones (clip-path, so
+     the dash pattern is never stretched) */
   .line {
+    position: relative;
     width: 18rem;
-    height: 1px;
-    background: rgba(26, 26, 26, 0.2);
+    height: 0;
+    border-top: 1px dashed rgba(26, 26, 26, 0.28);
   }
   .fill {
-    height: 100%;
-    background: #1a1a1a;
-    transform: scaleX(0);
-    transform-origin: left;
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: 1px dashed #1a1a1a;
+    clip-path: inset(0% 100% 0% 0%);
   }
   .nums {
     position: relative;

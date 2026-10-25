@@ -248,7 +248,7 @@ import Story from './Story.astro';
         invalidateOnRefresh: true,
         scrub: 0.7, // the animation eases towards the finger instead of following it 1:1
         // the brake: after the finger lifts, the scroll settles on the nearest step, never between two
-        snap: { snapTo: REST, duration: { min: 0.2, max: 0.6 }, delay: 0.1, ease: 'power2.inOut' },
+        snap: { snapTo: REST, directional: false, duration: { min: 0.2, max: 0.6 }, delay: 0.1, ease: 'power2.inOut' }, // nearest point: it must not push on from a step the pager has just reached
       },
     });
     tl.fromTo('.fill', { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: END - FIRST, ease: 'none' }, FIRST);
@@ -276,7 +276,56 @@ import Story from './Story.astro';
     }
     tl.set({}, {}, END); // the last step rests before the page moves on
 
+    // ---- paging: one swipe = one step -----------------------------------------------------------------------------
+    // While the story is pinned, a swipe (or a wheel notch on a tablet with a mouse) is not scrolling: it moves to the next
+    // or the previous step, and further swipes are ignored until it has arrived. At the first step a swipe back, and at the
+    // last step a swipe on, lead out of the story. The scrollbar, keys and the snapping above still work as a fallback.
+    const st = tl.scrollTrigger!;
+    const H = () => window.innerHeight;
+    const stops = () => REST.slice(0, -1).map((r) => st.start + r * (st.end - st.start)); // step 01, 02, 03
+    let busy = false;
+    const proxy = { y: 0 };
+    const goTo = (dir: number) => {
+      if (busy) return;
+      const pts = stops();
+      const y0 = window.scrollY;
+      let i = 0;
+      pts.forEach((pt, k) => { if (Math.abs(pt - y0) < Math.abs(pts[i] - y0)) i = k; });
+      const j = i + dir;
+      const y = j < 0 ? st.start - H() * 0.6 : j > last ? st.end + H() * 0.6 : pts[j];
+      busy = true;
+      proxy.y = y0;
+      gsap.to(proxy, {
+        y,
+        duration: 1.15,
+        ease: 'power2.inOut',
+        onUpdate: () => window.scrollTo(0, proxy.y),
+        onComplete: () => gsap.delayedCall(0.12, () => (busy = false)), // a short pause so the end of the swipe is not read as a new one
+      });
+    };
+    const pager = ScrollTrigger.observe({
+      target: window,
+      type: 'touch,wheel',
+      tolerance: 14,
+      preventDefault: true,
+      allowClicks: true,
+      onChangeY: (self) => {
+        if (busy) return;
+        if (Math.abs(self.deltaY) < 1) return;
+        goTo(self.deltaY > 0 ? -1 : 1); // Observer reports the finger's travel: finger up (page down) = negative
+      },
+    });
+    pager.disable();
+    // active only while the story is pinned (so the rest of the page scrolls normally)
+    const inside = () => window.scrollY >= st.start - 2 && window.scrollY <= st.end + 2;
+    const syncPager = () => (inside() ? pager.enable() : pager.disable());
+    st.vars.onToggle = syncPager;
+    ScrollTrigger.addEventListener('scrollEnd', syncPager);
+    syncPager();
+
     return () => {
+      pager.kill();
+      ScrollTrigger.removeEventListener('scrollEnd', syncPager);
       ScrollTrigger.removeEventListener('refreshInit', onRefreshInit);
       tl.scrollTrigger?.kill();
       tl.kill();

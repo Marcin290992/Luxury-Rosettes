@@ -1,0 +1,94 @@
+---
+// Real Facebook reviews, verbatim
+const featured = {
+  name: 'Julius C.',
+  quote:
+    'We brought our boy home last week, and he has been an absolute joy! He is incredibly friendly and handsome, and he bonded with our first cat in no time. It took them less than a week to share a bed and groom each other. Sylwia is a responsible and caring breeder. You can tell how much she loves her cats by how well they are raised. She was very helpful and informative throughout the process. Highly recommend!',
+};
+const others = [
+  { name: 'Zoe T.', quote: 'Fantastic communication. I bought my first Snow Bengal from Sylwia, she was very helpful with care and what they require: healthy kitten, full papers and support. Thank you.' },
+  { name: 'Marcin K.', quote: 'You can truly see that Sylvia does what she does with passion and love. Amazing knowledge and understanding of cats\' behaviour. Our cat is healthy, chipped, and fully vaccinated. We also received toys and 24/7 support.' },
+  { name: 'Robert S.', quote: 'We were shown all the details of our cats and their lineage and were very confident that we were getting our cats from the right person. Highly recommend Luxury Rosettes.' },
+];
+---
+
+<section class="tm" id="reviews">
+  <p class="eyebrow" data-reveal>Families</p>
+  <h2 data-reveal>In their words</h2>
+  <blockquote class="featured" data-reveal>
+    <p>{featured.quote}</p>
+    <footer>{featured.name} <span>Facebook review</span></footer>
+  </blockquote>
+  <div class="others">
+    {
+      others.map((o) => (
+        <blockquote data-reveal>
+          <p>{o.quote}</p>
+          <footer>{o.name} <span>Facebook review</span></footer>
+        </blockquote>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .tm {
+    background: #faf8f3;
+    color: #1a1a1a;
+    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    line-height: 1.05;
+    margin: 0 0 3rem;
+  }
+  blockquote {
+    margin: 0;
+  }
+  blockquote p {
+    margin: 0;
+  }
+  footer {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-top: 1.25rem;
+  }
+  footer span {
+    opacity: 0.5;
+    margin-left: 0.75rem;
+  }
+  .featured p {
+    font-family: var(--font-heading);
+    font-size: clamp(1.35rem, 2.6vw, 2rem);
+    line-height: 1.35;
+    max-width: 52rem;
+  }
+  .others {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 2.5rem;
+    margin-top: 4rem;
+    padding-top: 2.5rem;
+    border-top: 1px dashed rgba(26, 26, 26, 0.3);
+  }
+  .others p {
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    line-height: 1.75;
+    opacity: 0.8;
+  }
+</style>

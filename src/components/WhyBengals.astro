@@ -1,0 +1,114 @@
+---
+import { Image } from 'astro:assets';
+import kita from '../assets/img/cats/kita.webp';
+
+const traits = [
+  { n: '01', title: 'Rosette markings', text: 'A coat as unique as a fingerprint, with wild-inspired patterns impossible to replicate.' },
+  { n: '02', title: 'Wild by nature', text: 'Descended from Asian Leopard Cats, with an untamed spirit refined for home life.' },
+  { n: '03', title: 'Remarkable intelligence', text: 'Quick to learn, endlessly curious and deeply engaged with their world.' },
+  { n: '04', title: 'Devoted companions', text: 'Bengals form lasting bonds: loyal, affectionate and uniquely present.' },
+];
+---
+
+<section class="why" id="why-bengals">
+  <div class="why-photo" data-reveal>
+    <Image src={kita} alt="Kita, a golden Bengal queen" widths={[500, 800, 1100]} sizes="(min-width:1024px) 40vw, 90vw" loading="lazy" />
+  </div>
+  <div class="why-copy">
+    <p class="eyebrow" data-reveal>Bengal excellence</p>
+    <h2 data-reveal>Why <em>Bengals?</em></h2>
+    <i class="dash" data-dash aria-hidden="true"></i>
+    <ol class="traits">
+      {
+        traits.map((t) => (
+          <li data-reveal>
+            <span class="num">{t.n}</span>
+            <div>
+              <h3>{t.title}</h3>
+              <p>{t.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .why {
+    background: #faf8f3;
+    color: #1a1a1a;
+    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
+    display: grid;
+    gap: 2.5rem;
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+  .why-photo {
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    background: #e9e4d9;
+  }
+  .why-photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    line-height: 1.05;
+    margin: 0 0 1.5rem;
+  }
+  .traits {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1.75rem;
+  }
+  .traits li {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    gap: 1rem;
+  }
+  .num {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: #b8922a;
+    padding-top: 0.5rem;
+  }
+  h3 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: 1.6rem;
+    line-height: 1.1;
+    margin: 0 0 0.4rem;
+  }
+  .traits p {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    opacity: 0.75;
+    margin: 0;
+  }
+  @media (min-width: 1024px) {
+    .why {
+      grid-template-columns: 5fr 6fr;
+      gap: 6rem;
+      align-items: center;
+    }
+  }
+</style>

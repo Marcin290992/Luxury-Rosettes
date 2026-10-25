@@ -1,0 +1,115 @@
+---
+import emblem from '../assets/logo/logo-emblem.svg';
+---
+
+<footer class="foot">
+  <div class="top">
+    <div class="brand">
+      <img src={emblem.src} alt="" width="44" height="44" loading="lazy" />
+      <div>
+        <p class="name">Luxury Rosettes</p>
+        <p class="tica">TICA registered Bengal cattery</p>
+      </div>
+    </div>
+    <div class="social">
+      <a href="https://www.facebook.com/people/Luxuryrosettes-Bengal-cattery/100091469460702/" target="_blank" rel="noopener noreferrer">Facebook</a>
+      <a href="https://www.instagram.com/luxuryrosettes" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="https://wa.me/447514951289" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+    </div>
+  </div>
+  <i class="dash" aria-hidden="true"></i>
+  <div class="bottom">
+    <nav aria-label="Footer navigation">
+      <a href="/#why-bengals">About</a>
+      <a href="/available-kittens">Kittens</a>
+      <a href="/gallery">Gallery</a>
+      <button type="button" data-contact-trigger>Contact</button>
+      <a href="mailto:luxuryrosettes@yahoo.com">luxuryrosettes@yahoo.com</a>
+    </nav>
+    <p class="copy">© 2025 Luxury Rosettes. All rights reserved.</p>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    background: #faf8f3;
+    color: #1a1a1a;
+    font-family: var(--font-body);
+    padding: 3.5rem 1.5rem 2.5rem;
+    position: relative;
+  }
+  .foot::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #d4af37 50%, transparent);
+  }
+  .top,
+  .bottom {
+    max-width: 72rem;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .brand img {
+    opacity: 0.9;
+  }
+  .name {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    margin: 0;
+  }
+  .tica {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.5;
+    margin: 0.15rem 0 0;
+  }
+  .social,
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.75rem;
+  }
+  .social a,
+  nav a,
+  nav button {
+    all: unset;
+    cursor: pointer;
+    font-size: 0.78rem;
+    color: rgba(26, 26, 26, 0.6);
+    transition: color 0.4s;
+  }
+  .social a:hover,
+  nav a:hover,
+  nav button:hover,
+  .social a:focus-visible,
+  nav a:focus-visible,
+  nav button:focus-visible {
+    color: #b8922a;
+  }
+  .foot .dash {
+    display: block;
+    max-width: 72rem;
+    margin: 2.5rem auto;
+    height: 0;
+    border-top: 1px dashed rgba(26, 26, 26, 0.3);
+  }
+  .copy {
+    font-size: 0.7rem;
+    opacity: 0.4;
+    margin: 0;
+  }
+</style>

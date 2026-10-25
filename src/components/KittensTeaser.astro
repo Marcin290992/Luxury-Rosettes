@@ -1,0 +1,124 @@
+---
+import { Image } from 'astro:assets';
+import candy from '../assets/img/cats/candy.webp';
+import cosmo from '../assets/img/cats/cosmo.webp';
+import charlie from '../assets/img/cats/charlie.webp';
+import chester from '../assets/img/cats/chester.webp';
+
+// Hard-coded for now; later this comes from the CMS
+const kittens = [
+  { name: 'Candy', gender: 'Girl', img: candy, text: 'Curious about everything, with a glittering coat and a soft, affectionate side.' },
+  { name: 'Cosmo', gender: 'Boy', img: cosmo, text: 'A bold little explorer with a true Bengal spirit and a taste for climbing.' },
+  { name: 'Charlie', gender: 'Boy', img: charlie, text: 'Cheeky and clever, always first to work out the new toy.' },
+  { name: 'Chester', gender: 'Boy', img: chester, text: 'The friendliest of the bunch, happy to be part of whatever you are doing.' },
+];
+---
+
+<section class="kit" id="kittens">
+  <div class="kit-head">
+    <p class="eyebrow" data-reveal>Meet the kittens</p>
+    <h2 data-reveal>Waiting for a home</h2>
+  </div>
+  <div class="kit-grid">
+    {
+      kittens.map((k) => (
+        <article class="kit-card" data-reveal>
+          <div class="kit-photo">
+            <Image src={k.img} alt={`${k.name}, a Bengal kitten`} widths={[400, 700]} sizes="(min-width:1024px) 22vw, 70vw" loading="lazy" />
+          </div>
+          <h3>{k.name}</h3>
+          <p class="kit-meta">{k.gender}</p>
+          <p class="kit-text">{k.text}</p>
+        </article>
+      ))
+    }
+  </div>
+  <p class="kit-more" data-reveal><a href="/available-kittens">View all kittens</a></p>
+</section>
+
+<style>
+  .kit {
+    background: #faf8f3;
+    color: #1a1a1a;
+    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    line-height: 1.05;
+    margin: 0 0 3rem;
+  }
+  .kit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 2rem;
+  }
+  .kit-photo {
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    background: #e9e4d9;
+  }
+  .kit-photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .kit-card:hover .kit-photo :global(img) {
+    transform: scale(1.04);
+  }
+  h3 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: 1.8rem;
+    line-height: 1.1;
+    margin: 1rem 0 0.15rem;
+  }
+  .kit-meta {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #b8922a;
+    margin: 0 0 0.5rem;
+  }
+  .kit-text {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    line-height: 1.65;
+    opacity: 0.75;
+    margin: 0;
+  }
+  .kit-more {
+    margin: 3rem 0 0;
+    text-align: center;
+  }
+  .kit-more a {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #1a1a1a;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(26, 26, 26, 0.4);
+    padding-bottom: 0.4rem;
+    transition: color 0.4s, border-color 0.4s;
+  }
+  .kit-more a:hover {
+    color: #b8922a;
+    border-color: #b8922a;
+  }
+</style>

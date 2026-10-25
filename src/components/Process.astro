@@ -1,0 +1,112 @@
+---
+// Steps taken from the cattery's own FAQ answers
+const steps = [
+  { title: 'Consultation', text: 'A short conversation to understand your lifestyle and what you are looking for.' },
+  { title: 'Application & contract', text: 'A simple application, then a contract that sets out everything clearly.' },
+  { title: 'Deposit', text: 'A deposit secures your chosen kitten.' },
+  { title: 'Updates', text: 'Regular photos and videos while your kitten grows, until collection day.' },
+  { title: 'Collection', text: 'Ready at 12 to 14 weeks, fully vaccinated, with a written health guarantee.' },
+  { title: 'Lifelong support', text: 'Guidance on nutrition, behaviour and health for as long as you need it.' },
+];
+---
+
+<section class="process" id="process">
+  <p class="eyebrow" data-reveal>Before you decide</p>
+  <h2 data-reveal>From first message<br />to your kitten at home</h2>
+  <ol class="steps">
+    {
+      steps.map((s) => (
+        <li data-reveal>
+          <h3>{s.title}</h3>
+          <p>{s.text}</p>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<style>
+  .process {
+    background: #faf8f3;
+    color: #1a1a1a;
+    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    line-height: 1.05;
+    margin: 0 0 3rem;
+  }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2rem;
+    counter-reset: step;
+    border-left: 1px dashed rgba(26, 26, 26, 0.3);
+    padding-left: 1.75rem;
+  }
+  .steps li {
+    position: relative;
+    counter-increment: step;
+  }
+  .steps li::before {
+    content: '';
+    position: absolute;
+    left: calc(-1.75rem - 5px);
+    top: 0.55rem;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #faf8f3;
+    border: 1px solid #1a1a1a;
+  }
+  h3 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: 1.6rem;
+    line-height: 1.1;
+    margin: 0 0 0.4rem;
+  }
+  .steps p {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    opacity: 0.75;
+    margin: 0;
+    max-width: 34rem;
+  }
+  /* wide screens: the line runs along the top, steps sit in a row */
+  @media (min-width: 1024px) {
+    .steps {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 1.5rem;
+      border-left: 0;
+      padding-left: 0;
+      border-top: 1px dashed rgba(26, 26, 26, 0.3);
+      padding-top: 2rem;
+    }
+    .steps li::before {
+      left: 0;
+      top: calc(-2rem - 5px);
+    }
+    h3 {
+      font-size: 1.35rem;
+    }
+    .steps p {
+      font-size: 0.82rem;
+    }
+  }
+</style>

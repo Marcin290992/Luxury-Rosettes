@@ -1,0 +1,98 @@
+---
+---
+
+<section class="end" id="enquire">
+  <p class="eyebrow" data-reveal>Your Bengal awaits</p>
+  <h2 data-reveal>Ready to meet<br />your kitten?</h2>
+  <div class="ctas" data-reveal>
+    <a class="cta cta--gold" href="/available-kittens">View available kittens</a>
+    <button type="button" class="cta" data-contact-trigger>Get in touch</button>
+  </div>
+</section>
+
+<style>
+  .end {
+    background: #0d0b09;
+    color: #efe9dc;
+    text-align: center;
+    min-height: 80vh;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    padding: clamp(5rem, 14vh, 9rem) 1.5rem;
+  }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 1.25rem;
+  }
+  h2 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(2.6rem, 7vw, 5.5rem);
+    line-height: 1.02;
+    margin: 0 0 2.5rem;
+  }
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+  .cta {
+    all: unset;
+    box-sizing: border-box;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #efe9dc;
+    border: 1px solid rgba(239, 233, 220, 0.5);
+    border-radius: 999px;
+    padding: 1.05rem 1.9rem;
+    transition: color 0.6s cubic-bezier(0.65, 0, 0.35, 1), border-color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .cta::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    background: #d4af37;
+    translate: 0 101%;
+    transition: translate 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .cta--gold {
+    background: #d4af37;
+    border-color: #d4af37;
+    color: #1a1410;
+  }
+  .cta--gold::before {
+    background: #efe9dc;
+  }
+  .cta:hover,
+  .cta:focus-visible {
+    color: #1a1410;
+    border-color: #d4af37;
+  }
+  .cta:hover::before,
+  .cta:focus-visible::before {
+    translate: 0 0;
+  }
+  .cta--gold:hover,
+  .cta--gold:focus-visible {
+    border-color: #efe9dc;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cta,
+    .cta::before {
+      transition-duration: 0.01ms;
+    }
+  }
+</style>

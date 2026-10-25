@@ -1,0 +1,116 @@
+---
+// Hard-coded for now; later this comes from the CMS
+const faqs = [
+  { q: 'How much does a Bengal kitten cost?', a: 'Pricing varies based on lineage, markings, and show potential. Please contact us directly for current availability and personalised pricing. Each kitten is individually assessed for quality and temperament.' },
+  { q: 'Are your kittens health tested?', a: 'Yes. All kittens receive comprehensive health testing including HCM and PK-Def screening, a full veterinary examination, and age-appropriate vaccinations. Every kitten leaves with a written health guarantee.' },
+  { q: 'What is the adoption process?', a: 'We begin with a short consultation to understand your lifestyle, followed by an application and contract. A deposit secures your chosen kitten, after which you receive regular updates, photos, and videos until collection day.' },
+  { q: 'Do you offer shipping and delivery?', a: 'We offer ground transport within the UK and a flight nanny service for international families. Personal collection at our location is always preferred. Contact us to discuss timing and logistics.' },
+  { q: 'What age do kittens go to their new homes?', a: 'Our kittens are ready at 12 to 14 weeks. This ensures a complete vaccination course, proper socialisation with mother and littermates, and the confidence and independence your kitten needs to settle into your home.' },
+  { q: 'What care do Bengal cats require?', a: 'Bengals thrive on high-quality protein-rich food, daily interactive play, and mental enrichment such as climbing structures and puzzle toys. Weekly brushing keeps their coat in condition. We provide a full care guide with every kitten.' },
+  { q: 'Can I visit your cattery before adopting?', a: 'Approved applicants are warmly welcome to visit by appointment. You will meet our cats and kittens, see our home environment, and ask any questions in person. Biosecurity protocols are in place to protect our cats.' },
+  { q: 'What support do you offer after adoption?', a: "We remain available for guidance throughout your Bengal's lifetime: nutrition, behaviour, health, and anything else that arises. We also love receiving updates as your kitten grows." },
+];
+---
+
+<section class="faq" id="faq">
+  <p class="eyebrow" data-reveal>Before you decide</p>
+  <h2 data-reveal>Questions, answered</h2>
+  <div class="list">
+    {
+      faqs.map((f) => (
+        <details data-reveal>
+          <summary>
+            <span>{f.q}</span>
+            <i aria-hidden="true"></i>
+          </summary>
+          <p>{f.a}</p>
+        </details>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .faq {
+    background: #faf8f3;
+    color: #1a1a1a;
+    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
+    max-width: 48rem;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    line-height: 1.05;
+    margin: 0 0 3rem;
+  }
+  details {
+    border-top: 1px dashed rgba(26, 26, 26, 0.3);
+  }
+  details:last-child {
+    border-bottom: 1px dashed rgba(26, 26, 26, 0.3);
+  }
+  summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.4rem 0;
+    font-family: var(--font-heading);
+    font-size: 1.45rem;
+    line-height: 1.2;
+    transition: color 0.4s;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary:hover {
+    color: #b8922a;
+  }
+  summary:focus-visible {
+    outline: 1px solid #b8922a;
+    outline-offset: 4px;
+  }
+  summary i {
+    position: relative;
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+  summary i::before,
+  summary i::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: currentColor;
+    transition: transform 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  summary i::after {
+    transform: rotate(90deg);
+  }
+  details[open] summary i::after {
+    transform: rotate(0deg);
+  }
+  details p {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    line-height: 1.8;
+    opacity: 0.78;
+    margin: 0 0 1.6rem;
+    max-width: 40rem;
+  }
+</style>

@@ -6,14 +6,14 @@ import Stage from '../components/Stage.astro';
 import ScrollExpand from '../components/ScrollExpand.astro';
 import CatsRow from '../components/CatsRow.astro';
 import Corridor from '../components/Corridor.astro';
+import WhyBengals from '../components/WhyBengals.astro';
+import Process from '../components/Process.astro';
+import KittensTeaser from '../components/KittensTeaser.astro';
+import Testimonials from '../components/Testimonials.astro';
+import FAQ from '../components/FAQ.astro';
+import Closing from '../components/Closing.astro';
+import Footer from '../components/Footer.astro';
 import expandImg from '../assets/img/expand.webp';
-
-// Placeholder copy — to be replaced with real content
-const pillars = [
-  { title: 'Champion bloodlines', text: 'Placeholder text about the lineage and the cats behind every litter.' },
-  { title: 'Health tested', text: 'Placeholder text about the screening and care each kitten receives.' },
-  { title: 'Raised with love', text: 'Placeholder text about kittens growing up in our home, among people.' },
-];
 ---
 
 <Layout>
@@ -27,24 +27,14 @@ const pillars = [
   <CatsRow />
   <Corridor />
   <main class="content">
-
-    <section class="pillars">
-      {
-        pillars.map((p) => (
-          <article class="pillar" data-reveal>
-            <h2>{p.title}</h2>
-            <p>{p.text}</p>
-          </article>
-        ))
-      }
-    </section>
-
-    <section class="closing">
-      <i class="dash" data-dash aria-hidden="true" />
-      <h2 data-reveal>Meet our kittens</h2>
-      <p data-reveal>Placeholder call to action.</p>
-    </section>
+    <WhyBengals />
+    <Process />
+    <KittensTeaser />
+    <Testimonials />
+    <FAQ />
   </main>
+  <Closing />
+  <Footer />
 </Layout>
 
 <script>
@@ -98,43 +88,5 @@ const pillars = [
   .content {
     background: #faf8f3;
     font-family: var(--font-heading);
-  }
-  section {
-    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
-    max-width: 72rem;
-    margin: 0 auto;
-  }
-  .pillars {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-    gap: 2.5rem;
-  }
-  .closing .dash {
-    margin-bottom: 4rem;
-  }
-  .pillar h2 {
-    font-size: 1.75rem;
-    font-weight: 400;
-    margin: 0 0 0.75rem;
-  }
-  .pillar p {
-    font-size: 1.15rem;
-    line-height: 1.5;
-    margin: 0;
-  }
-  .closing {
-    text-align: center;
-    min-height: 60vh;
-    display: grid;
-    align-content: center;
-  }
-  .closing h2 {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 400;
-    margin: 0 0 1rem;
-  }
-  .closing p {
-    font-size: 1.25rem;
-    margin: 0;
   }
 </style>

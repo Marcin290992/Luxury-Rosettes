@@ -28,27 +28,36 @@ const items = [
 ---
 
 <section class="cor" id="corridor" aria-label="Our story and awards">
-  <div class="cor-stage">
-    <div class="cor-intro">
-      <p class="cor-eyebrow">Our story &amp; awards</p>
-      <h2>A passion<br />worth showing</h2>
+  <div class="cor-track">
+    <div class="cor-stage">
+      <div class="cor-intro">
+        <p class="cor-eyebrow">Our story &amp; awards</p>
+        <h2>A passion<br />worth showing</h2>
+      </div>
+
+      {
+        items.map((it, i) => (
+          <figure class="cor-item">
+            <div class="cor-frame">
+              <Image src={it.img} alt={it.title} widths={[500, 800, 1100]} sizes="(min-width:1024px) 30vw, 90vw" loading="lazy" draggable="false" />
+            </div>
+            <figcaption class="cor-cap">
+              <p class="cor-eyebrow">{it.eyebrow}</p>
+              <h3>{it.title}</h3>
+              <p class="cor-text">{it.text}</p>
+            </figcaption>
+          </figure>
+        ))
+      }
+
+      <div class="cor-progress" aria-hidden="true">
+        <div class="cor-line"><div class="cor-fill"></div></div>
+        <span class="cor-count">01</span>
+      </div>
     </div>
+  </div>
 
-    {
-      items.map((it, i) => (
-        <figure class="cor-item" data-side={i % 2 === 0 ? 'l' : 'r'}>
-          <div class="cor-frame">
-            <Image src={it.img} alt={it.title} widths={[500, 800, 1100]} sizes="(min-width:1024px) 30vw, 90vw" loading="lazy" />
-          </div>
-          <figcaption class="cor-cap">
-            <p class="cor-eyebrow">{it.eyebrow}</p>
-            <h3>{it.title}</h3>
-            <p class="cor-text">{it.text}</p>
-          </figcaption>
-        </figure>
-      ))
-    }
-
+  <div class="cor-end">
     <div class="cor-finale">
       <Image class="cor-finale-img" src={finale} alt="Bengal kittens" widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
       <div class="cor-finale-scrim"></div>
@@ -62,19 +71,11 @@ const items = [
         </div>
       </div>
     </div>
-
-    <div class="cor-progress" aria-hidden="true">
-      <div class="cor-line"><div class="cor-fill"></div></div>
-      <span class="cor-count">01</span>
-    </div>
   </div>
 </section>
 
 <script>
-  import gsap from 'gsap';
-  import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-  gsap.registerPlugin(ScrollTrigger);
+  import { createDolly, type Dolly } from '../scripts/dolly-gallery';
 
   const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
   const smooth = (e0: number, e1: number, x: number) => {
@@ -82,112 +83,98 @@ const items = [
     return t * t * (3 - 2 * t);
   };
 
-  const mm = gsap.matchMedia();
-  mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
-    const section = document.getElementById('corridor')!;
-    const items = gsap.utils.toArray<HTMLElement>('.cor-item', section);
-    const intro = section.querySelector<HTMLElement>('.cor-intro')!;
-    const fill = section.querySelector<HTMLElement>('.cor-fill')!;
-    const fin = section.querySelector<HTMLElement>('.cor-finale')!;
-    const finImg = section.querySelector<HTMLElement>('.cor-finale-img')!;
-    const finScrim = section.querySelector<HTMLElement>('.cor-finale-scrim')!;
-    const finCopy = section.querySelector<HTMLElement>('.cor-finale-copy')!;
-    const progress = section.querySelector<HTMLElement>('.cor-progress')!;
-    const count = section.querySelector<HTMLElement>('.cor-count')!;
-    const n = items.length;
+  const section = document.getElementById('corridor')!;
+  const stage = section.querySelector<HTMLElement>('.cor-stage')!;
+  const tiles = Array.from(section.querySelectorAll<HTMLElement>('.cor-item'));
+  const intro = section.querySelector<HTMLElement>('.cor-intro')!;
+  const fill = section.querySelector<HTMLElement>('.cor-fill')!;
+  const count = section.querySelector<HTMLElement>('.cor-count')!;
+  const fin = section.querySelector<HTMLElement>('.cor-finale')!;
+  const finImg = section.querySelector<HTMLElement>('.cor-finale-img')!;
+  const finScrim = section.querySelector<HTMLElement>('.cor-finale-scrim')!;
+  const finCopy = section.querySelector<HTMLElement>('.cor-finale-copy')!;
+
+  const PX_PER_STEP = 560; // page scroll per photo
+  const LEAD = 2; // empty corridor before the first photo: only the title
+  const SPACING = 600; // depth between photos, in px
+
+  const MIN = -LEAD * SPACING;
+  const MAX = (tiles.length - 1) * SPACING;
+
+  let dolly: Dolly | undefined;
+  let onScroll: (() => void) | undefined;
+
+  // Plain sticky pin: the section is taller than the screen and the stage sticks while the page scrolls past.
+  // The scroll position only sets the camera target; the dolly eases towards it.
+  const start = () => {
+    const travel = (tiles.length - 1 + LEAD) * PX_PER_STEP;
+    section.style.setProperty('--cor-travel', `${travel}px`);
     section.dataset.pinned = '';
 
-    // A camera moves along a corridor. Item i sits at depth i; with the camera at c its distance is r = i - c.
-    // Perspective: everything shrinks towards the centre with distance and grows past the screen edges as it
-    // goes by, so the photos stream out to the left and right.
-    const FOCAL = 0.9;
-    const START = -1.3; // camera before the first photo: only the title
-    const LAST = n - 1 + 0.15; // last photo in place
-    const FIN = 1.7; // camera travel the finale takes: the kittens photo opens up from the middle to fill the screen
-    const END = LAST + FIN + 0.35; // ...and then rests, so the call to action can be read
-    const PX_PER_STEP = 430;
-    const SIDE = 27; // vw from the centre
-    const rise = (i: number) => [-7, 5, -3, 8, -6][i % 5]; // vh, so the photos don't sit on one line
-
-    const render = (c: number) => {
+    dolly = createDolly(stage, tiles, {
+      itemWidth: Math.min(380, window.innerHeight * 0.42),
+      spacing: SPACING,
+      spread: 1.5,
+      scatter: 0.12,
+      revealRange: 1.5,
+      passRange: 0.6,
+      lead: LEAD,
+      grayscale: 0,
       // the title leaves first; only then do the photos fade in, so the two never overlap
-      const lead = clamp(c - START, 0, 1.3);
-      const gate = smooth(0.55, 1.1, lead);
-      items.forEach((el, i) => {
-        const r = i - c;
-        const f = FOCAL / (FOCAL + r);
-        const visible = r > -0.62 && r < 3.4;
-        el.style.visibility = visible ? 'visible' : 'hidden';
-        if (!visible) return;
-        const side = el.dataset.side === 'l' ? -1 : 1;
-        const x = side * SIDE * f;
-        const y = rise(i) * f;
-        const alpha = smooth(3.4, 2.5, r) * smooth(-0.62, -0.3, r) * gate;
-        const blur = r > 0 ? Math.min(7, r * 2.2) : Math.min(10, -r * 22);
-        el.style.opacity = alpha.toFixed(3);
-        el.style.transform = `translate3d(calc(-50% + ${x.toFixed(2)}vw), calc(-50% + ${y.toFixed(2)}vh), 0) scale(${f.toFixed(4)})`;
-        el.style.filter = blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : 'none';
-        el.style.zIndex = String(Math.round(f * 100));
-        const cap = el.querySelector<HTMLElement>('.cor-cap')!;
-        cap.style.opacity = (smooth(0.75, 0.2, r) * smooth(-0.5, -0.15, r)).toFixed(3);
-      });
-      intro.style.opacity = (1 - smooth(0.05, 0.6, lead)).toFixed(3);
-      intro.style.transform = `translate3d(0,0,0) scale(${(1 + lead * 0.5).toFixed(3)})`;
-      fill.style.clipPath = `inset(0% ${((1 - clamp((c - START) / (END - START), 0, 1)) * 100).toFixed(2)}% 0% 0%)`;
-      // finale: a framed photo grows from the centre until it fills the screen, then the call to action arrives
-      const p = clamp((c - LAST) / FIN, 0, 1);
-      const e = smooth(0, 1, p);
-      const ix = 36 * (1 - e);
-      const iy = 33 * (1 - e);
-      fin.style.opacity = smooth(0, 0.18, p).toFixed(3);
-      fin.style.visibility = p > 0 ? 'visible' : 'hidden';
-      fin.style.clipPath = `inset(${iy.toFixed(2)}% ${ix.toFixed(2)}% ${iy.toFixed(2)}% ${ix.toFixed(2)}% round ${(14 * (1 - e)).toFixed(1)}px)`;
-      finImg.style.transform = `scale(${(1.45 - 0.45 * e).toFixed(4)})`;
-      finScrim.style.opacity = (0.65 * smooth(0.45, 0.95, p)).toFixed(3);
-      const copyIn = smooth(0.72, 1, p);
+      gate: (offset) => smooth(-1.0, -0.4, offset / SPACING),
+      onIndexChange: (i) => {
+        count.textContent = String(i + 1).padStart(2, '0');
+      },
+      onFrame: (offset) => {
+        const e = offset / SPACING;
+        intro.style.opacity = (1 - smooth(-LEAD + 0.3, -1.1, e)).toFixed(3);
+        intro.style.transform = `scale(${(1 + clamp((e + LEAD) / 1.5, 0, 1) * 0.5).toFixed(3)})`;
+        fill.style.clipPath = `inset(0% ${((1 - clamp((offset - MIN) / (MAX - MIN), 0, 1)) * 100).toFixed(2)}% 0% 0%)`;
+      },
+    });
+
+    onScroll = () => {
+      const d = dolly!;
+      const rect = section.getBoundingClientRect();
+      const p = clamp(-rect.top / travel, 0, 1);
+      d.setTarget(d.min + p * (d.max - d.min));
+
+      // finale: a framed photo grows as it scrolls in, then the call to action arrives
+      const f = clamp(1 - fin.getBoundingClientRect().top / window.innerHeight, 0, 1);
+      const g = smooth(0, 1, f);
+      const ix = 36 * (1 - g);
+      const iy = 33 * (1 - g);
+      fin.style.clipPath = `inset(${iy.toFixed(2)}% ${ix.toFixed(2)}% ${iy.toFixed(2)}% ${ix.toFixed(2)}% round ${(14 * (1 - g)).toFixed(1)}px)`;
+      finImg.style.transform = `scale(${(1.45 - 0.45 * g).toFixed(4)})`;
+      finScrim.style.opacity = (0.65 * smooth(0.45, 0.95, f)).toFixed(3);
+      const copyIn = smooth(0.72, 1, f);
       finCopy.style.opacity = copyIn.toFixed(3);
       finCopy.style.transform = `translate3d(0, ${((1 - copyIn) * 22).toFixed(1)}px, 0)`;
       finCopy.style.pointerEvents = copyIn > 0.6 ? 'auto' : 'none';
-      progress.style.opacity = (1 - smooth(0.1, 0.4, p)).toFixed(3);
-      count.textContent = String(clamp(Math.round(c), 0, n - 1) + 1).padStart(2, '0');
     };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    onScroll();
+  };
 
-    // Built after the web fonts, in the same event as the stage and the cats row (this script comes later in the
-    // page, so its listener runs last): ScrollTrigger needs pins created in page order, otherwise this pin
-    // measures its start before the ones above it exist and the page jumps straight to it.
-    let ctx: gsap.Context | undefined;
-    let cancelled = false;
-    const cam = { c: START };
-    render(START);
-    document.fonts.ready.then(() => {
-      if (cancelled) return;
-      ctx = gsap.context(() => {
-        gsap.to(cam, {
-          c: END,
-          ease: 'none',
-          onUpdate: () => render(cam.c),
-          scrollTrigger: {
-            trigger: section,
-            start: 'top top',
-            end: () => `+=${(END - START) * PX_PER_STEP}`,
-            pin: true,
-            scrub: 1,
-            invalidateOnRefresh: true,
-          },
-        });
-      }, section);
-    });
+  const stop = () => {
+    if (onScroll) {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    }
+    dolly?.destroy();
+    dolly = undefined;
+    onScroll = undefined;
+    delete section.dataset.pinned;
+    section.style.removeProperty('--cor-travel');
+    [intro, fill, fin, finImg, finScrim, finCopy].forEach((el) => el.removeAttribute('style'));
+  };
 
-    return () => {
-      cancelled = true;
-      ctx?.revert();
-      delete section.dataset.pinned;
-      section
-        .querySelectorAll<HTMLElement>('.cor-item, .cor-cap, .cor-intro, .cor-fill')
-        .forEach((el) => el.removeAttribute('style'));
-      section.querySelectorAll<HTMLElement>('.cor-finale, .cor-finale-img, .cor-finale-scrim, .cor-finale-copy, .cor-progress').forEach((el) => el.removeAttribute('style'));
-    };
-  });
+  // Desktop only, and only when motion is allowed; otherwise the photos simply stack.
+  const query = window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)');
+  const sync = () => (query.matches ? !dolly && start() : stop());
+  query.addEventListener('change', sync);
+  sync();
 </script>
 
 <style>
@@ -199,7 +186,7 @@ const items = [
     z-index: 4;
   }
   .cor-stage {
-    padding: clamp(4rem, 10vh, 7rem) 1.5rem;
+    padding: clamp(4rem, 10vh, 7rem) 1.5rem 3rem;
     display: grid;
     gap: 3rem;
   }
@@ -333,13 +320,23 @@ const items = [
     color: #fff;
   }
 
-  /* ---- Desktop: pinned corridor (script sets data-pinned) ---- */
+  .cor-end {
+    padding: 0 1.5rem clamp(4rem, 10vh, 7rem);
+  }
+
+  /* ---- Desktop: sticky corridor (script sets data-pinned) ---- */
+  .cor[data-pinned] .cor-track {
+    height: calc(100vh + var(--cor-travel));
+  }
   .cor[data-pinned] .cor-stage {
-    position: relative;
+    position: sticky;
+    top: 0;
     height: 100vh;
     padding: 0;
     overflow: hidden;
     display: block;
+    perspective: 1000px;
+    touch-action: pan-y;
   }
   .cor[data-pinned] .cor-intro {
     position: absolute;
@@ -355,12 +352,21 @@ const items = [
     position: absolute;
     left: 50%;
     top: 50%;
-    width: min(28vw, 44vh);
-    will-change: transform, opacity, filter;
+    will-change: transform, opacity;
     visibility: hidden;
+    backface-visibility: hidden;
+  }
+  .cor[data-pinned] .cor-frame {
+    height: 100%;
+    aspect-ratio: auto;
   }
   .cor[data-pinned] .cor-cap {
-    will-change: opacity;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    /* captions only read when their photo is near the camera */
+    opacity: calc(var(--a, 0) * var(--a, 0) * var(--a, 0));
   }
   .cor[data-pinned] .cor-cap h3 {
     font-size: clamp(1.4rem, 2vw, 2.2rem);
@@ -376,14 +382,14 @@ const items = [
     font-family: var(--font-body);
     font-size: 0.75rem;
   }
+  .cor[data-pinned] .cor-end {
+    padding: 0;
+  }
   .cor[data-pinned] .cor-finale {
-    position: absolute;
-    inset: 0;
+    height: 100vh;
     aspect-ratio: auto;
     border-radius: 0;
-    z-index: 300;
-    visibility: hidden;
-    will-change: clip-path, opacity;
+    will-change: clip-path;
   }
   .cor[data-pinned] .cor-finale :global(.cor-finale-img) {
     will-change: transform;

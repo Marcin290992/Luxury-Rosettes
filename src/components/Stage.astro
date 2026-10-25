@@ -204,30 +204,18 @@ import Story from './Story.astro';
     const extras = steps.map((s) => gsap.utils.toArray<HTMLElement>('.eyebrow, .cta', s));
     const last = steps.length - 1;
 
-    // geometry in px, re-measured on resize (functions); the photo band is a share of the screen height
-    const NAV = 104; // room for the nav pill
-    const band = () => window.innerHeight * (window.innerWidth >= 700 ? 0.46 : 0.42);
-    const setVars = () => {
-      story.style.setProperty('--nav', `${NAV}px`);
-      story.style.setProperty('--band', `${band()}px`);
-    };
-    setVars();
-    const box = (l: number, t: number, w: number, h: number) => ({
-      left: () => l * window.innerWidth,
-      top: () => NAV + t * band(),
-      width: () => w * window.innerWidth,
-      height: () => h * band(),
-    });
+    // Sizes and vertical positions of the photos are plain CSS (svh units: they do NOT change when the mobile address
+    // bar slides away, so nothing can jump at the first swipe). The only thing that moves is `left`, which depends
+    // on the width alone.
     const LAYOUT = {
-      big: [box(0.34, 0, 0.62, 1), box(0.04, 0, 0.62, 1), box(0.34, 0, 0.62, 1)],
-      small: [box(0.04, 0.5, 0.37, 0.5), box(0.59, 0.5, 0.37, 0.5), box(0.04, 0.5, 0.37, 0.5)],
+      big: [0.34, 0.04, 0.34].map((l) => ({ left: () => l * window.innerWidth })),
+      small: [0.04, 0.59, 0.04].map((l) => ({ left: () => l * window.innerWidth })),
     };
     const place = () => {
-      gsap.set(bigShape, { ...LAYOUT.big[0], right: 'auto', bottom: 'auto' });
-      gsap.set(smallShape, { ...LAYOUT.small[0], right: 'auto', bottom: 'auto' });
+      gsap.set(bigShape, LAYOUT.big[0]);
+      gsap.set(smallShape, LAYOUT.small[0]);
     };
     const onRefreshInit = () => {
-      setVars();
       if ('mobile' in story.dataset) place();
     };
     ScrollTrigger.addEventListener('refreshInit', onRefreshInit);
@@ -289,8 +277,6 @@ import Story from './Story.astro';
       tl.kill();
       unstick(story, storyBox);
       delete story.dataset.mobile;
-      story.style.removeProperty('--nav');
-      story.style.removeProperty('--band');
       gsap.set(
         [steps, bigShape, smallShape, bigLayers, smallLayers, nums, words.flat(), extras.flat(), story.querySelector('.fill')],
         { clearProps: 'all' },

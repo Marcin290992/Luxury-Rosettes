@@ -220,13 +220,31 @@ const small = [
     display: block;
     overflow: hidden;
   }
+  /* svh = the viewport with the address bar showing; unlike px read from the script it never changes while scrolling */
+  .story[data-mobile] {
+    --nav: 104px;
+    --band: calc(100svh * 0.42);
+  }
+  @media (min-width: 700px) {
+    .story[data-mobile] {
+      --band: calc(100svh * 0.46);
+    }
+  }
   .story[data-mobile] .big {
     clip-path: url(#clipBig);
     z-index: 1;
+    top: var(--nav);
+    height: var(--band);
+    width: 62vw;
+    left: 34vw;
   }
   .story[data-mobile] .small {
     clip-path: url(#clipSmall);
     z-index: 2;
+    top: calc(var(--nav) + var(--band) * 0.5);
+    height: calc(var(--band) * 0.5);
+    width: 37vw;
+    left: 4vw;
   }
   .story[data-mobile] .layer {
     position: absolute;
@@ -238,7 +256,7 @@ const small = [
     position: absolute;
     left: 6vw;
     right: 6vw;
-    top: calc(var(--nav, 104px) + var(--band, 42svh) + 1.6rem);
+    top: calc(var(--nav) + var(--band) + 1.6rem);
     display: grid;
     gap: 0;
     z-index: 3;

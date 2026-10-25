@@ -235,7 +235,10 @@ import Story from './Story.astro';
     const FIRST = 0.8;
     const GAP = 1.8;
     const DUR = 1.4;
-    const END = FIRST + GAP * last + DUR + 0.6;
+    const SETTLED = 1.9; // after this many time units a step's words and button are all in place
+    const END = FIRST + GAP * last + SETTLED + 0.2;
+    // resting points as a share of the pin: step 01 (the start), then each later step once it has settled
+    const REST = [0, ...Array.from({ length: last }, (_, k) => (FIRST + GAP * k + SETTLED) / END), 1];
     const tl = gsap.timeline({
       defaults: { immediateRender: false },
       scrollTrigger: {
@@ -244,6 +247,8 @@ import Story from './Story.astro';
         end: () => `+=${storyBox.offsetHeight - story.offsetHeight}`,
         invalidateOnRefresh: true,
         scrub: 0.7, // the animation eases towards the finger instead of following it 1:1
+        // the brake: after the finger lifts, the scroll settles on the nearest step, never between two
+        snap: { snapTo: REST, duration: { min: 0.2, max: 0.6 }, delay: 0.1, ease: 'power2.inOut' },
       },
     });
     tl.fromTo('.fill', { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: END - FIRST, ease: 'none' }, FIRST);

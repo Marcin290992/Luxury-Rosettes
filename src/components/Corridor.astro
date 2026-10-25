@@ -116,18 +116,18 @@ const items = [
       spacing: SPACING,
       spread: 1.5,
       scatter: 0.12,
-      revealRange: 1.5,
+      revealRange: 3,
       passRange: 0.6,
       lead: LEAD,
       grayscale: 0,
       // the title leaves first; only then do the photos fade in, so the two never overlap
-      gate: (offset) => smooth(-1.0, -0.4, offset / SPACING),
+      gate: (offset) => smooth(-1.3, -0.7, offset / SPACING),
       onIndexChange: (i) => {
         count.textContent = String(i + 1).padStart(2, '0');
       },
       onFrame: (offset) => {
         const e = offset / SPACING;
-        intro.style.opacity = (1 - smooth(-LEAD + 0.3, -1.1, e)).toFixed(3);
+        intro.style.opacity = (1 - smooth(-LEAD + 0.2, -1.4, e)).toFixed(3);
         intro.style.transform = `scale(${(1 + clamp((e + LEAD) / 1.5, 0, 1) * 0.5).toFixed(3)})`;
         fill.style.clipPath = `inset(0% ${((1 - clamp((offset - MIN) / (MAX - MIN), 0, 1)) * 100).toFixed(2)}% 0% 0%)`;
       },
@@ -351,7 +351,7 @@ const items = [
   .cor[data-pinned] .cor-item {
     position: absolute;
     left: 50%;
-    top: 50%;
+    top: 43%;
     will-change: transform, opacity;
     visibility: hidden;
     backface-visibility: hidden;
@@ -366,7 +366,7 @@ const items = [
     left: 0;
     right: 0;
     /* captions only read when their photo is near the camera */
-    opacity: calc(var(--a, 0) * var(--a, 0) * var(--a, 0));
+    opacity: calc(var(--a, 0) * var(--a, 0));
   }
   .cor[data-pinned] .cor-cap h3 {
     font-size: clamp(1.4rem, 2vw, 2.2rem);

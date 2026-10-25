@@ -151,6 +151,8 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
       const ry = eased.x * o.tilt * rush * alpha;
       tile.style.opacity = alpha.toFixed(3);
       tile.style.setProperty('--a', alpha.toFixed(3));
+      // the stage is flattened (overflow hidden), so stack by depth: nearer tiles paint over farther ones
+      tile.style.zIndex = String(Math.round(10000 - depth));
       tile.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, ${(-depth).toFixed(1)}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${swell.toFixed(4)})`;
     });
     if (nearest >= 0 && nearest !== lastIndex) {

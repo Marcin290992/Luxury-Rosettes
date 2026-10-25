@@ -191,7 +191,7 @@ import Story from './Story.astro';
   // eye; step 01 is already in place while the story rises over the cream, so there is never an empty page.
   function buildStoryMobile(story: HTMLElement, heroTl: gsap.core.Timeline, enterAt: number, overlap: number) {
     story.dataset.mobile = '';
-    const STORY_SCREENS = 2.6; // screens the three steps take (the pager moves one step per swipe; this length matters for the scrollbar and keys)
+    const STORY_SCREENS = 3.2; // screens of swiping the three steps take: about a screen per step, fully controlled by the finger
     // The box starts where the hero's box starts (negative margin = the hero's height) and reaches to the end of the story,
     // so the sticky story is stuck in place for the whole time and is simply revealed after the dive.
     const storyBox = stickIn(story, overlap + STORY_SCREENS);
@@ -263,8 +263,6 @@ import Story from './Story.astro';
     const SETTLED = 1.9; // after this many time units a step's words and button are all in place
     // `last` steps means `last` transitions, the last one starting at FIRST + GAP * (last - 1); the timeline ends right after it settles
     const END = FIRST + GAP * (last - 1) + SETTLED + 0.15;
-    // resting points as a share of the pin: step 01 (the start), then each later step once it has settled
-    const REST = [0, ...Array.from({ length: last }, (_, k) => (FIRST + GAP * k + SETTLED) / END), 1];
     const tl = gsap.timeline({
       defaults: { immediateRender: false },
       scrollTrigger: {
@@ -272,9 +270,7 @@ import Story from './Story.astro';
         start: () => heroTl.scrollTrigger!.end, // the steps begin where the hero's pin ends
         end: 'bottom bottom', // the sticky story lets go at the bottom of its box
         invalidateOnRefresh: true,
-        scrub: 0.7, // the animation eases towards the finger instead of following it 1:1
-        // the brake: after the finger lifts, the scroll settles on the nearest step, never between two
-        snap: { snapTo: REST, directional: false, duration: { min: 0.2, max: 0.6 }, delay: 0.1, ease: 'power2.inOut' }, // nearest point: it must not push on from a step the pager has just reached
+        scrub: 0.7, // the animation eases towards the finger: how far you scroll is how far the story goes
       },
     });
     tl.fromTo('.fill', { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: END - FIRST, ease: 'none' }, FIRST);
@@ -302,66 +298,7 @@ import Story from './Story.astro';
     }
     tl.set({}, {}, END); // the last step rests before the page moves on
 
-    // ---- paging: one swipe = one step -----------------------------------------------------------------------------
-    // While the story is pinned, a swipe (or a wheel notch on a tablet with a mouse) is not scrolling: it moves to the next
-    // or the previous step, and further swipes are ignored until it has arrived. At the first step a swipe back, and at the
-    // last step a swipe on, lead out of the story. The scrollbar, keys and the snapping above still work as a fallback.
-    const st = tl.scrollTrigger!;
-    const H = () => window.innerHeight;
-    const stops = () => REST.slice(0, -1).map((r) => st.start + r * (st.end - st.start)); // step 01, 02, 03
-    let busy = false;
-    const proxy = { y: 0 };
-    const goTo = (dir: number) => {
-      if (busy) return;
-      const pts = stops();
-      const y0 = window.scrollY;
-      let i = 0;
-      pts.forEach((pt, k) => { if (Math.abs(pt - y0) < Math.abs(pts[i] - y0)) i = k; });
-      const j = i + dir;
-      const y = j < 0 ? st.start - H() * 0.6 : j > last ? st.end + H() * 0.6 : pts[j];
-      busy = true;
-      proxy.y = y0;
-      gsap.to(proxy, {
-        y,
-        duration: 1.45, // a calm, constant travel time whatever the speed of the swipe
-        ease: 'power2.inOut',
-        onUpdate: () => window.scrollTo(0, proxy.y),
-        onComplete: () => gsap.delayedCall(0.12, () => (busy = false)), // a short pause so the end of the swipe is not read as a new one
-      });
-    };
-    // The decision is taken when the finger LIFTS, and only for a deliberate gesture (a real drag or a flick): a brush or the
-    // start of a slow drag does nothing. A wheel notch (a tablet with a mouse) counts straight away.
-    const MIN_DRAG = 48; // px of finger travel
-    const MIN_FLICK = 700; // px/s
-    const pager = ScrollTrigger.observe({
-      target: window,
-      type: 'touch,wheel',
-      preventDefault: true,
-      allowClicks: true,
-      wheelSpeed: -1, // wheel: positive deltaY = scrolling down, the same sign as the finger moving up
-      onWheel: (self) => {
-        if (busy || Math.abs(self.deltaY) < 4) return;
-        goTo(self.deltaY > 0 ? 1 : -1);
-      },
-      onDragEnd: (self) => {
-        if (busy) return;
-        const travel = self.y - self.startY; // finger moving up (the page going down) is negative
-        const fast = Math.abs(self.velocityY) >= MIN_FLICK;
-        if (Math.abs(travel) < MIN_DRAG && !fast) return;
-        goTo(travel < 0 ? 1 : -1);
-      },
-    });
-    pager.disable();
-    // active only while the story is pinned (so the rest of the page scrolls normally)
-    const inside = () => window.scrollY >= st.start - 2 && window.scrollY <= st.end + 2;
-    const syncPager = () => (inside() ? pager.enable() : pager.disable());
-    st.vars.onToggle = syncPager;
-    ScrollTrigger.addEventListener('scrollEnd', syncPager);
-    syncPager();
-
     return () => {
-      pager.kill();
-      ScrollTrigger.removeEventListener('scrollEnd', syncPager);
       ScrollTrigger.removeEventListener('refreshInit', onRefreshInit);
       tl.scrollTrigger?.kill();
       tl.kill();

@@ -83,8 +83,7 @@ const items = [
 
   const section = document.getElementById('corridor')!;
   const stage = section.querySelector<HTMLElement>('.cor-stage')!;
-  const items = section.querySelectorAll<HTMLElement>('.cor-item').length;
-  const tiles = Array.from(section.querySelectorAll<HTMLElement>('.cor-item'));
+  const allTiles = Array.from(section.querySelectorAll<HTMLElement>('.cor-item'));
   const intro = section.querySelector<HTMLElement>('.cor-intro')!;
   const fill = section.querySelector<HTMLElement>('.cor-fill')!;
   const progress = section.querySelector<HTMLElement>('.cor-progress')!;
@@ -95,17 +94,12 @@ const items = [
   const finCopy = section.querySelector<HTMLElement>('.cor-finale-copy')!;
   const finCtas = section.querySelector<HTMLElement>('.cor-ctas')!;
 
-  const PX_PER_STEP = 560; // page scroll per photo
-  const LEAD = 2;
-  const SPACING = 600; // depth between photos, in px
-  // Finale, in steps from the first photo (the last photo is in place at items - 1): first the words arrive on the
-  // paper, then they turn white as the kittens photo fades in and everything goes dark.
-  const TEXT_IN: [number, number] = [items - 0.5, items + 0.2];
-  const DARKEN: [number, number] = [items + 0.7, items + 1.8];
-  const END_AT = items + 2.7;
+  // Phones and tablets show the seven strongest photos (the others are hidden while the corridor runs): six screens
+  // of swiping would be too many on a phone.
+  const PHONE_KEEP = [0, 1, 3, 4, 5, 6, 9];
 
-  const MIN = -LEAD * SPACING;
-  const MAX = END_AT * SPACING;
+  const SPACING = 600; // depth between photos, in px
+  const LEAD = 2;
   const INK = [26, 26, 26];
   const PAPER = [250, 248, 243];
   const WHITE = [255, 255, 255];
@@ -115,16 +109,30 @@ const items = [
 
   // Plain sticky pin: the section is taller than the screen and the stage sticks while the page scrolls past.
   // The scroll position only sets the camera target; the dolly eases towards it.
-  const start = () => {
+  const start = (phone: boolean) => {
+    const tiles = phone ? PHONE_KEEP.map((k) => allTiles[k]) : allTiles;
+    allTiles.forEach((t) => { if (!tiles.includes(t)) t.hidden = true; });
+    const items = tiles.length;
+    const PX_PER_STEP = phone ? 400 : 560; // page scroll per photo
+    // Finale, in steps from the first photo (the last photo is in place at items - 1): first the words arrive on the
+    // paper, then they turn white as the kittens photo fades in and everything goes dark.
+    const TEXT_IN: [number, number] = [items - 0.5, items + 0.2];
+    const DARKEN: [number, number] = [items + 0.7, items + 1.8];
+    const END_AT = items + 2.7;
+    const MIN = -LEAD * SPACING;
+    const MAX = END_AT * SPACING;
+
     const travel = (END_AT + LEAD) * PX_PER_STEP;
     section.style.setProperty('--cor-travel', `${travel}px`);
     section.dataset.pinned = '';
+    if (phone) section.dataset.phone = '';
 
     dolly = createDolly(stage, tiles, {
-      itemWidth: Math.min(380, window.innerHeight * 0.42),
+      // phones: the photo is as wide as the screen allows and no taller than ~half of what is visible
+      itemWidth: phone ? Math.min(window.innerWidth * 0.72, window.innerHeight * 0.4) : Math.min(380, window.innerHeight * 0.42),
       spacing: SPACING,
-      spread: 1.75,
-      scatter: 0.12,
+      spread: phone ? 0.16 : 1.75, // the photos must stay on a narrow screen
+      scatter: phone ? 0.08 : 0.12,
       revealRange: 3,
       passRange: 0.35,
       lead: LEAD,
@@ -185,14 +193,26 @@ const items = [
     dolly = undefined;
     onScroll = undefined;
     delete section.dataset.pinned;
+    delete section.dataset.phone;
+    allTiles.forEach((t) => (t.hidden = false));
     section.style.removeProperty('--cor-travel');
     [stage, intro, fill, progress, fin, finImg, finScrim, finCopy, finCtas].forEach((el) => el.removeAttribute('style'));
   };
 
-  // Desktop only, and only when motion is allowed; otherwise the photos simply stack.
-  const query = window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)');
-  const sync = () => (query.matches ? !dolly && start() : stop());
-  query.addEventListener('change', sync);
+  // The corridor runs whenever motion is allowed: the full version on laptops, a portrait version on phones and tablets.
+  // With reduced motion the photos simply stack.
+  const motion = window.matchMedia('(prefers-reduced-motion: no-preference)');
+  const wide = window.matchMedia('(min-width: 1024px)');
+  let mode: 'wide' | 'phone' | null = null;
+  const sync = () => {
+    const next = motion.matches ? (wide.matches ? 'wide' : 'phone') : null;
+    if (next === mode) return;
+    stop();
+    mode = next;
+    if (mode) start(mode === 'phone');
+  };
+  motion.addEventListener('change', sync);
+  wide.addEventListener('change', sync);
   sync();
 </script>
 
@@ -343,13 +363,19 @@ const items = [
   }
 
   /* ---- Desktop: sticky corridor (script sets data-pinned) ---- */
+  .cor[data-pinned] {
+    --bar: calc(100vh - 100svh);
+    --bar: calc(100lvh - 100svh);
+  }
   .cor[data-pinned] .cor-track {
     height: calc(100vh + var(--cor-travel));
+    height: calc(100lvh + var(--cor-travel)); /* lvh: constant when the mobile address bar slides away */
   }
   .cor[data-pinned] .cor-stage {
     position: sticky;
     top: 0;
     height: 100vh;
+    height: 100lvh;
     padding: 0;
     overflow: hidden;
     display: block;
@@ -358,7 +384,9 @@ const items = [
   }
   .cor[data-pinned] .cor-intro {
     position: absolute;
-    inset: 0;
+    inset: 0 0 auto 0;
+    height: 100vh;
+    height: 100svh; /* centred on what is visible while the address bar is up */
     display: grid;
     place-content: center;
     will-change: transform, opacity;
@@ -369,7 +397,8 @@ const items = [
   .cor[data-pinned] .cor-item {
     position: absolute;
     left: 50%;
-    top: 43%;
+    top: 43vh;
+    top: 43svh;
     will-change: transform, opacity;
     visibility: hidden;
     backface-visibility: hidden;
@@ -395,7 +424,7 @@ const items = [
     gap: 1.25rem;
     position: absolute;
     left: 4.5vw;
-    bottom: 5vh;
+    bottom: calc(5vh + var(--bar, 0px));
     z-index: 200;
     font-family: var(--font-body);
     font-size: 0.75rem;
@@ -421,12 +450,50 @@ const items = [
     pointer-events: none;
   }
   .cor[data-pinned] .cor-finale-copy {
+    inset: 0 0 auto 0;
+    height: 100vh;
+    height: 100svh;
     opacity: 0;
     pointer-events: none;
     will-change: opacity, transform;
   }
   .cor[data-pinned] .cor-finale-copy h2 {
     font-size: clamp(2.8rem, 6vw, 6rem);
+  }
+  /* ---- Phones and tablets (script adds data-phone) ---- */
+  .cor[data-phone] .cor-progress {
+    left: 8vw;
+    gap: 1rem;
+  }
+  .cor[data-phone] .cor-line {
+    width: min(14rem, 52vw);
+  }
+  .cor[data-phone] .cor-cap {
+    padding: 0 0.25rem;
+  }
+  .cor[data-phone] .cor-cap h3 {
+    font-size: clamp(1.35rem, 5.4vw, 2rem);
+    margin-bottom: 0.3rem;
+  }
+  /* one line of detail under each photo; the long copy stays in the markup for screen readers */
+  .cor[data-phone] .cor-text {
+    font-size: 0.8rem;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cor[data-phone] .cor-cap .cor-eyebrow {
+    margin-bottom: 0.4rem;
+    font-size: 0.65rem;
+  }
+  .cor[data-phone] .cor-finale-copy {
+    padding: 0 8vw;
+  }
+  .cor[data-phone] .cor-finale-copy h2 {
+    font-size: clamp(2.3rem, 10vw, 3.6rem);
   }
   .cor-line {
     position: relative;

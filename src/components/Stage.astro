@@ -118,7 +118,7 @@ import Story from './Story.astro';
     const storyEl = document.getElementById('story')!;
     const DIVE = 1.5; // screens of swiping for the dive itself ...
     const LIFT = 1; // ... and one more while the story rises over the cream (no empty page in between)
-    gsap.set(storyEl, { marginTop: '-100lvh', position: 'relative', zIndex: 2 });
+    const heroBox = stickIn(hero, 1 + DIVE + LIFT);
     const eye = () => JSON.parse(heroImg.dataset.eye ?? '{"ox":40,"oy":40,"w":0}') as { ox: number; oy: number; w: number };
     const origin = () => `${eye().ox}% ${eye().oy}%`;
     // the eye should end up filling most of the short side of the screen (7 on a laptop; a phone needs less)
@@ -130,13 +130,11 @@ import Story from './Story.astro';
     const tl = gsap.timeline({
       defaults: { immediateRender: false },
       scrollTrigger: {
-        trigger: hero,
+        trigger: heroBox,
         start: 'top top',
-        end: () => `+=${Math.round(window.innerHeight * (DIVE + LIFT))}`,
-        pin: true,
-        anticipatePin: 1,
+        end: () => `+=${heroBox.offsetHeight - hero.offsetHeight}`,
         invalidateOnRefresh: true,
-        scrub: 0.8,
+        scrub: 0.35,
       },
     });
     tl.fromTo(
@@ -155,7 +153,7 @@ import Story from './Story.astro';
 
     return () => {
       storyCleanup();
-      gsap.set(storyEl, { clearProps: 'marginTop,position,zIndex' });
+      unstick(hero, heroBox);
       tl.scrollTrigger?.kill();
       tl.kill();
       gsap.set([heroImg, fade, hero.querySelector('.hero-content')], { clearProps: 'all' });
@@ -163,12 +161,36 @@ import Story from './Story.astro';
   });
 
 
+  // On touch screens a GSAP pin switches the element to position:fixed on the main thread, which visibly jitters when the
+  // pin starts and while the page is scrolled by the compositor. Instead the element sits in a tall box and sticks with
+  // CSS (position: sticky), which the compositor handles on its own; GSAP only reads the scroll position.
+  function stickIn(el: HTMLElement, screens: number) {
+    const box = document.createElement('div');
+    box.dataset.stick = '';
+    box.style.cssText = `position:relative;height:calc(100lvh * ${screens})`;
+    el.parentNode!.insertBefore(box, el);
+    box.appendChild(el);
+    el.style.position = 'sticky';
+    el.style.top = '0';
+    return box;
+  }
+  function unstick(el: HTMLElement, box: HTMLElement) {
+    box.parentNode?.insertBefore(el, box);
+    box.remove();
+    el.style.position = '';
+    el.style.top = '';
+  }
+
   // ---- the story on tablets and phones (< 1024px) ----------------------------------------------------
   // Same three steps as on a laptop, in a portrait layout: two photos on top (in the same morphing shapes; they trade
   // sides at every step), the words below, the progress line at the bottom. It is pinned right after the dive into the
   // eye; step 01 is already in place while the story rises over the cream, so there is never an empty page.
   function buildStoryMobile(story: HTMLElement) {
     story.dataset.mobile = '';
+    const STORY_SCREENS = 2.4; // swiping the three steps take
+    const storyBox = stickIn(story, 1 + STORY_SCREENS);
+    storyBox.style.marginTop = '-100lvh'; // rises over the cream while the hero is still stuck
+    storyBox.style.zIndex = '2';
     const q = <T extends HTMLElement>(sel: string) => gsap.utils.toArray<T>(sel, story);
     const steps = q('.step');
     const bigLayers = q('.big .layer');
@@ -229,12 +251,11 @@ import Story from './Story.astro';
     const tl = gsap.timeline({
       defaults: { immediateRender: false },
       scrollTrigger: {
-        trigger: story,
+        trigger: storyBox,
         start: 'top top',
-        end: () => `+=${Math.round(window.innerHeight * 2.4)}`, // about 0.8 of a screen of swiping per step
-        pin: true,
+        end: () => `+=${storyBox.offsetHeight - story.offsetHeight}`, // about 0.8 of a screen of swiping per step
         invalidateOnRefresh: true,
-        scrub: 0.8,
+        scrub: 0.35,
       },
     });
     tl.fromTo('.fill', { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: END - FIRST, ease: 'none' }, FIRST);
@@ -266,6 +287,7 @@ import Story from './Story.astro';
       ScrollTrigger.removeEventListener('refreshInit', onRefreshInit);
       tl.scrollTrigger?.kill();
       tl.kill();
+      unstick(story, storyBox);
       delete story.dataset.mobile;
       story.style.removeProperty('--nav');
       story.style.removeProperty('--band');

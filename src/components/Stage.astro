@@ -297,22 +297,32 @@ import Story from './Story.astro';
       proxy.y = y0;
       gsap.to(proxy, {
         y,
-        duration: 1.15,
+        duration: 1.45, // a calm, constant travel time whatever the speed of the swipe
         ease: 'power2.inOut',
         onUpdate: () => window.scrollTo(0, proxy.y),
         onComplete: () => gsap.delayedCall(0.12, () => (busy = false)), // a short pause so the end of the swipe is not read as a new one
       });
     };
+    // The decision is taken when the finger LIFTS, and only for a deliberate gesture (a real drag or a flick): a brush or the
+    // start of a slow drag does nothing. A wheel notch (a tablet with a mouse) counts straight away.
+    const MIN_DRAG = 48; // px of finger travel
+    const MIN_FLICK = 700; // px/s
     const pager = ScrollTrigger.observe({
       target: window,
       type: 'touch,wheel',
-      tolerance: 14,
       preventDefault: true,
       allowClicks: true,
-      onChangeY: (self) => {
+      wheelSpeed: -1, // wheel: positive deltaY = scrolling down, the same sign as the finger moving up
+      onWheel: (self) => {
+        if (busy || Math.abs(self.deltaY) < 4) return;
+        goTo(self.deltaY > 0 ? 1 : -1);
+      },
+      onDragEnd: (self) => {
         if (busy) return;
-        if (Math.abs(self.deltaY) < 1) return;
-        goTo(self.deltaY > 0 ? -1 : 1); // Observer reports the finger's travel: finger up (page down) = negative
+        const travel = self.y - self.startY; // finger moving up (the page going down) is negative
+        const fast = Math.abs(self.velocityY) >= MIN_FLICK;
+        if (Math.abs(travel) < MIN_DRAG && !fast) return;
+        goTo(travel < 0 ? 1 : -1);
       },
     });
     pager.disable();

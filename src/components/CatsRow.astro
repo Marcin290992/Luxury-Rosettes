@@ -277,10 +277,8 @@ const cats = [
 
     const ctx = gsap.context(() => {
       const imgs = cats.map((c) => c.querySelector<HTMLElement>('img')!);
-      const texts = cats.map((c) => gsap.utils.toArray<HTMLElement>('h3, p', c));
       // the photos are simply there (no mask, no zoom): while the row slides the photo must not also be "appearing"
       gsap.set(imgs, { scale: 1.12 });
-      gsap.set(texts.flat(), { autoAlpha: 0, y: 16 });
       gsap.set(fill, { clipPath: 'inset(0% 100% 0% 0%)' });
 
       const tl = gsap.timeline({
@@ -304,9 +302,8 @@ const cats = [
       cats.forEach((_, j) => {
         const t = j + 1; // its item index
         const end = n - 1; // nothing may run past the last screen, or the whole row would be stretched
-        // the photo drifts against its card (depth); the name and caption fade up shortly before it is centred
-        tl.fromTo(imgs[j], { xPercent: 5 }, { xPercent: -5, duration: Math.min(2, end - (t - 1)), ease: 'none' }, t - 1)
-          .fromTo(texts[j], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.3, stagger: 0.05, ease: 'power2.out' }, t - 0.5);
+        // the only effect left: the photo drifts against its card (depth). Names and captions are simply there.
+        tl.fromTo(imgs[j], { xPercent: 5 }, { xPercent: -5, duration: Math.min(2, end - (t - 1)), ease: 'none' }, t - 1);
       });
       tl.set({}, {}, n - 1);
 

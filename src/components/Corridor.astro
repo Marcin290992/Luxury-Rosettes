@@ -50,25 +50,23 @@ const items = [
         ))
       }
 
+      <div class="cor-finale">
+        <Image class="cor-finale-img" src={finale} alt="Bengal kittens" widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
+        <div class="cor-finale-scrim"></div>
+        <div class="cor-finale-copy">
+          <p class="cor-eyebrow">Your Bengal awaits</p>
+          <h2>Meet your Bengal</h2>
+          <p class="cor-finale-text">Placeholder text. A calm sentence or two about the next litter and how to reserve a kitten.</p>
+          <div class="cor-ctas">
+            <a class="cor-cta cor-cta--solid" href="#">View available kittens</a>
+            <a class="cor-cta" href="#">Join the waiting list</a>
+          </div>
+        </div>
+      </div>
+
       <div class="cor-progress" aria-hidden="true">
         <div class="cor-line"><div class="cor-fill"></div></div>
         <span class="cor-count">01</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="cor-end">
-    <div class="cor-finale">
-      <Image class="cor-finale-img" src={finale} alt="Bengal kittens" widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
-      <div class="cor-finale-scrim"></div>
-      <div class="cor-finale-copy">
-        <p class="cor-eyebrow">Your Bengal awaits</p>
-        <h2>Meet your Bengal</h2>
-        <p class="cor-finale-text">Placeholder text. A calm sentence or two about the next litter and how to reserve a kitten.</p>
-        <div class="cor-ctas">
-          <a class="cor-cta cor-cta--solid" href="#">View available kittens</a>
-          <a class="cor-cta" href="#">Join the waiting list</a>
-        </div>
       </div>
     </div>
   </div>
@@ -85,21 +83,32 @@ const items = [
 
   const section = document.getElementById('corridor')!;
   const stage = section.querySelector<HTMLElement>('.cor-stage')!;
+  const items = section.querySelectorAll<HTMLElement>('.cor-item').length;
   const tiles = Array.from(section.querySelectorAll<HTMLElement>('.cor-item'));
   const intro = section.querySelector<HTMLElement>('.cor-intro')!;
   const fill = section.querySelector<HTMLElement>('.cor-fill')!;
+  const progress = section.querySelector<HTMLElement>('.cor-progress')!;
   const count = section.querySelector<HTMLElement>('.cor-count')!;
   const fin = section.querySelector<HTMLElement>('.cor-finale')!;
   const finImg = section.querySelector<HTMLElement>('.cor-finale-img')!;
   const finScrim = section.querySelector<HTMLElement>('.cor-finale-scrim')!;
   const finCopy = section.querySelector<HTMLElement>('.cor-finale-copy')!;
+  const finCtas = section.querySelector<HTMLElement>('.cor-ctas')!;
 
   const PX_PER_STEP = 560; // page scroll per photo
-  const LEAD = 2; // empty corridor before the first photo: only the title
+  const LEAD = 2;
   const SPACING = 600; // depth between photos, in px
+  // Finale, in steps from the first photo (the last photo is in place at items - 1): first the words arrive on the
+  // paper, then they turn white as the kittens photo fades in and everything goes dark.
+  const TEXT_IN: [number, number] = [items - 0.5, items + 0.2];
+  const DARKEN: [number, number] = [items + 0.7, items + 1.8];
+  const END_AT = items + 2.7;
 
   const MIN = -LEAD * SPACING;
-  const MAX = (tiles.length - 1) * SPACING;
+  const MAX = END_AT * SPACING;
+  const INK = [26, 26, 26];
+  const PAPER = [250, 248, 243];
+  const WHITE = [255, 255, 255];
 
   let dolly: Dolly | undefined;
   let onScroll: (() => void) | undefined;
@@ -107,7 +116,7 @@ const items = [
   // Plain sticky pin: the section is taller than the screen and the stage sticks while the page scrolls past.
   // The scroll position only sets the camera target; the dolly eases towards it.
   const start = () => {
-    const travel = (tiles.length - 1 + LEAD) * PX_PER_STEP;
+    const travel = (END_AT + LEAD) * PX_PER_STEP;
     section.style.setProperty('--cor-travel', `${travel}px`);
     section.dataset.pinned = '';
 
@@ -119,17 +128,40 @@ const items = [
       revealRange: 3,
       passRange: 0.35,
       lead: LEAD,
+      tail: END_AT - (items - 1),
       grayscale: 0,
       // the title leaves first; only then do the photos fade in, so the two never overlap
       gate: (offset) => smooth(-1.3, -0.7, offset / SPACING),
       onIndexChange: (i) => {
-        count.textContent = String(i + 1).padStart(2, '0');
+        count.textContent = String(Math.min(i, items - 1) + 1).padStart(2, '0');
       },
       onFrame: (offset) => {
         const e = offset / SPACING;
         intro.style.opacity = (1 - smooth(-LEAD + 0.2, -1.4, e)).toFixed(3);
         intro.style.transform = `scale(${(1 + clamp((e + LEAD) / 1.5, 0, 1) * 0.5).toFixed(3)})`;
         fill.style.clipPath = `inset(0% ${((1 - clamp((offset - MIN) / (MAX - MIN), 0, 1)) * 100).toFixed(2)}% 0% 0%)`;
+        const mix = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',');
+        const at = offset / SPACING;
+        const textIn = smooth(TEXT_IN[0], TEXT_IN[1], at);
+        const dark = smooth(DARKEN[0], DARKEN[1], at);
+        // the words first, in ink on the paper...
+        fin.style.visibility = textIn > 0 ? 'visible' : 'hidden';
+        finCopy.style.opacity = textIn.toFixed(3);
+        finCopy.style.transform = `translate3d(0, ${((1 - textIn) * 22).toFixed(1)}px, 0)`;
+        finCopy.style.pointerEvents = textIn > 0.6 ? 'auto' : 'none';
+        // ...then they turn white while the photo fades in and the lights go down
+        finCopy.style.setProperty('--fg', `rgb(${mix(INK, WHITE, dark)})`);
+        finCopy.style.setProperty('--inv', `rgb(${mix(WHITE, INK, dark)})`);
+        // the buttons only arrive once the photo is there
+        const ctaIn = smooth(DARKEN[0] + 0.6 * (DARKEN[1] - DARKEN[0]), DARKEN[1] + 0.2, at);
+        finCtas.style.opacity = ctaIn.toFixed(3);
+        finCtas.style.transform = `translate3d(0, ${((1 - ctaIn) * 14).toFixed(1)}px, 0)`;
+        finCtas.style.pointerEvents = ctaIn > 0.6 ? 'auto' : 'none';
+        finImg.style.opacity = dark.toFixed(3);
+        finImg.style.transform = `scale(${(1.15 - 0.15 * dark).toFixed(4)})`;
+        finScrim.style.opacity = (0.65 * dark).toFixed(3);
+        stage.style.backgroundColor = `rgb(${mix(PAPER, [0, 0, 0], dark)})`;
+        progress.style.opacity = (1 - smooth(TEXT_IN[0], TEXT_IN[1], at)).toFixed(3);
       },
     });
 
@@ -138,19 +170,6 @@ const items = [
       const rect = section.getBoundingClientRect();
       const p = clamp(-rect.top / travel, 0, 1);
       d.setTarget(d.min + p * (d.max - d.min));
-
-      // finale: a framed photo grows as it scrolls in, then the call to action arrives
-      const f = clamp(1 - fin.getBoundingClientRect().top / window.innerHeight, 0, 1);
-      const g = smooth(0, 1, f);
-      const ix = 36 * (1 - g);
-      const iy = 33 * (1 - g);
-      fin.style.clipPath = `inset(${iy.toFixed(2)}% ${ix.toFixed(2)}% ${iy.toFixed(2)}% ${ix.toFixed(2)}% round ${(14 * (1 - g)).toFixed(1)}px)`;
-      finImg.style.transform = `scale(${(1.45 - 0.45 * g).toFixed(4)})`;
-      finScrim.style.opacity = (0.65 * smooth(0.45, 0.95, f)).toFixed(3);
-      const copyIn = smooth(0.72, 1, f);
-      finCopy.style.opacity = copyIn.toFixed(3);
-      finCopy.style.transform = `translate3d(0, ${((1 - copyIn) * 22).toFixed(1)}px, 0)`;
-      finCopy.style.pointerEvents = copyIn > 0.6 ? 'auto' : 'none';
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
@@ -167,7 +186,7 @@ const items = [
     onScroll = undefined;
     delete section.dataset.pinned;
     section.style.removeProperty('--cor-travel');
-    [intro, fill, fin, finImg, finScrim, finCopy].forEach((el) => el.removeAttribute('style'));
+    [stage, intro, fill, progress, fin, finImg, finScrim, finCopy, finCtas].forEach((el) => el.removeAttribute('style'));
   };
 
   // Desktop only, and only when motion is allowed; otherwise the photos simply stack.
@@ -264,6 +283,9 @@ const items = [
     opacity: 0.8;
   }
   .cor-finale-copy {
+    --fg: #fff;
+    --inv: #1a1a1a;
+    color: var(--fg);
     position: absolute;
     inset: 0;
     display: flex;
@@ -297,31 +319,27 @@ const items = [
     font-size: 0.78rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--fg);
     text-decoration: none;
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    border: 1px solid color-mix(in srgb, var(--fg) 60%, transparent);
     border-radius: 999px;
     padding: 1rem 1.75rem;
     transition: background 0.3s, color 0.3s;
   }
   .cor-cta:hover {
-    background: #fff;
-    color: #1a1a1a;
+    background: var(--fg);
+    color: var(--inv);
   }
   .cor-cta--solid {
-    background: #fff;
-    color: #1a1a1a;
+    background: var(--fg);
+    color: var(--inv);
   }
   .cor-cta--solid:hover {
     background: transparent;
-    color: #fff;
+    color: var(--fg);
   }
   .cor-finale-copy .cor-eyebrow {
-    color: #fff;
-  }
-
-  .cor-end {
-    padding: 0 1.5rem clamp(4rem, 10vh, 7rem);
+    color: var(--fg);
   }
 
   /* ---- Desktop: sticky corridor (script sets data-pinned) ---- */
@@ -382,20 +400,25 @@ const items = [
     font-family: var(--font-body);
     font-size: 0.75rem;
   }
-  .cor[data-pinned] .cor-end {
-    padding: 0;
-  }
   .cor[data-pinned] .cor-finale {
-    height: 100vh;
+    position: absolute;
+    inset: 0;
     aspect-ratio: auto;
     border-radius: 0;
-    will-change: clip-path;
+    z-index: 20000;
+    visibility: hidden;
+    pointer-events: none;
   }
   .cor[data-pinned] .cor-finale :global(.cor-finale-img) {
-    will-change: transform;
+    opacity: 0;
+    will-change: transform, opacity;
   }
   .cor[data-pinned] .cor-finale-scrim {
     opacity: 0;
+  }
+  .cor[data-pinned] .cor-ctas {
+    opacity: 0;
+    pointer-events: none;
   }
   .cor[data-pinned] .cor-finale-copy {
     opacity: 0;

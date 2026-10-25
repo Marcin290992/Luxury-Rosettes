@@ -27,6 +27,12 @@ export interface DollyOptions {
   pauseOnHover?: boolean;
   /** Steps of empty corridor before the first tile (room for a title). */
   lead?: number;
+  /** Steps of corridor kept after the last tile (room for a finale). */
+  tail?: number;
+  /** Steps over which a full-screen tile (data-full) fades in as the camera approaches it. */
+  fullReveal?: number;
+  /** Extra steps of empty corridor between the last ordinary tile and a full-screen tile. */
+  fullGap?: number;
   /** Wheel, drag and arrow keys move the camera. Off when the target is driven from outside. */
   interactive?: boolean;
   /** Extra 0..1 multiplier on every tile's opacity, from the camera offset (e.g. to hold tiles back behind a title). */
@@ -74,13 +80,16 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
     autoScroll: 0,
     pauseOnHover: true,
     lead: 0,
+    tail: 0,
+    fullReveal: 1.6,
+    fullGap: 0,
     interactive: false,
     ...options,
   };
 
   const step = Math.max(40, o.spacing);
   const min = -o.lead * step;
-  const max = Math.max(min, (tiles.length - 1) * step);
+  const max = Math.max(min, (tiles.length - 1 + o.tail) * step);
   const settle = (v: number) => clamp(v, min, max);
 
   let width = 0;
@@ -110,10 +119,13 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
     tileWidth = Math.max(40, Math.min(o.itemWidth, width - 32));
     tileHeight = tileWidth / Math.max(0.1, o.aspectRatio);
     for (const tile of tiles) {
-      tile.style.width = `${tileWidth}px`;
-      tile.style.height = `${tileHeight}px`;
-      tile.style.marginLeft = `${-tileWidth / 2}px`;
-      tile.style.marginTop = `${-tileHeight / 2}px`;
+      // a full tile (data-full) is the size of the stage: it fills the screen when the camera reaches it
+      const w = 'full' in tile.dataset ? width : tileWidth;
+      const h = 'full' in tile.dataset ? height : tileHeight;
+      tile.style.width = `${w}px`;
+      tile.style.height = `${h}px`;
+      tile.style.marginLeft = `${-w / 2}px`;
+      tile.style.marginTop = `${-h / 2}px`;
       if (o.grayscale > 0) tile.style.filter = `grayscale(${clamp(o.grayscale, 0, 1)})`;
     }
   };
@@ -125,11 +137,13 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
     let nearest = -1;
     let nearestGap = Infinity;
     tiles.forEach((tile, k) => {
-      const depth = k * step - offset;
+      const full = 'full' in tile.dataset;
+      const raw = (full ? k + o.fullGap : k) * step - offset;
+      const depth = full ? Math.max(0, raw) : raw; // a full tile stops at the camera and holds
       const t = depth / step;
       const alpha =
         (t >= 0
-          ? 1 - clamp(t / Math.max(0.01, o.revealRange), 0, 1)
+          ? 1 - clamp(t / Math.max(0.01, full ? o.fullReveal : o.revealRange), 0, 1)
           : 1 - clamp(-t / Math.max(0.01, o.passRange), 0, 1)) * gate;
       if (alpha <= 0.002 || -depth >= o.perspective * 0.95) {
         tile.style.visibility = 'hidden';
@@ -140,6 +154,13 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
       if (gap < nearestGap) {
         nearestGap = gap;
         nearest = k;
+      }
+      if (full) {
+        tile.style.opacity = alpha.toFixed(3);
+        tile.style.setProperty('--a', alpha.toFixed(3));
+        tile.style.zIndex = String(Math.round(10000 - depth));
+        tile.style.transform = `translate3d(0, 0, ${(-depth).toFixed(1)}px)`;
+        return;
       }
       const side = k % 2 === 0 ? -1 : 1;
       const baseX = side * o.spread * (0.7 + 0.3 * jitter(k, 1)) * tileWidth;

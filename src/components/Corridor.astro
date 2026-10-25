@@ -137,8 +137,8 @@ const items = [
       spread: phone ? 0.62 : 1.75,
       scatter: phone ? 0.05 : 0.12,
       revealRange: phone ? 3.6 : 3, // phones: the upcoming photo is nearly solid, not a ghost
-      passRange: phone ? 1.2 : 0.35,
-      passHold: phone ? 0.6 : 0,
+      passRange: phone ? 0.8 : 0.35, // phones: the photo that has passed the camera is gone quickly ...
+      passHold: phone ? 0.15 : 0,
       lead: LEAD,
       tail: END_AT - (items - 1),
       grayscale: 0,
@@ -474,6 +474,8 @@ const items = [
   }
   .cor[data-phone] .cor-cap {
     padding: 0 0.25rem;
+    /* ... and the caption of the photo coming up is readable early (desktop: opacity = a squared) */
+    opacity: min(1, calc(var(--a, 0) * 1.7));
   }
   .cor[data-phone] .cor-cap h3 {
     font-size: clamp(1.35rem, 5.4vw, 2rem);

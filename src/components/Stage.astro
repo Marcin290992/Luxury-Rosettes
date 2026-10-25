@@ -120,7 +120,7 @@ import Story from './Story.astro';
     // the zoom), so it never travels in from below: the cream wash completes, then its content arrives where it stands.
     const PIN = 3; // screens of swiping: the dive takes the first part, the entrance of the story the rest
     const ENTER_AT = ZOOM + 0.1; // the story is shown once the screen is fully cream
-    const TOTAL = ENTER_AT + 1.7;
+    const TOTAL = ENTER_AT + 1.55; // ends right after the entrance (the last bit of an ease-out is not visible)
     const heroBox = stickIn(hero, 1 + PIN);
     const eye = () => JSON.parse(heroImg.dataset.eye ?? '{"ox":40,"oy":40,"w":0}') as { ox: number; oy: number; w: number };
     const origin = () => `${eye().ox}% ${eye().oy}%`;
@@ -191,7 +191,7 @@ import Story from './Story.astro';
   // eye; step 01 is already in place while the story rises over the cream, so there is never an empty page.
   function buildStoryMobile(story: HTMLElement, heroTl: gsap.core.Timeline, enterAt: number, overlap: number) {
     story.dataset.mobile = '';
-    const STORY_SCREENS = 3.9; // screens of swiping the three steps take: a whole step is more than one swipe, so a flick can't skip it
+    const STORY_SCREENS = 2.6; // screens the three steps take (the pager moves one step per swipe; this length matters for the scrollbar and keys)
     // The box starts where the hero's box starts (negative margin = the hero's height) and reaches to the end of the story,
     // so the sticky story is stuck in place for the whole time and is simply revealed after the dive.
     const storyBox = stickIn(story, overlap + STORY_SCREENS);
@@ -257,11 +257,12 @@ import Story from './Story.astro';
       .fromTo(extras[0][1], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out' }, enterAt + 0.9)
       .fromTo(progressEl, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.6, ease: 'none' }, enterAt + 0.8);
 
-    const FIRST = 0.8;
+    const FIRST = 0.15; // the first transition starts almost at once: no stretch of scrolling where nothing happens
     const GAP = 1.8;
     const DUR = 1.4;
     const SETTLED = 1.9; // after this many time units a step's words and button are all in place
-    const END = FIRST + GAP * last + SETTLED + 0.2;
+    // `last` steps means `last` transitions, the last one starting at FIRST + GAP * (last - 1); the timeline ends right after it settles
+    const END = FIRST + GAP * (last - 1) + SETTLED + 0.15;
     // resting points as a share of the pin: step 01 (the start), then each later step once it has settled
     const REST = [0, ...Array.from({ length: last }, (_, k) => (FIRST + GAP * k + SETTLED) / END), 1];
     const tl = gsap.timeline({

@@ -129,12 +129,16 @@ const items = [
 
     dolly = createDolly(stage, tiles, {
       // phones: the photo is as wide as the screen allows and no taller than ~half of what is visible
-      itemWidth: phone ? Math.min(window.innerWidth * 0.72, window.innerHeight * 0.4) : Math.min(380, window.innerHeight * 0.42),
+      // phones: tall, narrow photos (smaller but taller) that alternate sides, and the one nearest the camera grows
+      // huge and runs off the edge of the screen while the next one stands small on the other side
+      itemWidth: phone ? Math.min(window.innerWidth * 0.5, window.innerHeight * 0.3) : Math.min(380, window.innerHeight * 0.42),
+      ...(phone ? { aspectRatio: 0.56, perspective: 900 } : {}), // (undefined would overwrite the engine's defaults)
       spacing: SPACING,
-      spread: phone ? 0.16 : 1.75, // the photos must stay on a narrow screen
-      scatter: phone ? 0.08 : 0.12,
-      revealRange: 3,
-      passRange: 0.35,
+      spread: phone ? 0.62 : 1.75,
+      scatter: phone ? 0.05 : 0.12,
+      revealRange: phone ? 2.2 : 3,
+      passRange: phone ? 1.2 : 0.35,
+      passHold: phone ? 0.55 : 0,
       lead: LEAD,
       tail: END_AT - (items - 1),
       grayscale: 0,

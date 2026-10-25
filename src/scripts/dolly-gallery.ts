@@ -14,6 +14,8 @@ export interface DollyOptions {
   scatter?: number;
   revealRange?: number;
   passRange?: number;
+  /** 0..1: share of passRange during which a tile that has passed the camera stays fully opaque before it fades (0 = fades at once). */
+  passHold?: number;
   parallaxX?: number;
   parallaxY?: number;
   parallaxSmooth?: number;
@@ -68,6 +70,7 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
     scatter: 0.1,
     revealRange: 1.5,
     passRange: 1,
+    passHold: 0,
     parallaxX: 0.12,
     parallaxY: 0.06,
     parallaxSmooth: 0.85,
@@ -144,7 +147,7 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
       const alpha =
         (t >= 0
           ? 1 - clamp(t / Math.max(0.01, full ? o.fullReveal : o.revealRange), 0, 1)
-          : 1 - clamp(-t / Math.max(0.01, o.passRange), 0, 1)) * gate;
+          : 1 - clamp((-t / Math.max(0.01, o.passRange) - o.passHold) / Math.max(0.01, 1 - o.passHold), 0, 1)) * gate;
       if (alpha <= 0.002 || -depth >= o.perspective * 0.95) {
         tile.style.visibility = 'hidden';
         return;

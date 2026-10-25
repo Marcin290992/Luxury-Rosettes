@@ -107,6 +107,99 @@ const items = [
   let dolly: Dolly | undefined;
   let onScroll: (() => void) | undefined;
 
+
+  // ---- phones and tablets: panels that wipe over each other --------------------------------------------------------
+  // Each point is a cream panel with one tall, narrow photo and its caption. The next panel slides in from the right
+  // with a straight vertical edge and covers the previous one (which drifts left a little). Same finale as on a laptop.
+  let wipeCleanup: (() => void) | undefined;
+  const startWipe = () => {
+    const tiles = PHONE_KEEP.map((k) => allTiles[k]);
+    allTiles.forEach((t) => { if (!tiles.includes(t)) t.hidden = true; });
+    const items = tiles.length;
+    const PX = 420; // page scroll per photo
+    const LEAD_P = 1;
+    const TEXT_IN: [number, number] = [items - 0.5, items + 0.2];
+    const DARKEN: [number, number] = [items + 0.7, items + 1.8];
+    const END_AT = items + 2.7;
+    const travel = (END_AT + LEAD_P) * PX;
+    section.style.setProperty('--cor-travel', `${travel}px`);
+    section.dataset.pinned = '';
+    section.dataset.phone = '';
+    section.dataset.wipe = '';
+
+    const frames = tiles.map((t) => t.querySelector<HTMLElement>('.cor-frame')!);
+    const caps = tiles.map((t) => t.querySelector<HTMLElement>('.cor-cap')!);
+    tiles.forEach((t, i) => { t.style.zIndex = String(i + 1); });
+
+    const mix = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',');
+    const paint = (at: number) => {
+      const W = window.innerWidth;
+      tiles.forEach((t, i) => {
+        const r = smooth(i - 0.9, i - 0.1, at); // this panel wipes in from the right
+        const n = i < items - 1 ? smooth(i + 0.1, i + 0.9, at) : 0; // the next one is covering it
+        const hide = r <= 0.001 || n >= 0.999;
+        t.style.visibility = hide ? 'hidden' : 'visible';
+        if (hide) return;
+        t.style.clipPath = `inset(0 0 0 ${((1 - r) * 100).toFixed(2)}%)`;
+        // the contents drift: they arrive faster than the panel's edge, the caption a little behind the photo
+        const shift = (1 - r) * W * 0.24 - n * W * 0.12;
+        frames[i].style.transform = `translate3d(${shift.toFixed(1)}px, 0, 0)`;
+        caps[i].style.transform = `translate3d(${(shift + (1 - r) * W * 0.08).toFixed(1)}px, 0, 0)`;
+      });
+      count.textContent = String(Math.round(clamp(at, 0, items - 1)) + 1).padStart(2, '0');
+      intro.style.opacity = (1 - smooth(-0.6, -0.1, at)).toFixed(3);
+      fill.style.clipPath = `inset(0% ${((1 - clamp((at + LEAD_P) / (END_AT + LEAD_P), 0, 1)) * 100).toFixed(2)}% 0% 0%)`;
+      const textIn = smooth(TEXT_IN[0], TEXT_IN[1], at);
+      const dark = smooth(DARKEN[0], DARKEN[1], at);
+      fin.style.visibility = textIn > 0 ? 'visible' : 'hidden';
+      finCopy.style.opacity = textIn.toFixed(3);
+      finCopy.style.transform = `translate3d(0, ${((1 - textIn) * 22).toFixed(1)}px, 0)`;
+      finCopy.style.pointerEvents = textIn > 0.6 ? 'auto' : 'none';
+      finCopy.style.setProperty('--fg', `rgb(${mix(INK, WHITE, dark)})`);
+      finCopy.style.setProperty('--inv', `rgb(${mix(WHITE, INK, dark)})`);
+      const ctaIn = smooth(DARKEN[0] + 0.6 * (DARKEN[1] - DARKEN[0]), DARKEN[1] + 0.2, at);
+      finCtas.style.opacity = ctaIn.toFixed(3);
+      finCtas.style.transform = `translate3d(0, ${((1 - ctaIn) * 14).toFixed(1)}px, 0)`;
+      finCtas.style.pointerEvents = ctaIn > 0.6 ? 'auto' : 'none';
+      finImg.style.opacity = dark.toFixed(3);
+      finImg.style.transform = `scale(${(1.15 - 0.15 * dark).toFixed(4)})`;
+      finScrim.style.opacity = (0.65 * dark).toFixed(3);
+      stage.style.backgroundColor = `rgb(${mix(PAPER, [0, 0, 0], dark)})`;
+      progress.style.opacity = (1 - textIn).toFixed(3);
+    };
+
+    // the scroll position is the target; the panels ease towards it
+    let target = -LEAD_P;
+    let current = target;
+    let raf = 0;
+    const tick = () => {
+      current += (target - current) * 0.2;
+      const done = Math.abs(target - current) < 0.0005;
+      if (done) current = target;
+      paint(current);
+      raf = done ? 0 : requestAnimationFrame(tick);
+    };
+    const onScrollWipe = () => {
+      const p = clamp(-section.getBoundingClientRect().top / travel, 0, 1);
+      target = -LEAD_P + p * (END_AT + LEAD_P);
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    window.addEventListener('scroll', onScrollWipe, { passive: true });
+    window.addEventListener('resize', onScrollWipe);
+    current = target = -LEAD_P;
+    onScrollWipe();
+    paint(current);
+
+    wipeCleanup = () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScrollWipe);
+      window.removeEventListener('resize', onScrollWipe);
+      delete section.dataset.wipe;
+      tiles.forEach((t) => t.removeAttribute('style'));
+      [...frames, ...caps].forEach((el) => el.removeAttribute('style'));
+    };
+  };
+
   // Plain sticky pin: the section is taller than the screen and the stage sticks while the page scrolls past.
   // The scroll position only sets the camera target; the dolly eases towards it.
   const start = (phone: boolean) => {
@@ -192,6 +285,8 @@ const items = [
     dolly?.destroy();
     dolly = undefined;
     onScroll = undefined;
+    wipeCleanup?.();
+    wipeCleanup = undefined;
     delete section.dataset.pinned;
     delete section.dataset.phone;
     allTiles.forEach((t) => (t.hidden = false));
@@ -209,7 +304,8 @@ const items = [
     if (next === mode) return;
     stop();
     mode = next;
-    if (mode) start(mode === 'phone');
+    if (mode === 'phone') startWipe();
+    else if (mode) start(false);
   };
   motion.addEventListener('change', sync);
   wide.addEventListener('change', sync);
@@ -460,6 +556,47 @@ const items = [
   .cor[data-pinned] .cor-finale-copy h2 {
     font-size: clamp(2.8rem, 6vw, 6rem);
   }
+  /* ---- Phones and tablets, wipe mode (script adds data-wipe): cream panels with one tall, narrow photo ---- */
+  .cor[data-wipe] {
+    --nav: 104px;
+    --photo-h: calc(100svh * 0.58);
+  }
+  .cor[data-wipe] .cor-item {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: #faf8f3;
+    visibility: hidden;
+    will-change: clip-path;
+  }
+  .cor[data-wipe] .cor-frame {
+    position: absolute;
+    left: 8vw;
+    top: calc(var(--nav) + 0.5rem);
+    width: 62vw;
+    height: var(--photo-h);
+    aspect-ratio: auto;
+    border-radius: 6px;
+    will-change: transform;
+  }
+  .cor[data-wipe] .cor-cap {
+    position: absolute;
+    left: 8vw;
+    right: 8vw;
+    top: calc(var(--nav) + 0.5rem + var(--photo-h) + 1.1rem);
+    opacity: 1; /* the caption simply travels with its panel */
+    will-change: transform;
+  }
+  .cor[data-wipe] .cor-cap h3 {
+    font-size: clamp(1.6rem, 6.4vw, 2.6rem);
+  }
+  .cor[data-wipe] .cor-text {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
   /* ---- Phones and tablets (script adds data-phone) ---- */
   .cor[data-phone] .cor-progress {
     left: 8vw;

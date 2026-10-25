@@ -21,6 +21,8 @@ import Story from './Story.astro';
   import { initLenis } from '../scripts/lenis';
 
   gsap.registerPlugin(ScrollTrigger);
+  // the mobile address bar sliding in/out changes the window height: that must not re-measure the pins
+  ScrollTrigger.config({ ignoreMobileResize: true });
 
   // ---- photo shapes ------------------------------------------------------------------------------
   // Rounded polygon as a path with a fixed command structure, so GSAP can tween one shape into another.
@@ -110,14 +112,13 @@ import Story from './Story.astro';
   const small = gsap.matchMedia();
   small.add('(max-width: 1023px) and (prefers-reduced-motion: no-preference)', () => {
     initLenis();
-    ScrollTrigger.config({ ignoreMobileResize: true }); // the address bar sliding away must not re-measure and jump
     const hero = document.getElementById('hero')!;
     const heroImg = hero.querySelector<HTMLElement>('.hero-img')!;
     const fade = hero.querySelector<HTMLElement>('.hero-fade')!;
     const storyEl = document.getElementById('story')!;
     const DIVE = 1.5; // screens of swiping for the dive itself ...
     const LIFT = 1; // ... and one more while the story rises over the cream (no empty page in between)
-    gsap.set(storyEl, { marginTop: '-100svh', position: 'relative', zIndex: 2 });
+    gsap.set(storyEl, { marginTop: '-100lvh', position: 'relative', zIndex: 2 });
     const eye = () => JSON.parse(heroImg.dataset.eye ?? '{"ox":40,"oy":40,"w":0}') as { ox: number; oy: number; w: number };
     const origin = () => `${eye().ox}% ${eye().oy}%`;
     // the eye should end up filling most of the short side of the screen (7 on a laptop; a phone needs less)

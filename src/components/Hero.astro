@@ -69,7 +69,7 @@ import hero from '../assets/img/hero_img.webp';
     if (!words.length) return;
     const size = parseFloat(getComputedStyle(title).fontSize);
     const width = words[words.length - 1].getBoundingClientRect().right - words[0].getBoundingClientRect().left;
-    if (width > 0) title.style.fontSize = `${Math.min((size * innerWidth * 0.94) / width, innerHeight * 0.12)}px`;
+    if (width > 0) title.style.fontSize = `${Math.min((size * innerWidth * 0.94) / width, hero.clientHeight * 0.12)}px`;
   };
 
   // Where the cat sits. The photo is "cover"-cropped, so on wide or short windows the cat would slide low and the
@@ -98,7 +98,10 @@ import hero from '../assets/img/hero_img.webp';
 
   const chars = splitChars(title);
   let raf = 0;
+  let lastW = innerWidth;
   addEventListener('resize', () => {
+    if (innerWidth === lastW) return; // only the height changed: the mobile address bar sliding in or out
+    lastW = innerWidth;
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {
       placeCat();
@@ -140,7 +143,13 @@ import hero from '../assets/img/hero_img.webp';
 
 <style>
   .hero {
-    height: 100svh;
+    /* Phones: the hero is as tall as the LARGEST viewport (address bar hidden), so it never changes size when the
+       bar slides in or out. What must stay visible while the bar is up is placed from the bottom of the SMALL
+       viewport (see --bar). On desktop these are all the same value. */
+    height: 100vh;
+    height: 100lvh;
+    --bar: calc(100vh - 100svh);
+    --bar: calc(100lvh - 100svh);
     position: relative;
     overflow: hidden;
     background: #111;
@@ -191,7 +200,7 @@ import hero from '../assets/img/hero_img.webp';
   .hero-lockup {
     position: absolute;
     left: 50%;
-    bottom: 5vh;
+    bottom: calc(5svh + var(--bar, 0px));
     transform: translateX(-50%);
     width: max-content; /* as wide as the name; the rail follows it */
     max-width: 96vw;

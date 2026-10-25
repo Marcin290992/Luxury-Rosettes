@@ -152,25 +152,35 @@ const items = [
       count.textContent = String(clamp(Math.round(c), 0, n - 1) + 1).padStart(2, '0');
     };
 
+    // Built after the web fonts, in the same event as the stage and the cats row (this script comes later in the
+    // page, so its listener runs last): ScrollTrigger needs pins created in page order, otherwise this pin
+    // measures its start before the ones above it exist and the page jumps straight to it.
+    let ctx: gsap.Context | undefined;
+    let cancelled = false;
     const cam = { c: START };
     render(START);
-    const tween = gsap.to(cam, {
-      c: END,
-      ease: 'none',
-      onUpdate: () => render(cam.c),
-      scrollTrigger: {
-        trigger: section,
-        start: 'top top',
-        end: () => `+=${(END - START) * PX_PER_STEP}`,
-        pin: true,
-        scrub: 1,
-        invalidateOnRefresh: true,
-      },
+    document.fonts.ready.then(() => {
+      if (cancelled) return;
+      ctx = gsap.context(() => {
+        gsap.to(cam, {
+          c: END,
+          ease: 'none',
+          onUpdate: () => render(cam.c),
+          scrollTrigger: {
+            trigger: section,
+            start: 'top top',
+            end: () => `+=${(END - START) * PX_PER_STEP}`,
+            pin: true,
+            scrub: 1,
+            invalidateOnRefresh: true,
+          },
+        });
+      }, section);
     });
 
     return () => {
-      tween.scrollTrigger?.kill();
-      tween.kill();
+      cancelled = true;
+      ctx?.revert();
       delete section.dataset.pinned;
       section
         .querySelectorAll<HTMLElement>('.cor-item, .cor-cap, .cor-intro, .cor-fill')

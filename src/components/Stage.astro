@@ -116,9 +116,12 @@ import Story from './Story.astro';
     const heroImg = hero.querySelector<HTMLElement>('.hero-img')!;
     const fade = hero.querySelector<HTMLElement>('.hero-fade')!;
     const storyEl = document.getElementById('story')!;
-    const DIVE = 2.1; // screens of swiping for the dive itself ...
-    const LIFT = 1; // ... and one more while the story rises over the cream (no empty page in between)
-    const heroBox = stickIn(hero, 1 + DIVE + LIFT);
+    // One pin for the dive AND the story's entrance. The story is pinned in the very same place from the start (hidden under
+    // the zoom), so it never travels in from below: the cream wash completes, then its content arrives where it stands.
+    const PIN = 3; // screens of swiping: the dive takes the first part, the entrance of the story the rest
+    const ENTER_AT = ZOOM + 0.1; // the story is shown once the screen is fully cream
+    const TOTAL = ENTER_AT + 1.7;
+    const heroBox = stickIn(hero, 1 + PIN);
     const eye = () => JSON.parse(heroImg.dataset.eye ?? '{"ox":40,"oy":40,"w":0}') as { ox: number; oy: number; w: number };
     const origin = () => `${eye().ox}% ${eye().oy}%`;
     // the eye should end up filling most of the short side of the screen (7 on a laptop; a phone needs less)
@@ -145,10 +148,11 @@ import Story from './Story.astro';
     )
       .fromTo(fade, { opacity: 0 }, { opacity: 1, duration: ZOOM - WASH, ease: 'power1.in' }, WASH)
       .fromTo('.hero-content', { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -40, duration: 0.9, ease: 'power2.in' }, 0);
-    tl.set({}, {}, ZOOM * ((DIVE + LIFT) / DIVE)); // the dive takes the first part of the pin; the rest is the story rising
+    tl.set({}, {}, TOTAL); // the dive takes the first part of the pin; the entrance of the story the rest
 
-    // the story is pinned right after (created in page order; line widths do not matter here, so no waiting for fonts)
-    const storyCleanup = buildStoryMobile(storyEl);
+    // the story is pinned in the same place and starts when this pin ends (created in page order; line widths do not
+    // matter here, so no waiting for fonts)
+    const storyCleanup = buildStoryMobile(storyEl, tl, ENTER_AT, 1 + PIN);
     document.fonts.ready.then(() => ScrollTrigger.refresh());
 
     return () => {
@@ -185,11 +189,13 @@ import Story from './Story.astro';
   // Same three steps as on a laptop, in a portrait layout: two photos on top (in the same morphing shapes; they trade
   // sides at every step), the words below, the progress line at the bottom. It is pinned right after the dive into the
   // eye; step 01 is already in place while the story rises over the cream, so there is never an empty page.
-  function buildStoryMobile(story: HTMLElement) {
+  function buildStoryMobile(story: HTMLElement, heroTl: gsap.core.Timeline, enterAt: number, overlap: number) {
     story.dataset.mobile = '';
     const STORY_SCREENS = 3.9; // screens of swiping the three steps take: a whole step is more than one swipe, so a flick can't skip it
-    const storyBox = stickIn(story, 1 + STORY_SCREENS);
-    storyBox.style.marginTop = '-100lvh'; // rises over the cream while the hero is still stuck
+    // The box starts where the hero's box starts (negative margin = the hero's height) and reaches to the end of the story,
+    // so the sticky story is stuck in place for the whole time and is simply revealed after the dive.
+    const storyBox = stickIn(story, overlap + STORY_SCREENS);
+    storyBox.style.marginTop = `calc(-100lvh * ${overlap})`;
     storyBox.style.zIndex = '2';
     const q = <T extends HTMLElement>(sel: string) => gsap.utils.toArray<T>(sel, story);
     const steps = q('.step');
@@ -220,17 +226,36 @@ import Story from './Story.astro';
     };
     ScrollTrigger.addEventListener('refreshInit', onRefreshInit);
 
-    // everything step 01 needs is already in its final state
+    // the story waits, invisible, under the dive; step 01 is built up in the hero's timeline (below), in place
+    const progressEl = story.querySelector<HTMLElement>('.progress')!;
+    const firstImgs = [bigLayers[0], smallLayers[0]].map((l) => l.querySelector('img')!);
     bigPath.setAttribute('d', bigShapes[0]);
     smallPath.setAttribute('d', smallShapes[0]);
     place();
+    gsap.set(story, { autoAlpha: 0 });
     gsap.set(steps, { autoAlpha: 0 });
     gsap.set(steps[0], { autoAlpha: 1 });
-    gsap.set(words.slice(1).flat(), { yPercent: 115 });
-    gsap.set(extras.slice(1).flat(), { autoAlpha: 0, y: 16 });
+    gsap.set(words.flat(), { yPercent: 115 });
+    gsap.set(extras.flat(), { autoAlpha: 0, y: 16 });
     gsap.set([bigLayers.slice(1), smallLayers.slice(1)], { autoAlpha: 0 });
+    gsap.set(bigLayers[0], { clipPath: 'inset(0% 100% 0% 0%)' });
+    gsap.set(smallLayers[0], { clipPath: 'inset(100% 0% 0% 0%)' });
+    gsap.set(firstImgs, { scale: 1.3 });
     gsap.set(nums.slice(1), { autoAlpha: 0, y: 12 });
+    gsap.set(progressEl, { autoAlpha: 0 });
     gsap.set('.fill', { clipPath: 'inset(0% 100% 0% 0%)' });
+
+    // the entrance, as on a laptop: photo masks open while the images settle, the words rise, then the button and the progress line
+    heroTl
+      .fromTo(story, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.01 }, enterAt)
+      .fromTo(bigLayers[0], { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'power3.out' }, enterAt)
+      .fromTo(firstImgs[0], { scale: 1.3 }, { scale: 1, duration: 1.6, ease: 'power2.out' }, enterAt)
+      .fromTo(smallLayers[0], { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1, ease: 'power3.out' }, enterAt + 0.12)
+      .fromTo(firstImgs[1], { scale: 1.3 }, { scale: 1, duration: 1.5, ease: 'power2.out' }, enterAt + 0.12)
+      .fromTo(extras[0][0], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out' }, enterAt + 0.1)
+      .fromTo(words[0], { yPercent: 115 }, { yPercent: 0, duration: 0.8, stagger: 0.03, ease: 'power3.out' }, enterAt + 0.2)
+      .fromTo(extras[0][1], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out' }, enterAt + 0.9)
+      .fromTo(progressEl, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.6, ease: 'none' }, enterAt + 0.8);
 
     const FIRST = 0.8;
     const GAP = 1.8;
@@ -243,8 +268,8 @@ import Story from './Story.astro';
       defaults: { immediateRender: false },
       scrollTrigger: {
         trigger: storyBox,
-        start: 'top top',
-        end: () => `+=${storyBox.offsetHeight - story.offsetHeight}`,
+        start: () => heroTl.scrollTrigger!.end, // the steps begin where the hero's pin ends
+        end: 'bottom bottom', // the sticky story lets go at the bottom of its box
         invalidateOnRefresh: true,
         scrub: 0.7, // the animation eases towards the finger instead of following it 1:1
         // the brake: after the finger lifts, the scroll settles on the nearest step, never between two

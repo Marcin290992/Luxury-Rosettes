@@ -149,13 +149,132 @@ import Story from './Story.astro';
       .fromTo('.hero-content', { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -40, duration: 0.9, ease: 'power2.in' }, 0);
     tl.set({}, {}, ZOOM * ((DIVE + LIFT) / DIVE)); // the dive takes the first part of the pin; the rest is the story rising
 
+    // the story is pinned right after (created in page order; line widths do not matter here, so no waiting for fonts)
+    const storyCleanup = buildStoryMobile(storyEl);
+    document.fonts.ready.then(() => ScrollTrigger.refresh());
+
     return () => {
+      storyCleanup();
       gsap.set(storyEl, { clearProps: 'marginTop,position,zIndex' });
       tl.scrollTrigger?.kill();
       tl.kill();
       gsap.set([heroImg, fade, hero.querySelector('.hero-content')], { clearProps: 'all' });
     };
   });
+
+
+  // ---- the story on tablets and phones (< 1024px) ----------------------------------------------------
+  // Same three steps as on a laptop, in a portrait layout: two photos on top (in the same morphing shapes; they trade
+  // sides at every step), the words below, the progress line at the bottom. It is pinned right after the dive into the
+  // eye; step 01 is already in place while the story rises over the cream, so there is never an empty page.
+  function buildStoryMobile(story: HTMLElement) {
+    story.dataset.mobile = '';
+    const q = <T extends HTMLElement>(sel: string) => gsap.utils.toArray<T>(sel, story);
+    const steps = q('.step');
+    const bigLayers = q('.big .layer');
+    const smallLayers = q('.small .layer');
+    const nums = q('.num');
+    const bigShape = story.querySelector<HTMLElement>('.big')!;
+    const smallShape = story.querySelector<HTMLElement>('.small')!;
+    const bigPath = story.querySelector('#clipBig path')!;
+    const smallPath = story.querySelector('#clipSmall path')!;
+    const words = steps.map((s) => splitWords(s.querySelector<HTMLElement>('.heading')!));
+    const extras = steps.map((s) => gsap.utils.toArray<HTMLElement>('.eyebrow, .cta', s));
+    const last = steps.length - 1;
+
+    // geometry in px, re-measured on resize (functions); the photo band is a share of the screen height
+    const NAV = 104; // room for the nav pill
+    const band = () => window.innerHeight * (window.innerWidth >= 700 ? 0.46 : 0.42);
+    const setVars = () => {
+      story.style.setProperty('--nav', `${NAV}px`);
+      story.style.setProperty('--band', `${band()}px`);
+    };
+    setVars();
+    const box = (l: number, t: number, w: number, h: number) => ({
+      left: () => l * window.innerWidth,
+      top: () => NAV + t * band(),
+      width: () => w * window.innerWidth,
+      height: () => h * band(),
+    });
+    const LAYOUT = {
+      big: [box(0.34, 0, 0.62, 1), box(0.04, 0, 0.62, 1), box(0.34, 0, 0.62, 1)],
+      small: [box(0.04, 0.5, 0.37, 0.5), box(0.59, 0.5, 0.37, 0.5), box(0.04, 0.5, 0.37, 0.5)],
+    };
+    const place = () => {
+      gsap.set(bigShape, { ...LAYOUT.big[0], right: 'auto', bottom: 'auto' });
+      gsap.set(smallShape, { ...LAYOUT.small[0], right: 'auto', bottom: 'auto' });
+    };
+    const onRefreshInit = () => {
+      setVars();
+      if ('mobile' in story.dataset) place();
+    };
+    ScrollTrigger.addEventListener('refreshInit', onRefreshInit);
+
+    // everything step 01 needs is already in its final state
+    bigPath.setAttribute('d', bigShapes[0]);
+    smallPath.setAttribute('d', smallShapes[0]);
+    place();
+    gsap.set(steps, { autoAlpha: 0 });
+    gsap.set(steps[0], { autoAlpha: 1 });
+    gsap.set(words.slice(1).flat(), { yPercent: 115 });
+    gsap.set(extras.slice(1).flat(), { autoAlpha: 0, y: 16 });
+    gsap.set([bigLayers.slice(1), smallLayers.slice(1)], { autoAlpha: 0 });
+    gsap.set(nums.slice(1), { autoAlpha: 0, y: 12 });
+    gsap.set('.fill', { clipPath: 'inset(0% 100% 0% 0%)' });
+
+    const FIRST = 0.8;
+    const GAP = 1.8;
+    const DUR = 1.4;
+    const END = FIRST + GAP * last + DUR + 0.6;
+    const tl = gsap.timeline({
+      defaults: { immediateRender: false },
+      scrollTrigger: {
+        trigger: story,
+        start: 'top top',
+        end: () => `+=${Math.round(window.innerHeight * 2.4)}`, // about 0.8 of a screen of swiping per step
+        pin: true,
+        invalidateOnRefresh: true,
+        scrub: 0.8,
+      },
+    });
+    tl.fromTo('.fill', { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: END - FIRST, ease: 'none' }, FIRST);
+
+    for (let i = 0; i < last; i++) {
+      const s = FIRST + i * GAP;
+      const n = i + 1;
+      tl.fromTo(words[i], { yPercent: 0 }, { yPercent: -115, duration: 0.5, stagger: 0.012, ease: 'power2.in' }, s)
+        .fromTo(extras[i], { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -12, duration: 0.35 }, s)
+        .fromTo(steps[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.01 }, s + 0.55)
+        .fromTo(steps[n], { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.01 }, s + 0.05)
+        .fromTo(words[n], { yPercent: 115 }, { yPercent: 0, duration: 0.8, stagger: 0.03, ease: 'power3.out' }, s + 0.7)
+        .fromTo(extras[n], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.1 }, s + 1.1);
+      [bigLayers, smallLayers].forEach((layers) => {
+        tl.fromTo(layers[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.8, ease: 'power1.inOut' }, s)
+          .fromTo(layers[n], { autoAlpha: 0, scale: 1.12 }, { autoAlpha: 1, scale: 1, duration: DUR - 0.2, ease: 'power2.out' }, s);
+      });
+      tl.fromTo(bigPath, { attr: { d: bigShapes[i] } }, { attr: { d: bigShapes[n] }, duration: DUR - 0.2, ease: 'power3.inOut' }, s)
+        .fromTo(smallPath, { attr: { d: smallShapes[i] } }, { attr: { d: smallShapes[n] }, duration: DUR - 0.2, ease: 'power3.inOut' }, s)
+        // the photos glide to the opposite sides (the one in front first)
+        .fromTo(bigShape, LAYOUT.big[i], { ...LAYOUT.big[n], duration: DUR, ease: 'power3.inOut' }, s + 0.12)
+        .fromTo(smallShape, LAYOUT.small[i], { ...LAYOUT.small[n], duration: DUR, ease: 'power3.inOut' }, s)
+        .fromTo(nums[i], { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -12, duration: 0.4 }, s)
+        .fromTo(nums[n], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.5 }, s + 0.2);
+    }
+    tl.set({}, {}, END); // the last step rests before the page moves on
+
+    return () => {
+      ScrollTrigger.removeEventListener('refreshInit', onRefreshInit);
+      tl.scrollTrigger?.kill();
+      tl.kill();
+      delete story.dataset.mobile;
+      story.style.removeProperty('--nav');
+      story.style.removeProperty('--band');
+      gsap.set(
+        [steps, bigShape, smallShape, bigLayers, smallLayers, nums, words.flat(), extras.flat(), story.querySelector('.fill')],
+        { clearProps: 'all' },
+      );
+    };
+  }
 
   function build(stage: HTMLElement, story: HTMLElement) {
     const q = <T extends HTMLElement>(sel: string) => gsap.utils.toArray<T>(sel, story);

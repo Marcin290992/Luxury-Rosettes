@@ -201,6 +201,78 @@ const small = [
     will-change: transform;
   }
 
+  /* ---- Phones and tablets: pinned portrait layout (script sets data-mobile) ---- */
+  .story[data-mobile] {
+    position: relative;
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    height: 100lvh; /* constant when the mobile address bar slides in or out */
+    --bar: calc(100vh - 100svh);
+    --bar: calc(100lvh - 100svh);
+  }
+  .story[data-mobile] .photos {
+    display: block;
+  }
+  .story[data-mobile] .shape {
+    position: absolute;
+    display: block;
+    overflow: hidden;
+  }
+  .story[data-mobile] .big {
+    clip-path: url(#clipBig);
+    z-index: 1;
+  }
+  .story[data-mobile] .small {
+    clip-path: url(#clipSmall);
+    z-index: 2;
+  }
+  .story[data-mobile] .layer {
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
+    aspect-ratio: auto;
+  }
+  .story[data-mobile] .texts {
+    position: absolute;
+    left: 6vw;
+    right: 6vw;
+    top: calc(var(--nav, 104px) + var(--band, 42svh) + 1.6rem);
+    display: grid;
+    gap: 0;
+    z-index: 3;
+  }
+  .story[data-mobile] .step {
+    grid-area: 1 / 1;
+  }
+  .story[data-mobile] .eyebrow {
+    margin-bottom: 0.9rem;
+    font-size: 0.7rem;
+  }
+  .story[data-mobile] .heading {
+    font-size: clamp(1.7rem, 5.6vw, 3.2rem);
+    line-height: 1.08;
+    margin-bottom: 1.4rem;
+  }
+  .story[data-mobile] .cta {
+    padding: 0.85rem 1.4rem;
+  }
+  .story[data-mobile] .progress {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: absolute;
+    left: 6vw;
+    bottom: calc(var(--bar, 0px) + 4svh);
+    z-index: 3;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+  }
+  .story[data-mobile] .line {
+    width: min(14rem, 52vw);
+  }
+
   /* ---- Desktop pinned layout (script sets data-pinned) ---- */
   /* lies on top of the hero inside the pinned stage; transparent so the hero shows through until the cream wash */
   .story[data-pinned] {

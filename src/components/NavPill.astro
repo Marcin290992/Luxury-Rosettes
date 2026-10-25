@@ -205,10 +205,33 @@ const isCurrent = (href: string) =>
     border-radius: 999px;
     font-size: 0.78rem;
     letter-spacing: 0.12em;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    transition: color 0.6s var(--ease), border-color 0.6s var(--ease), letter-spacing 0.6s var(--ease), translate 0.6s var(--ease);
   }
-  .inquire-btn:hover { border-color: var(--gold); background: rgba(212, 175, 55, 0.1); }
-  .arrow-icon { width: 30px; height: 12px; transition: translate 0.3s ease; }
-  .inquire-btn:hover .arrow-icon { translate: 4px 0; }
+  /* gold slides up from the bottom like a curtain; the label turns dark on it */
+  .inquire-btn::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    background: var(--gold);
+    translate: 0 101%;
+    transition: translate 0.6s var(--ease);
+  }
+  .inquire-btn:hover,
+  .inquire-btn:focus-visible {
+    color: #1a1410;
+    border-color: var(--gold);
+    letter-spacing: 0.135em;
+    translate: 0 -1px;
+  }
+  .inquire-btn:hover::before,
+  .inquire-btn:focus-visible::before { translate: 0 0; }
+  .arrow-icon { width: 30px; height: 12px; transition: translate 0.6s var(--ease); }
+  .inquire-btn:hover .arrow-icon,
+  .inquire-btn:focus-visible .arrow-icon { translate: 5px 0; }
 
   /* Height animation without JS: 0fr -> 1fr */
   .nav-content {
@@ -326,6 +349,6 @@ const isCurrent = (href: string) =>
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .nav-pill, .nav-content, .nav-links li, .nav-brand, .nav-footer, .menu-lines span { transition-duration: 0.01ms !important; transition-delay: 0s !important; }
+    .nav-pill, .nav-content, .nav-links li, .nav-brand, .nav-footer, .menu-lines span, .inquire-btn, .inquire-btn::before, .arrow-icon { transition-duration: 0.01ms !important; transition-delay: 0s !important; }
   }
 </style>

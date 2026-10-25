@@ -116,7 +116,7 @@ import Story from './Story.astro';
     const heroImg = hero.querySelector<HTMLElement>('.hero-img')!;
     const fade = hero.querySelector<HTMLElement>('.hero-fade')!;
     const storyEl = document.getElementById('story')!;
-    const DIVE = 1.5; // screens of swiping for the dive itself ...
+    const DIVE = 2.1; // screens of swiping for the dive itself ...
     const LIFT = 1; // ... and one more while the story rises over the cream (no empty page in between)
     const heroBox = stickIn(hero, 1 + DIVE + LIFT);
     const eye = () => JSON.parse(heroImg.dataset.eye ?? '{"ox":40,"oy":40,"w":0}') as { ox: number; oy: number; w: number };
@@ -134,7 +134,7 @@ import Story from './Story.astro';
         start: 'top top',
         end: () => `+=${heroBox.offsetHeight - hero.offsetHeight}`,
         invalidateOnRefresh: true,
-        scrub: 0.35,
+        scrub: 0.7,
       },
     });
     tl.fromTo(
@@ -187,7 +187,7 @@ import Story from './Story.astro';
   // eye; step 01 is already in place while the story rises over the cream, so there is never an empty page.
   function buildStoryMobile(story: HTMLElement) {
     story.dataset.mobile = '';
-    const STORY_SCREENS = 2.4; // swiping the three steps take
+    const STORY_SCREENS = 3.9; // screens of swiping the three steps take: a whole step is more than one swipe, so a flick can't skip it
     const storyBox = stickIn(story, 1 + STORY_SCREENS);
     storyBox.style.marginTop = '-100lvh'; // rises over the cream while the hero is still stuck
     storyBox.style.zIndex = '2';
@@ -241,9 +241,9 @@ import Story from './Story.astro';
       scrollTrigger: {
         trigger: storyBox,
         start: 'top top',
-        end: () => `+=${storyBox.offsetHeight - story.offsetHeight}`, // about 0.8 of a screen of swiping per step
+        end: () => `+=${storyBox.offsetHeight - story.offsetHeight}`,
         invalidateOnRefresh: true,
-        scrub: 0.35,
+        scrub: 0.7, // the animation eases towards the finger instead of following it 1:1
       },
     });
     tl.fromTo('.fill', { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: END - FIRST, ease: 'none' }, FIRST);

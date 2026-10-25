@@ -35,7 +35,7 @@ import hero from '../assets/img/hero_img.webp';
   <div class="hero-curtain" aria-hidden="true"></div>
 </header>
 
-<noscript><style>[data-intro] { opacity: 1 !important; }</style></noscript>
+<noscript><style>[data-intro] { opacity: 1 !important; } #main-nav { opacity: 1 !important; }</style></noscript>
 
 <script>
   import gsap from 'gsap';
@@ -121,6 +121,9 @@ import hero from '../assets/img/hero_img.webp';
     new Promise((r) => setTimeout(r, 1800)),
   ]).then(() => {
     fit();
+    // everything is measured and laid out: lift the curtain and show the nav (until now the page stays black)
+    hero.dataset.ready = '';
+    document.documentElement.classList.add('intro-ready');
     if (reduceMotion) {
       gsap.set('[data-intro]', { opacity: 1 });
       return;
@@ -242,7 +245,15 @@ import hero from '../assets/img/hero_img.webp';
     z-index: 3;
     background: #000;
     pointer-events: none;
+    /* stays black until the script has set the page up (data-ready); the long delay is only a safety net */
+    animation: curtain 1.6s 6s ease-out forwards;
+  }
+  .hero[data-ready] .hero-curtain {
     animation: curtain 1.6s 0.15s ease-out forwards;
+  }
+  /* the nav arrives with the intro (the script fades it in, then hands control back to this rule) */
+  :global(html:not(.intro-ready) #main-nav) {
+    opacity: 0;
   }
   @keyframes curtain {
     to {
@@ -251,7 +262,8 @@ import hero from '../assets/img/hero_img.webp';
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .hero-curtain {
+    .hero-curtain,
+    .hero[data-ready] .hero-curtain {
       animation-duration: 0.01s;
       animation-delay: 0s;
     }

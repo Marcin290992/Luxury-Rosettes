@@ -91,7 +91,8 @@ import hero from '../assets/img/hero_img.webp';
     photo.style.objectPosition = `${px * 100}% ${py * 100}%`;
     const eyeX = EYE.x * sW - px * (sW - W);
     const eyeY = EYE.y * sH - py * (sH - H);
-    photo.dataset.eye = JSON.stringify({ ox: (eyeX / W) * 100, oy: (eyeY / H) * 100 });
+    // w = width of the eye in px (the eye is ~7.5% of the photo's width): lets the scroll zoom pick a scale that fits the screen
+    photo.dataset.eye = JSON.stringify({ ox: (eyeX / W) * 100, oy: (eyeY / H) * 100, w: 0.075 * sW });
   };
   placeCat();
 

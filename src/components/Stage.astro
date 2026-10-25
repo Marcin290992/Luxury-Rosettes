@@ -103,6 +103,59 @@ import Story from './Story.astro';
     };
   });
 
+  // ---- tablets and phones --------------------------------------------------------------------------
+  // The story's pinned layout is made for wide screens, so below 1024px only the HERO is pinned: its whole
+  // sequence stays (the dive into the eye, the cream wash, the opening text leaving) and then hands over to the
+  // normal, stacked story. The wash ends on the page colour, so the hand-over has no seam.
+  const small = gsap.matchMedia();
+  small.add('(max-width: 1023px) and (prefers-reduced-motion: no-preference)', () => {
+    initLenis();
+    ScrollTrigger.config({ ignoreMobileResize: true }); // the address bar sliding away must not re-measure and jump
+    const hero = document.getElementById('hero')!;
+    const heroImg = hero.querySelector<HTMLElement>('.hero-img')!;
+    const fade = hero.querySelector<HTMLElement>('.hero-fade')!;
+    const storyEl = document.getElementById('story')!;
+    const DIVE = 1.5; // screens of swiping for the dive itself ...
+    const LIFT = 1; // ... and one more while the story rises over the cream (no empty page in between)
+    gsap.set(storyEl, { marginTop: '-100svh', position: 'relative', zIndex: 2 });
+    const eye = () => JSON.parse(heroImg.dataset.eye ?? '{"ox":40,"oy":40,"w":0}') as { ox: number; oy: number; w: number };
+    const origin = () => `${eye().ox}% ${eye().oy}%`;
+    // the eye should end up filling most of the short side of the screen (7 on a laptop; a phone needs less)
+    const scale = () => {
+      const w = eye().w || window.innerWidth * 0.12;
+      return Math.min(8, Math.max(3.5, (0.9 * Math.min(window.innerWidth, window.innerHeight)) / w));
+    };
+
+    const tl = gsap.timeline({
+      defaults: { immediateRender: false },
+      scrollTrigger: {
+        trigger: hero,
+        start: 'top top',
+        end: () => `+=${Math.round(window.innerHeight * (DIVE + LIFT))}`,
+        pin: true,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        scrub: 0.8,
+      },
+    });
+    tl.fromTo(
+      heroImg,
+      { scale: 1, xPercent: 0, yPercent: 0, transformOrigin: origin },
+      { scale, xPercent: () => 50 - eye().ox, yPercent: () => 50 - eye().oy, transformOrigin: origin, duration: ZOOM, ease: 'power3.inOut' },
+      0,
+    )
+      .fromTo(fade, { opacity: 0 }, { opacity: 1, duration: ZOOM - WASH, ease: 'power1.in' }, WASH)
+      .fromTo('.hero-content', { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -40, duration: 0.9, ease: 'power2.in' }, 0);
+    tl.set({}, {}, ZOOM * ((DIVE + LIFT) / DIVE)); // the dive takes the first part of the pin; the rest is the story rising
+
+    return () => {
+      gsap.set(storyEl, { clearProps: 'marginTop,position,zIndex' });
+      tl.scrollTrigger?.kill();
+      tl.kill();
+      gsap.set([heroImg, fade, hero.querySelector('.hero-content')], { clearProps: 'all' });
+    };
+  });
+
   function build(stage: HTMLElement, story: HTMLElement) {
     const q = <T extends HTMLElement>(sel: string) => gsap.utils.toArray<T>(sel, story);
 

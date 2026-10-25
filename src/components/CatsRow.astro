@@ -109,7 +109,7 @@ const cats = [
     const intro = gsap.utils.toArray<HTMLElement>('.cats-intro > *', section);
     const distance = () => Math.max(0, track.scrollWidth - window.innerWidth); // sideways travel
     const arrival = () => window.innerHeight; // scroll spent sliding the sheet in
-    const hold = () => window.innerHeight * 0.9; // scroll spent resting on the calendar, so it can't be skimmed past
+    const hold = () => window.innerHeight * 0.5; // scroll spent resting on the calendar, so it can't be skimmed past
     const SMOOTH = 1.2; // same "cinematic lag" feel as the stage before it
     let ctx: gsap.Context | undefined;
     let cancelled = false;

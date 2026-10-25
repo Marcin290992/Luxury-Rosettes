@@ -68,14 +68,14 @@ import Story from './Story.astro';
   };
 
   // ---- timeline layout (seconds; the scroll distance is PX_PER_SEC × total length) -----------------
-  const PX_PER_SEC = 720; // higher = the whole sequence is spread over more scrolling (slower)
+  const PX_PER_SEC = 520; // higher = the whole sequence is spread over more scrolling (slower)
   const ZOOM = 2.4; // zoom into the eye
   const WASH = 1.7; // cream wash starts (ends with the zoom)
   const INTRO = ZOOM + 0.25; // photos + text enter only once the screen is fully cream — never over the eye, in either direction
-  const FIRST_STEP = 5.8; // when step 01 → 02 starts
-  const STEP_GAP = 4; // distance between transitions
+  const FIRST_STEP = 4.2; // when step 01 → 02 starts
+  const STEP_GAP = 2.4; // distance between transitions
   const STEP_DUR = 1.6;
-  const HOLD_END = 14.2; // step 03 stays until here; the last screen of the pin is the next section covering it
+  const HOLD_END = 9; // step 03 stays until here; the last screen of the pin is the next section covering it
 
   const mm = gsap.matchMedia();
   mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
@@ -118,6 +118,29 @@ import Story from './Story.astro';
     const extras = steps.map((s) => gsap.utils.toArray<HTMLElement>('.eyebrow, .cta', s));
     const firstImgs = [bigLayers[0], smallLayers[0]].map((l) => l.querySelector('img')!);
     const last = steps.length - 1;
+    const bigShape = story.querySelector<HTMLElement>('.big')!;
+    const smallShape = story.querySelector<HTMLElement>('.small')!;
+    const progressEl = story.querySelector<HTMLElement>('.progress')!;
+    // Layout alternates every step: even = text left / photos right, odd = photos left / text right.
+    // Offsets (vw) from the even layout to the odd one.
+    // Everything in px (functions, re-measured on resize) so the photos always clear the nav pill and the
+    // bottom edge, whatever the screen height.
+    const NAV = 122; // px reserved at the top for the nav pill
+    const PAD = 28; // px kept free at the bottom
+    const areaH = () => window.innerHeight - NAV - PAD;
+    const textShift = () => window.innerWidth * 0.51;
+    // Photo boxes per layout: left/width in vw, top/height as a fraction of the free height.
+    // The two swap roles: one grows while the other shrinks, and they trade places.
+    const box = (l: number, t: number, w: number, h: number) => ({
+      left: () => (l * window.innerWidth) / 100,
+      top: () => NAV + t * areaH(),
+      width: () => (w * window.innerWidth) / 100,
+      height: () => h * areaH(),
+    });
+    const LAYOUT = {
+      big: [box(65, 0, 32, 1), box(27, 0, 15, 0.46), box(58, 0.1, 38, 0.88)],
+      small: [box(46.5, 0.54, 16.5, 0.46), box(3, 0.2, 28, 0.78), box(45.5, 0.04, 16.5, 0.44)],
+    };
 
     // ---- starting state (everything the timeline animates *from*) ----
     bigPath.setAttribute('d', bigShapes[0]);
@@ -127,6 +150,16 @@ import Story from './Story.astro';
     gsap.set(heroImg, { transformOrigin: () => `${eye().ox}% ${eye().oy}%` });
     gsap.set(steps, { autoAlpha: 0 });
     gsap.set(steps[0], { autoAlpha: 1 });
+    const placeStart = () => {
+      gsap.set(bigShape, { ...LAYOUT.big[0], right: 'auto', bottom: 'auto' });
+      gsap.set(smallShape, { ...LAYOUT.small[0], right: 'auto', bottom: 'auto' });
+    };
+    placeStart();
+    // px values go stale on resize: re-place before ScrollTrigger re-measures (the timeline then re-renders them)
+    ScrollTrigger.addEventListener('refreshInit', () => {
+      if ('stage' in stage.dataset) placeStart();
+    });
+    steps.forEach((st, i) => gsap.set(st, { x: () => (i % 2 ? textShift() : 0) }));
     gsap.set(words.flat(), { yPercent: 115 });
     gsap.set(extras.flat(), { autoAlpha: 0, y: 16 });
     gsap.set([bigLayers.slice(1), smallLayers.slice(1)], { autoAlpha: 0 });
@@ -157,7 +190,7 @@ import Story from './Story.astro';
         pin: true,
         anticipatePin: 1,
         invalidateOnRefresh: true, // the eye's spot depends on the window size
-        scrub: 1.6, // how long the animation trails behind the scroll position
+        scrub: 1, // how long the animation trails behind the scroll position
       },
     });
 
@@ -209,8 +242,8 @@ import Story from './Story.astro';
         .fromTo(extras[i], { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -12, duration: 0.35 }, s)
         .fromTo(steps[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.01 }, s + 0.6)
         .fromTo(steps[next], { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.01 }, s + 0.05)
-        .fromTo(words[next], { yPercent: 115 }, { yPercent: 0, duration: 0.9, stagger: 0.04, ease: 'power3.out' }, s + 0.4)
-        .fromTo(extras[next], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, s + 0.8);
+        .fromTo(words[next], { yPercent: 115 }, { yPercent: 0, duration: 0.9, stagger: 0.04, ease: 'power3.out' }, s + 1.0)
+        .fromTo(extras[next], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, s + 1.5);
       // photos
       [bigLayers, smallLayers].forEach((layers) => {
         tl.fromTo(layers[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.9, ease: 'power1.inOut' }, s)
@@ -218,6 +251,17 @@ import Story from './Story.astro';
       });
       tl.fromTo(bigPath, { attr: { d: bigShapes[i] } }, { attr: { d: bigShapes[next] }, duration: STEP_DUR - 0.3, ease: 'power3.inOut' }, s)
         .fromTo(smallPath, { attr: { d: smallShapes[i] } }, { attr: { d: smallShapes[next] }, duration: STEP_DUR - 0.3, ease: 'power3.inOut' }, s);
+      // layout swap: photos glide left (or back right), the new text appears on the opposite side
+      const toOdd = next % 2 === 1;
+      const [from, to] = [i, next];
+      // the photo in front travels first, so at the halfway point the two have a gap between them —
+      // that is when their layers trade places, where it can't be seen
+      const lead = 0.25;
+      tl.fromTo(bigShape, LAYOUT.big[from], { ...LAYOUT.big[to], duration: STEP_DUR, ease: 'power3.inOut' }, s + (toOdd ? lead : 0))
+        .fromTo(smallShape, LAYOUT.small[from], { ...LAYOUT.small[to], duration: STEP_DUR, ease: 'power3.inOut' }, s + (toOdd ? 0 : lead))
+        .fromTo(progressEl, { x: () => (toOdd ? 0 : textShift()) }, { x: () => (toOdd ? textShift() : 0), duration: STEP_DUR, ease: 'power3.inOut' }, s);
+      // the smaller photo always lies on top: layers trade places once the two are about the same size
+      tl.set(bigShape, { zIndex: toOdd ? 3 : 1 }, s + lead / 2 + STEP_DUR * 0.5);
       // counter
       tl.fromTo(nums[i], { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -12, duration: 0.4 }, s)
         .fromTo(nums[next], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.5 }, s + 0.2);

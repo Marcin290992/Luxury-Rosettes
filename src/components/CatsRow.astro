@@ -80,6 +80,7 @@ const cats = [
       <div class="cats-end" aria-hidden="true"></div>
     </div>
     <div class="cats-progress" aria-hidden="true"><div class="cats-fill"></div></div>
+    <span class="cats-count" aria-hidden="true"></span>
     </div>
   </section>
 </div>
@@ -239,6 +240,105 @@ const cats = [
       ctx?.revert();
       delete section.dataset.pinned;
       delete cover.dataset.pinned;
+    };
+  });
+
+  // ---- phones and tablets (< 1024px) ----------------------------------------------------------------------------------
+  // The row is pinned (CSS sticky, so the compositor does it: no jitter) and swiping up slides it sideways, one cat per
+  // screen. The photo of each cat opens with a mask as it arrives, drifts against its card, and the scroll settles on
+  // the nearest cat. The breeding calendar is a normal vertical block after the row (six columns do not fit on a phone).
+  const small = gsap.matchMedia();
+  small.add('(max-width: 1023px) and (prefers-reduced-motion: no-preference)', () => {
+    const cover = document.querySelector<HTMLElement>('.cats-cover')!;
+    const section = document.getElementById('cats')!;
+    const sheet = section.querySelector<HTMLElement>('.cats-sheet')!;
+    const track = section.querySelector<HTMLElement>('.cats-track')!;
+    const cal = section.querySelector<HTMLElement>('.cal')!;
+    const fill = section.querySelector<HTMLElement>('.cats-fill')!;
+    const count = section.querySelector<HTMLElement>('.cats-count')!;
+    const items = gsap.utils.toArray<HTMLElement>(':scope > .cats-intro, :scope > .cat', track);
+    const cats = items.slice(1);
+    const n = items.length;
+    const PER = 0.75; // screens of swiping per cat
+    const pad = (i: number) => String(i).padStart(2, '0');
+
+    cover.dataset.mobile = '';
+    section.dataset.mobile = '';
+
+    // the calendar leaves the row and follows it as a normal block
+    cover.appendChild(cal);
+
+    // the sheet sits in a tall box and sticks with CSS
+    const box = document.createElement('div');
+    box.dataset.stick = '';
+    box.style.cssText = `position:relative;height:calc(100lvh * ${1 + PER * (n - 1)})`;
+    sheet.parentNode!.insertBefore(box, sheet);
+    box.appendChild(sheet);
+
+    const ctx = gsap.context(() => {
+      const photos = cats.map((c) => c.querySelector<HTMLElement>('.cat-photo')!);
+      const imgs = cats.map((c) => c.querySelector<HTMLElement>('img')!);
+      const texts = cats.map((c) => gsap.utils.toArray<HTMLElement>('h3, p', c));
+      gsap.set(photos, { clipPath: 'inset(0% 100% 0% 0%)' });
+      gsap.set(imgs, { scale: 1.35 });
+      gsap.set(texts.flat(), { autoAlpha: 0, y: 16 });
+      gsap.set(fill, { clipPath: 'inset(0% 100% 0% 0%)' });
+
+      const tl = gsap.timeline({
+        defaults: { immediateRender: false },
+        scrollTrigger: {
+          trigger: box,
+          start: 'top top',
+          end: () => `+=${box.offsetHeight - sheet.offsetHeight}`,
+          invalidateOnRefresh: true,
+          scrub: 0.6,
+          snap: { snapTo: 1 / (n - 1), duration: { min: 0.15, max: 0.45 }, delay: 0.12, ease: 'power2.inOut' },
+          onUpdate: (self) => {
+            const i = Math.round(self.progress * (n - 1));
+            count.textContent = i ? `${pad(i)} / ${pad(n - 1)}` : '';
+          },
+        },
+      });
+      // one unit of time = one screen: item i is centred at time i
+      tl.fromTo(track, { x: 0 }, { x: () => -(n - 1) * window.innerWidth, ease: 'none', duration: n - 1 }, 0);
+      tl.fromTo(fill, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none', duration: n - 1 }, 0);
+      cats.forEach((_, j) => {
+        const t = j + 1; // its item index
+        const end = n - 1; // nothing may run past the last screen, or the whole row would be stretched
+        tl.fromTo(photos[j], { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.6, ease: 'power3.out' }, t - 0.75)
+          .fromTo(imgs[j], { scale: 1.35 }, { scale: 1.15, duration: Math.min(0.9, end - (t - 0.75)), ease: 'power2.out' }, t - 0.75)
+          .fromTo(imgs[j], { xPercent: 6 }, { xPercent: -6, duration: Math.min(2, end - (t - 1)), ease: 'none' }, t - 1)
+          .fromTo(texts[j], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.4, stagger: 0.06, ease: 'power3.out' }, t - 0.55);
+      });
+      tl.set({}, {}, n - 1);
+
+      // the calendar, now a vertical block: months draw in as it is reached
+      const months = gsap.utils.toArray<HTMLElement>('.cal-month', cal);
+      const lines = gsap.utils.toArray<HTMLElement>('.cal-line', cal);
+      const head = gsap.utils.toArray<HTMLElement>('.cal-head > *', cal);
+      const foot = gsap.utils.toArray<HTMLElement>('.cal-foot > *', cal);
+      gsap.set([head, months, foot].flat(), { autoAlpha: 0, y: 24 });
+      gsap.set(lines, { clipPath: 'inset(0% 100% 0% 0%)' });
+      gsap
+        .timeline({ scrollTrigger: { trigger: cal, start: 'top 80%', toggleActions: 'play none none reverse' }, defaults: { ease: 'power3.out' } })
+        .to(head, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, 0)
+        .to(months, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.08 }, 0.25)
+        .to(lines, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.2, stagger: 0.08, ease: 'power3.inOut' }, 0.4)
+        .to(foot, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.1 }, 0.9);
+    }, cover);
+
+    document.fonts.ready.then(() => ScrollTrigger.refresh());
+
+    return () => {
+      ctx.revert();
+      sheet.style.cssText = '';
+      box.parentNode?.insertBefore(sheet, box);
+      box.remove();
+      track.appendChild(cal);
+      track.insertBefore(cal, track.querySelector('.cats-end'));
+      gsap.set([track, ...items], { clearProps: 'all' });
+      delete cover.dataset.mobile;
+      delete section.dataset.mobile;
     };
   });
 </script>
@@ -536,5 +636,107 @@ const cats = [
      stays stuck under this sheet until it has fully arrived, so no gap can open between them. */
   .cats-cover[data-pinned] {
     margin-top: -200vh;
+  }
+
+  /* ---- Phones and tablets: pinned row, one cat per screen (script sets data-mobile) ---- */
+  .cats-cover[data-mobile] {
+    --nav: 104px;
+    --bar: calc(100vh - 100svh);
+    --bar: calc(100lvh - 100svh);
+  }
+  .cats[data-mobile] .cats-sheet {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100lvh;
+    padding: 0;
+    overflow: hidden;
+  }
+  .cats[data-mobile] .cats-track {
+    overflow: visible;
+    scroll-snap-type: none;
+    width: max-content;
+    gap: 0;
+    padding: 0;
+    align-items: stretch;
+    will-change: transform;
+  }
+  .cats[data-mobile] .cats-intro,
+  .cats[data-mobile] .cat {
+    flex: 0 0 100vw;
+    width: 100vw;
+    box-sizing: border-box;
+    height: 100vh;
+    height: 100lvh;
+    scroll-snap-align: none;
+  }
+  .cats[data-mobile] .cats-intro {
+    align-self: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--nav) 8vw calc(var(--bar) + 10svh);
+  }
+  .cats[data-mobile] .cats-intro h2 {
+    font-size: clamp(2.2rem, 8.4vw, 3.8rem);
+  }
+  .cats[data-mobile] .cat {
+    display: flex;
+    flex-direction: column;
+    padding: calc(var(--nav) + 1rem) 8vw calc(var(--bar) + 12svh);
+  }
+  .cats[data-mobile] .cat-photo {
+    flex: 1 1 auto;
+    min-height: 0;
+    aspect-ratio: auto;
+    border-radius: 6px;
+  }
+  .cats[data-mobile] .cat h3 {
+    margin: 1.1rem 0 0.25rem;
+    font-size: clamp(1.8rem, 6.4vw, 2.6rem);
+  }
+  .cats[data-mobile] .cats-end,
+  .cats[data-mobile] .cue {
+    display: none;
+  }
+  .cats[data-mobile] .cats-progress {
+    display: block;
+    position: absolute;
+    left: 8vw;
+    width: 52vw;
+    bottom: calc(var(--bar) + 5svh);
+    height: 0;
+    border-top: 1px dashed rgba(26, 26, 26, 0.28);
+  }
+  .cats[data-mobile] .cats-fill {
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: 1px dashed #1a1a1a;
+    clip-path: inset(0% 100% 0% 0%);
+  }
+  .cats[data-mobile] .cats-count {
+    display: block;
+    position: absolute;
+    right: 8vw;
+    bottom: calc(var(--bar) + 5svh - 0.45rem);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+  }
+  /* the calendar is a normal block after the row */
+  .cats-cover[data-mobile] > .cal {
+    flex: none;
+    display: grid;
+    box-sizing: border-box;
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 5rem 6vw 6rem;
+    background: #faf8f3;
+  }
+  .cats-count {
+    display: none;
   }
 </style>

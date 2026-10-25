@@ -276,11 +276,10 @@ const cats = [
     box.appendChild(sheet);
 
     const ctx = gsap.context(() => {
-      const photos = cats.map((c) => c.querySelector<HTMLElement>('.cat-photo')!);
       const imgs = cats.map((c) => c.querySelector<HTMLElement>('img')!);
       const texts = cats.map((c) => gsap.utils.toArray<HTMLElement>('h3, p', c));
-      gsap.set(photos, { clipPath: 'inset(0% 100% 0% 0%)' });
-      gsap.set(imgs, { scale: 1.35 });
+      // the photos are simply there (no mask, no zoom): while the row slides the photo must not also be "appearing"
+      gsap.set(imgs, { scale: 1.12 });
       gsap.set(texts.flat(), { autoAlpha: 0, y: 16 });
       gsap.set(fill, { clipPath: 'inset(0% 100% 0% 0%)' });
 
@@ -305,10 +304,9 @@ const cats = [
       cats.forEach((_, j) => {
         const t = j + 1; // its item index
         const end = n - 1; // nothing may run past the last screen, or the whole row would be stretched
-        tl.fromTo(photos[j], { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.6, ease: 'power3.out' }, t - 0.75)
-          .fromTo(imgs[j], { scale: 1.35 }, { scale: 1.15, duration: Math.min(0.9, end - (t - 0.75)), ease: 'power2.out' }, t - 0.75)
-          .fromTo(imgs[j], { xPercent: 6 }, { xPercent: -6, duration: Math.min(2, end - (t - 1)), ease: 'none' }, t - 1)
-          .fromTo(texts[j], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.4, stagger: 0.06, ease: 'power3.out' }, t - 0.55);
+        // the photo drifts against its card (depth); the name and caption fade up shortly before it is centred
+        tl.fromTo(imgs[j], { xPercent: 5 }, { xPercent: -5, duration: Math.min(2, end - (t - 1)), ease: 'none' }, t - 1)
+          .fromTo(texts[j], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.3, stagger: 0.05, ease: 'power2.out' }, t - 0.5);
       });
       tl.set({}, {}, n - 1);
 

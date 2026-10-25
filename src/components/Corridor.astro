@@ -1,0 +1,407 @@
+---
+import { Image } from 'astro:assets';
+import about from '../assets/img/story/about.webp';
+import parent from '../assets/img/story/champion-parent.webp';
+import standards from '../assets/img/story/our-standards.webp';
+import care from '../assets/img/story/premium-care.webp';
+import kittens from '../assets/img/story/our-kittens.webp';
+import plaque from '../assets/img/story/awards.webp';
+import bis from '../assets/img/story/award4.webp';
+import award1 from '../assets/img/story/award1.webp';
+import award2 from '../assets/img/story/award2.webp';
+import award6 from '../assets/img/story/award6.webp';
+import finale from '../assets/img/kittens.webp';
+
+// Copy taken from the previous site — to be updated
+const items = [
+  { img: about, eyebrow: 'Our story', title: 'Fifteen years of Bengals', text: 'It began with a gift from my husband and became a lifelong passion. We do not just breed Bengals. We live with them, love them and admire them every day.' },
+  { img: parent, eyebrow: 'Bloodlines', title: 'Champion parents', text: 'Carefully selected champions with exceptional pedigrees. TICA registered, with proven show records.' },
+  { img: standards, eyebrow: 'Standards', title: 'Exceptional standards', text: 'Spectacular rosettes, muscular builds and a captivating wild appearance, true to the breed standard.' },
+  { img: care, eyebrow: 'Care', title: 'Premium care & health', text: 'Comprehensive veterinary care, premium nutrition and early socialisation. Health guarantees and lifetime breeder support.' },
+  { img: kittens, eyebrow: 'Kittens', title: 'Raised with love', text: 'Born in our family home, well socialised and ready to become a cherished member of your family.' },
+  { img: plaque, eyebrow: 'Bengal Cat Association', title: 'Official recognition', text: 'Brown (Black) Spotted Male Adult — one of many awards from the Bengal Cat Association.' },
+  { img: bis, eyebrow: 'Show ring', title: 'Overall Best in Show Bengal 2024', text: 'First Place in multiple classes, Best of Breed and Best in Show Adult.' },
+  { img: award1, eyebrow: 'Show ring', title: 'Best of Breed', text: 'Rosettes and ribbons earned in front of international judges.' },
+  { img: award2, eyebrow: 'Show ring', title: 'Proven excellence', text: 'Recognised in the show hall and respected within the wider Bengal community.' },
+  { img: award6, eyebrow: 'Show ring', title: 'A cat of proven quality', text: 'Every family welcomes a Bengal of outstanding quality and proven excellence.' },
+];
+---
+
+<section class="cor" id="corridor" aria-label="Our story and awards">
+  <div class="cor-stage">
+    <div class="cor-intro">
+      <p class="cor-eyebrow">Our story &amp; awards</p>
+      <h2>A passion<br />worth showing</h2>
+    </div>
+
+    {
+      items.map((it, i) => (
+        <figure class="cor-item" data-side={i % 2 === 0 ? 'l' : 'r'}>
+          <div class="cor-frame">
+            <Image src={it.img} alt={it.title} widths={[500, 800, 1100]} sizes="(min-width:1024px) 30vw, 90vw" loading="lazy" />
+          </div>
+          <figcaption class="cor-cap">
+            <p class="cor-eyebrow">{it.eyebrow}</p>
+            <h3>{it.title}</h3>
+            <p class="cor-text">{it.text}</p>
+          </figcaption>
+        </figure>
+      ))
+    }
+
+    <div class="cor-finale">
+      <Image class="cor-finale-img" src={finale} alt="Bengal kittens" widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
+      <div class="cor-finale-scrim"></div>
+      <div class="cor-finale-copy">
+        <p class="cor-eyebrow">Your Bengal awaits</p>
+        <h2>Meet your Bengal</h2>
+        <p class="cor-finale-text">Placeholder text. A calm sentence or two about the next litter and how to reserve a kitten.</p>
+        <div class="cor-ctas">
+          <a class="cor-cta cor-cta--solid" href="#">View available kittens</a>
+          <a class="cor-cta" href="#">Join the waiting list</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="cor-progress" aria-hidden="true">
+      <div class="cor-line"><div class="cor-fill"></div></div>
+      <span class="cor-count">01</span>
+    </div>
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+  const smooth = (e0: number, e1: number, x: number) => {
+    const t = clamp((x - e0) / (e1 - e0), 0, 1);
+    return t * t * (3 - 2 * t);
+  };
+
+  const mm = gsap.matchMedia();
+  mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+    const section = document.getElementById('corridor')!;
+    const items = gsap.utils.toArray<HTMLElement>('.cor-item', section);
+    const intro = section.querySelector<HTMLElement>('.cor-intro')!;
+    const fill = section.querySelector<HTMLElement>('.cor-fill')!;
+    const fin = section.querySelector<HTMLElement>('.cor-finale')!;
+    const finImg = section.querySelector<HTMLElement>('.cor-finale-img')!;
+    const finScrim = section.querySelector<HTMLElement>('.cor-finale-scrim')!;
+    const finCopy = section.querySelector<HTMLElement>('.cor-finale-copy')!;
+    const progress = section.querySelector<HTMLElement>('.cor-progress')!;
+    const count = section.querySelector<HTMLElement>('.cor-count')!;
+    const n = items.length;
+    section.dataset.pinned = '';
+
+    // A camera moves along a corridor. Item i sits at depth i; with the camera at c its distance is r = i - c.
+    // Perspective: everything shrinks towards the centre with distance and grows past the screen edges as it
+    // goes by, so the photos stream out to the left and right.
+    const FOCAL = 0.9;
+    const START = -1.3; // camera before the first photo: only the title
+    const LAST = n - 1 + 0.15; // last photo in place
+    const FIN = 1.7; // camera travel the finale takes: the kittens photo opens up from the middle to fill the screen
+    const END = LAST + FIN + 0.35; // ...and then rests, so the call to action can be read
+    const PX_PER_STEP = 430;
+    const SIDE = 27; // vw from the centre
+    const rise = (i: number) => [-7, 5, -3, 8, -6][i % 5]; // vh, so the photos don't sit on one line
+
+    const render = (c: number) => {
+      // the title leaves first; only then do the photos fade in, so the two never overlap
+      const lead = clamp(c - START, 0, 1.3);
+      const gate = smooth(0.55, 1.1, lead);
+      items.forEach((el, i) => {
+        const r = i - c;
+        const f = FOCAL / (FOCAL + r);
+        const visible = r > -0.62 && r < 3.4;
+        el.style.visibility = visible ? 'visible' : 'hidden';
+        if (!visible) return;
+        const side = el.dataset.side === 'l' ? -1 : 1;
+        const x = side * SIDE * f;
+        const y = rise(i) * f;
+        const alpha = smooth(3.4, 2.5, r) * smooth(-0.62, -0.3, r) * gate;
+        const blur = r > 0 ? Math.min(7, r * 2.2) : Math.min(10, -r * 22);
+        el.style.opacity = alpha.toFixed(3);
+        el.style.transform = `translate3d(calc(-50% + ${x.toFixed(2)}vw), calc(-50% + ${y.toFixed(2)}vh), 0) scale(${f.toFixed(4)})`;
+        el.style.filter = blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : 'none';
+        el.style.zIndex = String(Math.round(f * 100));
+        const cap = el.querySelector<HTMLElement>('.cor-cap')!;
+        cap.style.opacity = (smooth(0.75, 0.2, r) * smooth(-0.5, -0.15, r)).toFixed(3);
+      });
+      intro.style.opacity = (1 - smooth(0.05, 0.6, lead)).toFixed(3);
+      intro.style.transform = `translate3d(0,0,0) scale(${(1 + lead * 0.5).toFixed(3)})`;
+      fill.style.clipPath = `inset(0% ${((1 - clamp((c - START) / (END - START), 0, 1)) * 100).toFixed(2)}% 0% 0%)`;
+      // finale: a framed photo grows from the centre until it fills the screen, then the call to action arrives
+      const p = clamp((c - LAST) / FIN, 0, 1);
+      const e = smooth(0, 1, p);
+      const ix = 36 * (1 - e);
+      const iy = 33 * (1 - e);
+      fin.style.opacity = smooth(0, 0.18, p).toFixed(3);
+      fin.style.visibility = p > 0 ? 'visible' : 'hidden';
+      fin.style.clipPath = `inset(${iy.toFixed(2)}% ${ix.toFixed(2)}% ${iy.toFixed(2)}% ${ix.toFixed(2)}% round ${(14 * (1 - e)).toFixed(1)}px)`;
+      finImg.style.transform = `scale(${(1.45 - 0.45 * e).toFixed(4)})`;
+      finScrim.style.opacity = (0.65 * smooth(0.45, 0.95, p)).toFixed(3);
+      const copyIn = smooth(0.72, 1, p);
+      finCopy.style.opacity = copyIn.toFixed(3);
+      finCopy.style.transform = `translate3d(0, ${((1 - copyIn) * 22).toFixed(1)}px, 0)`;
+      finCopy.style.pointerEvents = copyIn > 0.6 ? 'auto' : 'none';
+      progress.style.opacity = (1 - smooth(0.1, 0.4, p)).toFixed(3);
+      count.textContent = String(clamp(Math.round(c), 0, n - 1) + 1).padStart(2, '0');
+    };
+
+    const cam = { c: START };
+    render(START);
+    const tween = gsap.to(cam, {
+      c: END,
+      ease: 'none',
+      onUpdate: () => render(cam.c),
+      scrollTrigger: {
+        trigger: section,
+        start: 'top top',
+        end: () => `+=${(END - START) * PX_PER_STEP}`,
+        pin: true,
+        scrub: 1,
+        invalidateOnRefresh: true,
+      },
+    });
+
+    return () => {
+      tween.scrollTrigger?.kill();
+      tween.kill();
+      delete section.dataset.pinned;
+      section
+        .querySelectorAll<HTMLElement>('.cor-item, .cor-cap, .cor-intro, .cor-fill')
+        .forEach((el) => el.removeAttribute('style'));
+      section.querySelectorAll<HTMLElement>('.cor-finale, .cor-finale-img, .cor-finale-scrim, .cor-finale-copy, .cor-progress').forEach((el) => el.removeAttribute('style'));
+    };
+  });
+</script>
+
+<style>
+  .cor {
+    background: #faf8f3;
+    font-family: var(--font-heading);
+    color: #1a1a1a;
+    position: relative;
+    z-index: 4;
+  }
+  .cor-stage {
+    padding: clamp(4rem, 10vh, 7rem) 1.5rem;
+    display: grid;
+    gap: 3rem;
+  }
+  .cor-intro {
+    text-align: center;
+  }
+  .cor-intro h2 {
+    font-size: clamp(2.4rem, 9vw, 3.5rem);
+    font-weight: 400;
+    line-height: 1.02;
+    margin: 0;
+  }
+  .cor-eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin: 0 0 1rem;
+    opacity: 0.6;
+  }
+  .cor-item {
+    margin: 0;
+  }
+  .cor-frame {
+    overflow: hidden;
+    border-radius: 10px;
+    aspect-ratio: 4 / 5;
+    background: #e9e4d9;
+  }
+  .cor-frame :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .cor-cap {
+    padding-top: 1rem;
+  }
+  .cor-cap h3 {
+    font-size: 1.75rem;
+    font-weight: 400;
+    line-height: 1.1;
+    margin: 0 0 0.5rem;
+  }
+  .cor-text {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 0;
+    opacity: 0.75;
+  }
+  .cor-progress {
+    display: none;
+  }
+
+  /* finale: the kittens photo with the call to action (stacked on mobile, full-screen on desktop) */
+  .cor-finale {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    aspect-ratio: 4 / 5;
+    color: #fff;
+  }
+  .cor-finale :global(.cor-finale-img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .cor-finale-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.45) 55%, rgba(0, 0, 0, 0.55));
+    opacity: 0.8;
+  }
+  .cor-finale-copy {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8%;
+  }
+  .cor-finale-copy h2 {
+    font-size: clamp(2.4rem, 8vw, 3.5rem);
+    font-weight: 400;
+    line-height: 1.02;
+    margin: 0 0 1rem;
+  }
+  .cor-finale-text {
+    max-width: 34rem;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    margin: 0 0 2rem;
+  }
+  .cor-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+  .cor-cta {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fff;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 999px;
+    padding: 1rem 1.75rem;
+    transition: background 0.3s, color 0.3s;
+  }
+  .cor-cta:hover {
+    background: #fff;
+    color: #1a1a1a;
+  }
+  .cor-cta--solid {
+    background: #fff;
+    color: #1a1a1a;
+  }
+  .cor-cta--solid:hover {
+    background: transparent;
+    color: #fff;
+  }
+  .cor-finale-copy .cor-eyebrow {
+    color: #fff;
+  }
+
+  /* ---- Desktop: pinned corridor (script sets data-pinned) ---- */
+  .cor[data-pinned] .cor-stage {
+    position: relative;
+    height: 100vh;
+    padding: 0;
+    overflow: hidden;
+    display: block;
+  }
+  .cor[data-pinned] .cor-intro {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    will-change: transform, opacity;
+  }
+  .cor[data-pinned] .cor-intro h2 {
+    font-size: clamp(2.8rem, 6vw, 6rem);
+  }
+  .cor[data-pinned] .cor-item {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(28vw, 44vh);
+    will-change: transform, opacity, filter;
+    visibility: hidden;
+  }
+  .cor[data-pinned] .cor-cap {
+    will-change: opacity;
+  }
+  .cor[data-pinned] .cor-cap h3 {
+    font-size: clamp(1.4rem, 2vw, 2.2rem);
+  }
+  .cor[data-pinned] .cor-progress {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: absolute;
+    left: 4.5vw;
+    bottom: 5vh;
+    z-index: 200;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+  }
+  .cor[data-pinned] .cor-finale {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+    border-radius: 0;
+    z-index: 300;
+    visibility: hidden;
+    will-change: clip-path, opacity;
+  }
+  .cor[data-pinned] .cor-finale :global(.cor-finale-img) {
+    will-change: transform;
+  }
+  .cor[data-pinned] .cor-finale-scrim {
+    opacity: 0;
+  }
+  .cor[data-pinned] .cor-finale-copy {
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity, transform;
+  }
+  .cor[data-pinned] .cor-finale-copy h2 {
+    font-size: clamp(2.8rem, 6vw, 6rem);
+  }
+  .cor-line {
+    position: relative;
+    width: 18rem;
+    height: 0;
+    border-top: 1px dashed rgba(26, 26, 26, 0.28);
+  }
+  .cor-fill {
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: 1px dashed #1a1a1a;
+    clip-path: inset(0% 100% 0% 0%);
+  }
+</style>

@@ -57,15 +57,8 @@ export function initMobile() {
           end: () => `+=${box.offsetHeight - sheet.offsetHeight}`,
           invalidateOnRefresh: true,
           scrub: C.scrub,
-          // settles on the nearest cat; a swipe that ends in the first part of the rest comes back to the last cat
-          snap: {
-            snapTo: (p: number) => {
-              const t = p * total;
-              if (t < last) return Math.round(t) / total;
-              return t - last < hold * C.endSnapBack ? last / total : p;
-            },
-            ...C.snap,
-          },
+          // settles on the nearest cat; the rest on the last cat is left alone, so the page does not slide off it
+          snap: { snapTo: (p: number) => (p * total >= last ? p : Math.round(p * total) / total), ...C.snap },
           onUpdate: (self) => {
             const i = Math.min(last, Math.round(self.progress * total));
             count.textContent = i ? `${pad(i)} / ${pad(last)}` : '';

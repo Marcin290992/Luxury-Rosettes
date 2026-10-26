@@ -20,14 +20,23 @@ import Story from './Story.astro';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { initDesktop } from '../scripts/stage/desktop';
   import { initMobile } from '../scripts/stage/mobile';
+  import { destroyLenis } from '../scripts/lenis';
+  import { mount } from '../scripts/lifecycle';
 
   gsap.registerPlugin(ScrollTrigger);
   // the mobile address bar sliding in/out changes the window height: that must not re-measure the pins
   ScrollTrigger.config({ ignoreMobileResize: true });
 
   // Laptops and wider: one pinned stage (hero + story). Phones and tablets: the hero and the story pinned with CSS sticky.
-  initDesktop();
-  initMobile();
+  mount(() => {
+    const stopDesktop = initDesktop();
+    const stopMobile = initMobile();
+    return () => {
+      stopDesktop();
+      stopMobile();
+      destroyLenis();
+    };
+  });
 </script>
 
 <style>

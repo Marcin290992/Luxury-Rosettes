@@ -160,4 +160,5 @@ export function initDesktop() {
       delete cover.dataset.pinned;
     };
   });
+  return () => mm.revert();
 }

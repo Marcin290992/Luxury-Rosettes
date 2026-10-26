@@ -64,44 +64,62 @@ const isCurrent = (href: string) =>
 </nav>
 
 <script>
-  const nav = document.getElementById('main-nav')!;
-  const btn = document.getElementById('menu-btn')!;
-  const text = document.getElementById('menu-text')!;
-  const panel = document.getElementById('nav-panel')!;
+  import { mount } from '../scripts/lifecycle';
+  import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
-  const setOpen = (open: boolean) => {
-    nav.classList.toggle('expanded', open);
-    btn.setAttribute('aria-expanded', String(open));
-    text.textContent = open ? 'Close' : 'Menu';
-    panel.toggleAttribute('inert', !open);
-  };
+  mount(() => {
+    const nav = document.getElementById('main-nav')!;
+    const btn = nav.querySelector<HTMLElement>('#menu-btn')!;
+    const text = nav.querySelector<HTMLElement>('#menu-text')!;
+    const panel = nav.querySelector<HTMLElement>('#nav-panel')!;
 
-  btn.addEventListener('click', () => setOpen(!nav.classList.contains('expanded')));
+    const setOpen = (open: boolean) => {
+      nav.classList.toggle('expanded', open);
+      btn.setAttribute('aria-expanded', String(open));
+      text.textContent = open ? 'Close' : 'Menu';
+      panel.toggleAttribute('inert', !open);
+    };
 
-  // Close on outside click, Escape, or after choosing a link
-  document.addEventListener('click', (e) => {
-    if (!nav.contains(e.target as Node)) setOpen(false);
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && nav.classList.contains('expanded')) {
-      setOpen(false);
-      btn.focus();
-    }
-  });
-  panel.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
-
-  // Inquire: close menu, let the contact modal (when added) listen for this event
-  nav.querySelectorAll('[data-contact-trigger]').forEach((el) =>
-    el.addEventListener('click', () => {
+    const onToggle = () => setOpen(!nav.classList.contains('expanded'));
+    // Close on outside click, Escape, or after choosing a link
+    const onOutsideClick = (e: MouseEvent) => {
+      if (!nav.contains(e.target as Node)) setOpen(false); // target on purpose: where the click really landed
+    };
+    const onKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && nav.classList.contains('expanded')) {
+        setOpen(false);
+        btn.focus();
+      }
+    };
+    const onPanelClick = (e: MouseEvent) => {
+      if ((e.target as Element).closest('a')) setOpen(false); // a click on an icon inside a link counts as the link
+    };
+    // Inquire: close menu, let the contact modal (when added) listen for this event
+    const onNavClick = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('[data-contact-trigger]')) return;
       setOpen(false);
       document.dispatchEvent(new CustomEvent('open-contact-modal'));
-    }),
-  );
+    };
+    // Stronger glass once the page scrolls (readability over light sections)
+    const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > SCROLLED_AT);
 
-  // Stronger glass once the page scrolls (readability over light sections)
-  const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > 40);
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+    btn.addEventListener('click', onToggle);
+    document.addEventListener('click', onOutsideClick);
+    document.addEventListener('keydown', onKeydown);
+    panel.addEventListener('click', onPanelClick);
+    nav.addEventListener('click', onNavClick);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      btn.removeEventListener('click', onToggle);
+      document.removeEventListener('click', onOutsideClick);
+      document.removeEventListener('keydown', onKeydown);
+      panel.removeEventListener('click', onPanelClick);
+      nav.removeEventListener('click', onNavClick);
+      window.removeEventListener('scroll', onScroll);
+    };
+  });
 </script>
 
 <style>

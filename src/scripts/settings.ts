@@ -261,3 +261,6 @@ export const CORRIDOR = {
     phone: { width: 0.5, height: 0.3, aspectRatio: 0.56, perspective: 900, spread: 0.62, scatter: 0.05, revealRange: 3.6, passRange: 0.8, passHold: 0.15 },
   },
 };
+
+// ---- nav pill ---------------------------------------------------------------------------------------------------------
+export const NAV_SCROLLED_AT = 40; // px of scrolling after which the glass gets stronger

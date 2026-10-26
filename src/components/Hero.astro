@@ -41,105 +41,119 @@ import hero from '../assets/img/hero_img.webp';
   import gsap from 'gsap';
   import { clamp } from '../scripts/math';
   import { HERO, WORD_HIDDEN } from '../scripts/settings';
+  import { mount } from '../scripts/lifecycle';
 
-  // Opening sequence: the photo settles from a slow zoom, the name rises letter by letter across the bottom edge,
-  // then the rail of keywords, and finally the navigation arrives. Time-based; the scroll sequence is separate.
-  const hero = document.getElementById('hero')!;
-  const nav = document.getElementById('main-nav');
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const media = hero.querySelector<HTMLElement>('.hero-media')!;
-  const title = hero.querySelector<HTMLElement>('.hero-title')!;
-  const rail = hero.querySelector<HTMLElement>('.hero-rail')!;
+  mount(() => {
+    // Opening sequence: the photo settles from a slow zoom, the name rises letter by letter across the bottom edge,
+    // then the rail of keywords, and finally the navigation arrives. Time-based; the scroll sequence is separate.
+    const hero = document.getElementById('hero')!;
+    const nav = document.getElementById('main-nav');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const media = hero.querySelector<HTMLElement>('.hero-media')!;
+    const title = hero.querySelector<HTMLElement>('.hero-title')!;
+    const rail = hero.querySelector<HTMLElement>('.hero-rail')!;
 
-  const splitChars = (el: HTMLElement) => {
-    const text = (el.textContent ?? '').trim();
-    el.setAttribute('aria-label', text);
-    el.innerHTML = text
-      .split(/\s+/)
-      .map(
-        (w) =>
-          `<span class="hw" aria-hidden="true">${[...w].map((c) => `<span class="hc">${c}</span>`).join('')}</span>`,
-      )
-      .join(' ');
-    return Array.from(el.querySelectorAll<HTMLElement>('.hc'));
-  };
+    const splitChars = (el: HTMLElement) => {
+      const text = (el.textContent ?? '').trim();
+      el.setAttribute('aria-label', text);
+      el.innerHTML = text
+        .split(/\s+/)
+        .map(
+          (w) =>
+            `<span class="hw" aria-hidden="true">${[...w].map((c) => `<span class="hc">${c}</span>`).join('')}</span>`,
+        )
+        .join(' ');
+      return Array.from(el.querySelectorAll<HTMLElement>('.hc'));
+    };
 
-  // The name is sized by the screen's width AND height (whichever is smaller), so on a short window it can't
-  // grow up over the cat's face; the rail above it is as wide as the name.
-  const fit = () => {
-    const words = title.querySelectorAll<HTMLElement>('.hw');
-    if (!words.length) return;
-    const size = parseFloat(getComputedStyle(title).fontSize);
-    const width = words[words.length - 1].getBoundingClientRect().right - words[0].getBoundingClientRect().left;
-    if (width > 0) title.style.fontSize = `${Math.min((size * innerWidth * HERO.fitWidth) / width, hero.clientHeight * HERO.fitHeight)}px`;
-  };
+    // The name is sized by the screen's width AND height (whichever is smaller), so on a short window it can't
+    // grow up over the cat's face; the rail above it is as wide as the name.
+    const fit = () => {
+      const words = title.querySelectorAll<HTMLElement>('.hw');
+      if (!words.length) return;
+      const size = parseFloat(getComputedStyle(title).fontSize);
+      const width = words[words.length - 1].getBoundingClientRect().right - words[0].getBoundingClientRect().left;
+      if (width > 0) title.style.fontSize = `${Math.min((size * innerWidth * HERO.fitWidth) / width, hero.clientHeight * HERO.fitHeight)}px`;
+    };
 
-  // Where the cat sits. The photo is "cover"-cropped, so on wide or short windows the cat would slide low and the
-  // name would end up on its face. Instead the vertical crop is chosen so that the eyes land at HERO.eyeAtHeight of the height;
-  // the horizontal crop centres the pair of eyes. The spot of the left eye is published for the scroll zoom.
-  const EYE = HERO.eye;
-  const photo = hero.querySelector<HTMLImageElement>('.hero-img')!;
-  const placeCat = () => {
-    const W = hero.clientWidth;
-    const H = hero.clientHeight;
-    const iw = +(photo.dataset.w ?? HERO.photoFallback.w);
-    const ih = +(photo.dataset.h ?? HERO.photoFallback.h);
-    const k = Math.max(W / iw, H / ih);
-    const sW = iw * k;
-    const sH = ih * k;
-    const py = sH > H ? clamp((EYE.y * sH - H * HERO.eyeAtHeight) / (sH - H), 0, 1) : 0.5;
-    const px = sW > W ? clamp((EYE.mid * sW - W / 2) / (sW - W), 0, 1) : 0.5;
-    photo.style.objectPosition = `${px * 100}% ${py * 100}%`;
-    const eyeX = EYE.x * sW - px * (sW - W);
-    const eyeY = EYE.y * sH - py * (sH - H);
-    // w = width of the eye in px (see HERO.eyeWidth): lets the scroll zoom pick a scale that fits the screen
-    photo.dataset.eye = JSON.stringify({ ox: (eyeX / W) * 100, oy: (eyeY / H) * 100, w: HERO.eyeWidth * sW });
-  };
-  placeCat();
+    // Where the cat sits. The photo is "cover"-cropped, so on wide or short windows the cat would slide low and the
+    // name would end up on its face. Instead the vertical crop is chosen so that the eyes land at HERO.eyeAtHeight of the height;
+    // the horizontal crop centres the pair of eyes. The spot of the left eye is published for the scroll zoom.
+    const EYE = HERO.eye;
+    const photo = hero.querySelector<HTMLImageElement>('.hero-img')!;
+    const placeCat = () => {
+      const W = hero.clientWidth;
+      const H = hero.clientHeight;
+      const iw = +(photo.dataset.w ?? HERO.photoFallback.w);
+      const ih = +(photo.dataset.h ?? HERO.photoFallback.h);
+      const k = Math.max(W / iw, H / ih);
+      const sW = iw * k;
+      const sH = ih * k;
+      const py = sH > H ? clamp((EYE.y * sH - H * HERO.eyeAtHeight) / (sH - H), 0, 1) : 0.5;
+      const px = sW > W ? clamp((EYE.mid * sW - W / 2) / (sW - W), 0, 1) : 0.5;
+      photo.style.objectPosition = `${px * 100}% ${py * 100}%`;
+      const eyeX = EYE.x * sW - px * (sW - W);
+      const eyeY = EYE.y * sH - py * (sH - H);
+      // w = width of the eye in px (see HERO.eyeWidth): lets the scroll zoom pick a scale that fits the screen
+      photo.dataset.eye = JSON.stringify({ ox: (eyeX / W) * 100, oy: (eyeY / H) * 100, w: HERO.eyeWidth * sW });
+    };
+    placeCat();
 
-  const chars = splitChars(title);
-  let raf = 0;
-  let lastW = innerWidth;
-  addEventListener('resize', () => {
-    if (innerWidth === lastW) return; // only the height changed: the mobile address bar sliding in or out
-    lastW = innerWidth;
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      placeCat();
-      title.style.fontSize = '';
-      fit();
-    });
-  });
+    const chars = splitChars(title);
+    let raf = 0;
+    let lastW = innerWidth;
+    const onResize = () => {
+      if (innerWidth === lastW) return; // only the height changed: the mobile address bar sliding in or out
+      lastW = innerWidth;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        placeCat();
+        title.style.fontSize = '';
+        fit();
+      });
+    };
+    addEventListener('resize', onResize);
+    let opening: gsap.core.Timeline | undefined;
+    let cancelled = false;
 
-  if (!reduceMotion) {
-    gsap.set(chars, { yPercent: WORD_HIDDEN });
-    gsap.set(title, { opacity: 1 });
-    gsap.set(rail, { y: HERO.railRise });
-    gsap.set(media, { scale: HERO.mediaZoom });
-    if (nav) gsap.set(nav, { autoAlpha: 0 });
-  }
-
-  // wait for the web font and the photo, but never longer than HERO.maxWait
-  const img = hero.querySelector<HTMLImageElement>('.hero-img');
-  Promise.race([
-    Promise.all([document.fonts.ready, img?.decode?.().catch(() => undefined)]),
-    new Promise((r) => setTimeout(r, HERO.maxWait)),
-  ]).then(() => {
-    fit();
-    // everything is measured and laid out: lift the curtain and show the nav (until now the page stays black)
-    hero.dataset.ready = '';
-    document.documentElement.classList.add('intro-ready');
-    if (reduceMotion) {
-      gsap.set('[data-intro]', { opacity: 1 });
-      return;
+    if (!reduceMotion) {
+      gsap.set(chars, { yPercent: WORD_HIDDEN });
+      gsap.set(title, { opacity: 1 });
+      gsap.set(rail, { y: HERO.railRise });
+      gsap.set(media, { scale: HERO.mediaZoom });
+      if (nav) gsap.set(nav, { autoAlpha: 0 });
     }
-    const T = HERO.timeline;
-    gsap
-      .timeline({ defaults: { ease: 'power3.out' } })
-      .to(media, { scale: 1, duration: T.zoom }, 0)
-      .to(chars, { yPercent: 0, duration: T.chars.dur, stagger: T.chars.stagger }, T.chars.at)
-      .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at)
-      .to(nav, { autoAlpha: 1, duration: T.nav.dur, clearProps: 'opacity,visibility' }, T.nav.at);
+
+    // wait for the web font and the photo, but never longer than HERO.maxWait
+    const img = hero.querySelector<HTMLImageElement>('.hero-img');
+    Promise.race([
+      Promise.all([document.fonts.ready, img?.decode?.().catch(() => undefined)]),
+      new Promise((r) => setTimeout(r, HERO.maxWait)),
+    ]).then(() => {
+      if (cancelled) return;
+      fit();
+      // everything is measured and laid out: lift the curtain and show the nav (until now the page stays black)
+      hero.dataset.ready = '';
+      document.documentElement.classList.add('intro-ready');
+      if (reduceMotion) {
+        gsap.set('[data-intro]', { opacity: 1 });
+        return;
+      }
+      const T = HERO.timeline;
+      opening = gsap
+        .timeline({ defaults: { ease: 'power3.out' } })
+        .to(media, { scale: 1, duration: T.zoom }, 0)
+        .to(chars, { yPercent: 0, duration: T.chars.dur, stagger: T.chars.stagger }, T.chars.at)
+        .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at)
+        .to(nav, { autoAlpha: 1, duration: T.nav.dur, clearProps: 'opacity,visibility' }, T.nav.at);
+    });
+
+    return () => {
+      cancelled = true;
+      removeEventListener('resize', onResize);
+      cancelAnimationFrame(raf);
+      opening?.kill();
+    };
   });
 </script>
 

@@ -101,4 +101,5 @@ export function initMobile() {
       delete section.dataset.mobile;
     };
   });
+  return () => small.revert();
 }

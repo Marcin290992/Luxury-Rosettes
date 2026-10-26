@@ -74,6 +74,7 @@ export function initMobile() {
       gsap.set([heroImg, fade, hero.querySelector('.hero-content')], { clearProps: 'all' });
     };
   });
+  return () => small.revert();
 }
 
 // ---- the story on tablets and phones (< 1024px) ----------------------------------------------------

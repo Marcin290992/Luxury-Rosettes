@@ -94,10 +94,17 @@ const cats = [
   import { fillMonths } from '../scripts/cats/months';
   import { initDesktop } from '../scripts/cats/desktop';
   import { initMobile } from '../scripts/cats/mobile';
+  import { mount } from '../scripts/lifecycle';
 
   gsap.registerPlugin(ScrollTrigger);
 
-  fillMonths();
-  initDesktop();
-  initMobile();
+  mount(() => {
+    fillMonths();
+    const stopDesktop = initDesktop();
+    const stopMobile = initMobile();
+    return () => {
+      stopDesktop();
+      stopMobile();
+    };
+  });
 </script>

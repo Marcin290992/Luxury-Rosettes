@@ -6,16 +6,21 @@
 <canvas id="cursor-canvas" aria-hidden="true"></canvas>
 
 <script>
-  const canvas = document.getElementById('cursor-canvas') as HTMLCanvasElement;
-  const ctx = canvas.getContext('2d')!;
+  import { mount } from '../scripts/lifecycle';
 
-  const enabled =
-    window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
-    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  mount(() => {
+    const canvas = document.getElementById('cursor-canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
 
-  if (!enabled) {
-    canvas.remove();
-  } else {
+    const enabled =
+      window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!enabled) {
+      canvas.remove();
+      return;
+    }
     const config = {
       friction: 0.5,
       lines: 20, // how many thin lines are in the bundle
@@ -105,6 +110,7 @@
     resize();
 
     let running = false;
+    let raf = 0;
 
     const frame = () => {
       ctx.clearRect(0, 0, width, height);
@@ -120,23 +126,31 @@
 
       // Stop once everything has settled; the next mouse move restarts it
       if (moving) {
-        requestAnimationFrame(frame);
+        raf = requestAnimationFrame(frame);
       } else {
         running = false;
         ctx.clearRect(0, 0, width, height);
       }
     };
 
-    window.addEventListener('mousemove', (e) => {
+    const onMove = (e: MouseEvent) => {
       pos.x = e.clientX;
       pos.y = e.clientY;
       if (!lines.length) makeLines(); // start at the first pointer position
       if (!running) {
         running = true;
-        requestAnimationFrame(frame);
+        raf = requestAnimationFrame(frame);
       }
-    });
-  }
+    };
+    window.addEventListener('mousemove', onMove);
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', onMove);
+      cancelAnimationFrame(raf);
+      ctx.clearRect(0, 0, width, height);
+    };
+  });
 </script>
 
 <style>

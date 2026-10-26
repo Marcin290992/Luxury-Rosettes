@@ -43,6 +43,7 @@ export function initDesktop() {
       delete story.dataset.pinned;
     };
   });
+  return () => mm.revert();
 }
 
 /** Builds the stage timeline; returns what to undo outside the GSAP context (the global refresh listener). */

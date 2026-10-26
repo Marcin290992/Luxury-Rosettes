@@ -79,6 +79,7 @@ const has = Astro.slots.has('default');
 <script>
   import { clamp, smoothstep } from '../scripts/math';
   import { EXPAND_PHONE_BOX_WIDTH } from '../scripts/settings';
+  import { mount } from '../scripts/lifecycle';
 
   function init(root: HTMLElement) {
     const num = (key: string, fallback: number) => {
@@ -199,16 +200,28 @@ const has = Astro.slots.has('default');
     measure();
     target = current = progress();
     apply(current);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize);
     // layout above can shift after fonts/images load or a pin is created
-    window.addEventListener('load', () => {
+    const onLoad = () => {
       lastW = -1; // force a re-measure once everything above has settled
       onResize();
-    });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+    window.addEventListener('load', onLoad);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('load', onLoad);
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
   }
 
-  document.querySelectorAll<HTMLElement>('[data-scroll-expand]').forEach(init);
+  mount(() => {
+    const stops = Array.from(document.querySelectorAll<HTMLElement>('[data-scroll-expand]'), init);
+    return () => stops.forEach((stop) => stop());
+  });
 </script>
 
 <style>

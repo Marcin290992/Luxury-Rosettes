@@ -74,12 +74,8 @@ const items = [
 
 <script>
   import { createDolly, type Dolly } from '../scripts/dolly-gallery';
+  import { clamp, smoothstep as smooth } from '../scripts/math';
 
-  const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
-  const smooth = (e0: number, e1: number, x: number) => {
-    const t = clamp((x - e0) / (e1 - e0), 0, 1);
-    return t * t * (3 - 2 * t);
-  };
 
   const section = document.getElementById('corridor')!;
   const stage = section.querySelector<HTMLElement>('.cor-stage')!;
@@ -222,9 +218,9 @@ const items = [
 
 <style>
   .cor {
-    background: #faf8f3;
+    background: var(--paper);
     font-family: var(--font-heading);
-    color: #1a1a1a;
+    color: var(--ink);
     position: relative;
     z-index: 4;
   }
@@ -308,7 +304,7 @@ const items = [
   }
   .cor-finale-copy {
     --fg: #fff;
-    --inv: #1a1a1a;
+    --inv: var(--ink);
     color: var(--fg);
     position: absolute;
     inset: 0;
@@ -505,7 +501,7 @@ const items = [
     position: relative;
     width: 18rem;
     height: 0;
-    border-top: 1px dashed rgba(26, 26, 26, 0.28);
+    border-top: var(--dash-track);
   }
   .cor-fill {
     position: absolute;
@@ -513,7 +509,7 @@ const items = [
     left: 0;
     right: 0;
     height: 0;
-    border-top: 1px dashed #1a1a1a;
+    border-top: var(--dash-strong);
     clip-path: inset(0% 100% 0% 0%);
   }
 </style>

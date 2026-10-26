@@ -107,7 +107,7 @@ const small = [
 
 <style>
   .story {
-    background: #faf8f3;
+    background: var(--paper);
     font-family: var(--font-heading);
     padding: clamp(4rem, 12vh, 8rem) 1.5rem;
     display: grid;
@@ -148,8 +148,8 @@ const small = [
     transition: background 0.3s, color 0.3s;
   }
   .cta:hover {
-    background: #1a1a1a;
-    color: #faf8f3;
+    background: var(--ink);
+    color: var(--paper);
   }
   .photos {
     display: grid;
@@ -365,7 +365,7 @@ const small = [
     position: relative;
     width: 18rem;
     height: 0;
-    border-top: 1px dashed rgba(26, 26, 26, 0.28);
+    border-top: var(--dash-track);
   }
   .fill {
     position: absolute;
@@ -373,7 +373,7 @@ const small = [
     left: 0;
     right: 0;
     height: 0;
-    border-top: 1px dashed #1a1a1a;
+    border-top: var(--dash-strong);
     clip-path: inset(0% 100% 0% 0%);
   }
   .nums {

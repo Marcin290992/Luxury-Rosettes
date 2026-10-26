@@ -4,6 +4,8 @@
 // little sway, pulse and tilt. Drive the target with setTarget() (e.g. from scroll), or enable `interactive`
 // for wheel / drag / keyboard.
 
+import { clamp } from './math';
+
 export interface DollyOptions {
   itemWidth?: number;
   aspectRatio?: number;
@@ -53,7 +55,6 @@ export interface Dolly {
   destroy(): void;
 }
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const jitter = (k: number, salt: number) => {
   const x = Math.sin(k * 12.9898 + salt * 78.233) * 43758.5453;
   return x - Math.floor(x);

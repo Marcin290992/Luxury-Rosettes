@@ -31,6 +31,16 @@ const {
     --font-heading: 'Cormorant Garamond', serif;
     --font-body: 'Montserrat', sans-serif;
     --font-logo: 'Cinzel Decorative', serif;
+
+    /* the page's two colours */
+    --paper: #faf8f3;
+    --ink: #1a1a1a;
+
+    /* the dashed rule, in the four strengths the page uses */
+    --dash-faint: 1px dashed rgba(26, 26, 26, 0.22); /* calendar months */
+    --dash-track: 1px dashed rgba(26, 26, 26, 0.28); /* the light track behind a progress line */
+    --dash-divider: 1px dashed rgba(26, 26, 26, 0.3); /* dividers between blocks */
+    --dash-strong: 1px dashed #1a1a1a; /* the line that fills in over a track */
   }
   /* The dashed rule: the page's one recurring line (hero rail, progress lines, calendar, dividers).
      Elements with data-dash draw themselves in from the left when they scroll into view. */
@@ -44,7 +54,7 @@ const {
   body {
     margin: 0;
     font-family: var(--font-body);
-    background: #faf8f3;
-    color: #1a1a1a;
+    background: var(--paper);
+    color: var(--ink);
   }
 </style>

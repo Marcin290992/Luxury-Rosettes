@@ -350,7 +350,7 @@ const cats = [
   .cats-sheet {
     position: relative;
     padding: clamp(4rem, 10vh, 7rem) 0;
-    background: #faf8f3;
+    background: var(--paper);
   }
 
   /* Mobile / reduced motion: a swipeable row */
@@ -444,7 +444,7 @@ const cats = [
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    border-top: 1px dashed rgba(26, 26, 26, 0.22);
+    border-top: var(--dash-faint);
     padding-top: 1rem;
   }
   /* dark dashes over the light ones; revealed left to right during the hold (desktop) */
@@ -454,7 +454,7 @@ const cats = [
     left: 0;
     right: 0;
     height: 0;
-    border-top: 1px dashed #1a1a1a;
+    border-top: var(--dash-strong);
   }
   .cal-name {
     font-size: 1.75rem;
@@ -509,13 +509,13 @@ const cats = [
     display: inline-block;
   }
   .dot--pair {
-    background: #1a1a1a;
+    background: var(--ink);
   }
   .dot--exp {
     background: #b88a4a;
   }
   .dot--ready {
-    border: 1.5px solid #1a1a1a;
+    border: 1.5px solid var(--ink);
   }
   .cal .cta {
     display: inline-block;
@@ -531,8 +531,8 @@ const cats = [
     transition: background 0.3s, color 0.3s;
   }
   .cal .cta:hover {
-    background: #1a1a1a;
-    color: #faf8f3;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   /* ---- Desktop pinned layout (script sets data-pinned) ---- */
@@ -615,7 +615,7 @@ const cats = [
     right: 6vw;
     bottom: 6vh;
     height: 0;
-    border-top: 1px dashed rgba(26, 26, 26, 0.28);
+    border-top: var(--dash-track);
   }
   .cats[data-pinned] .cats-fill {
     position: absolute;
@@ -623,7 +623,7 @@ const cats = [
     left: 0;
     right: 0;
     height: 0;
-    border-top: 1px dashed #1a1a1a;
+    border-top: var(--dash-strong);
     clip-path: inset(0% 100% 0% 0%);
   }
 
@@ -701,7 +701,7 @@ const cats = [
     width: 52vw;
     bottom: calc(var(--bar) + 5svh);
     height: 0;
-    border-top: 1px dashed rgba(26, 26, 26, 0.28);
+    border-top: var(--dash-track);
   }
   .cats[data-mobile] .cats-fill {
     position: absolute;
@@ -709,7 +709,7 @@ const cats = [
     left: 0;
     right: 0;
     height: 0;
-    border-top: 1px dashed #1a1a1a;
+    border-top: var(--dash-strong);
     clip-path: inset(0% 100% 0% 0%);
   }
   .cats[data-mobile] .cats-count {
@@ -729,7 +729,7 @@ const cats = [
     max-width: 46rem;
     margin: 0 auto;
     padding: 5rem 6vw 6rem;
-    background: #faf8f3;
+    background: var(--paper);
   }
   .cats-count {
     display: none;

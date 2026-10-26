@@ -27,8 +27,8 @@ const steps = [
 
 <style>
   .process {
-    background: #faf8f3;
-    color: #1a1a1a;
+    background: var(--paper);
+    color: var(--ink);
     padding: clamp(4rem, 12vh, 9rem) 1.5rem;
     max-width: 72rem;
     margin: 0 auto;
@@ -55,7 +55,7 @@ const steps = [
     display: grid;
     gap: 2rem;
     counter-reset: step;
-    border-left: 1px dashed rgba(26, 26, 26, 0.3);
+    border-left: var(--dash-divider);
     padding-left: 1.75rem;
   }
   .steps li {
@@ -70,8 +70,8 @@ const steps = [
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    background: #faf8f3;
-    border: 1px solid #1a1a1a;
+    background: var(--paper);
+    border: 1px solid var(--ink);
   }
   h3 {
     font-family: var(--font-heading);
@@ -95,7 +95,7 @@ const steps = [
       gap: 1.5rem;
       border-left: 0;
       padding-left: 0;
-      border-top: 1px dashed rgba(26, 26, 26, 0.3);
+      border-top: var(--dash-divider);
       padding-top: 2rem;
     }
     .steps li::before {

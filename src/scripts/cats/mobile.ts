@@ -26,7 +26,9 @@ export function initMobile() {
     const items = gsap.utils.toArray<HTMLElement>(':scope > .cats-intro, :scope > .cat', track);
     const cats = items.slice(1);
     const n = items.length;
-    const last = n - 1; // transitions between items; one unit of timeline time = one screen
+    const last = n - 1; // transitions between items; one unit of timeline time = one cat
+    const hold = C.endHold / C.screensPerCat; // the same rest on the last cat, in timeline units
+    const total = last + hold;
 
     cover.dataset.mobile = '';
     section.dataset.mobile = '';
@@ -37,7 +39,7 @@ export function initMobile() {
     // the sheet sits in a tall box and sticks with CSS
     const box = document.createElement('div');
     box.dataset.stick = '';
-    box.style.cssText = `position:relative;height:calc(100lvh * ${1 + C.screensPerCat * last})`;
+    box.style.cssText = `position:relative;height:calc(100lvh * ${1 + C.screensPerCat * total})`;
     sheet.parentNode!.insertBefore(box, sheet);
     box.appendChild(sheet);
 
@@ -55,9 +57,10 @@ export function initMobile() {
           end: () => `+=${box.offsetHeight - sheet.offsetHeight}`,
           invalidateOnRefresh: true,
           scrub: C.scrub,
-          snap: { snapTo: 1 / last, ...C.snap },
+          // settles on the nearest cat; the rest on the last cat is left alone, so the page does not slide off it
+          snap: { snapTo: (p: number) => (p * total >= last ? p : Math.round(p * total) / total), ...C.snap },
           onUpdate: (self) => {
-            const i = Math.round(self.progress * last);
+            const i = Math.min(last, Math.round(self.progress * total));
             count.textContent = i ? `${pad(i)} / ${pad(last)}` : '';
           },
         },
@@ -70,7 +73,7 @@ export function initMobile() {
       imgs.forEach((img, j) => {
         tl.fromTo(img, { xPercent: C.drift }, { xPercent: -C.drift, duration: Math.min(C.driftSpan, last - j), ease: 'none' }, j);
       });
-      tl.set({}, {}, last);
+      tl.set({}, {}, total); // the last cat rests for a while before the page moves on to the calendar
 
       // the calendar, now a vertical block: months draw in as it is reached
       const months = gsap.utils.toArray<HTMLElement>('.cal-month', cal);

@@ -1,0 +1,100 @@
+/* Chapter 4, the cats row: pinned one-cat-per-screen layout on phones and tablets (script sets data-mobile). Imported by CatsRow.astro (plain CSS, so every rule hangs off .cats-cover). */
+
+/* ---- Phones and tablets: pinned row, one cat per screen (script sets data-mobile) ---- */
+.cats-cover[data-mobile] {
+  --nav: 104px;
+  --bar: calc(100vh - 100svh);
+  --bar: calc(100lvh - 100svh);
+}
+.cats[data-mobile] .cats-sheet {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100lvh;
+  padding: 0;
+  overflow: hidden;
+}
+.cats[data-mobile] .cats-track {
+  overflow: visible;
+  scroll-snap-type: none;
+  width: max-content;
+  gap: 0;
+  padding: 0;
+  align-items: stretch;
+  will-change: transform;
+}
+.cats[data-mobile] .cats-intro,
+.cats[data-mobile] .cat {
+  flex: 0 0 100vw;
+  width: 100vw;
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100lvh;
+  scroll-snap-align: none;
+}
+.cats[data-mobile] .cats-intro {
+  align-self: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--nav) 8vw calc(var(--bar) + 10svh);
+}
+.cats[data-mobile] .cats-intro h2 {
+  font-size: clamp(2.2rem, 8.4vw, 3.8rem);
+}
+.cats[data-mobile] .cat {
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--nav) + 1rem) 8vw calc(var(--bar) + 12svh);
+}
+.cats[data-mobile] .cat-photo {
+  flex: 1 1 auto;
+  min-height: 0;
+  aspect-ratio: auto;
+  border-radius: 6px;
+}
+.cats[data-mobile] .cat h3 {
+  margin: 1.1rem 0 0.25rem;
+  font-size: clamp(1.8rem, 6.4vw, 2.6rem);
+}
+.cats[data-mobile] .cats-end,
+.cats[data-mobile] .cue {
+  display: none;
+}
+.cats[data-mobile] .cats-progress {
+  display: block;
+  position: absolute;
+  left: 8vw;
+  width: 52vw;
+  bottom: calc(var(--bar) + 5svh);
+  height: 0;
+  border-top: var(--dash-track);
+}
+.cats[data-mobile] .cats-fill {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: var(--dash-strong);
+  clip-path: inset(0% 100% 0% 0%);
+}
+.cats[data-mobile] .cats-count {
+  display: block;
+  position: absolute;
+  right: 8vw;
+  bottom: calc(var(--bar) + 5svh - 0.45rem);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+/* the calendar is a normal block after the row */
+.cats-cover[data-mobile] > .cal {
+  flex: none;
+  display: grid;
+  box-sizing: border-box;
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 5rem 6vw 6rem;
+  background: var(--paper);
+}

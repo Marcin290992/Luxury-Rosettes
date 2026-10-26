@@ -1,16 +1,21 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { CATS_PHONE as C, CLIP, MEDIA, RISE } from '../settings';
 
 gsap.registerPlugin(ScrollTrigger);
 
-/** Phones and tablets: the row is pinned with CSS sticky, one cat per screen; the calendar follows as a vertical block. */
+const pad = (i: number) => String(i).padStart(2, '0');
+
+/**
+ * Phones and tablets: the row is pinned with CSS sticky, one cat per screen; the calendar follows as a vertical block.
+ *
+ * The row is pinned (CSS sticky, so the compositor does it: no jitter) and swiping up slides it sideways, one cat per
+ * screen. The photo of each cat drifts against its card and the scroll settles on the nearest cat. The breeding
+ * calendar is a normal vertical block after the row (six columns do not fit on a phone).
+ */
 export function initMobile() {
-  // ---- phones and tablets (< 1024px) ----------------------------------------------------------------------------------
-  // The row is pinned (CSS sticky, so the compositor does it: no jitter) and swiping up slides it sideways, one cat per
-  // screen. The photo of each cat opens with a mask as it arrives, drifts against its card, and the scroll settles on
-  // the nearest cat. The breeding calendar is a normal vertical block after the row (six columns do not fit on a phone).
   const small = gsap.matchMedia();
-  small.add('(max-width: 1023px) and (prefers-reduced-motion: no-preference)', () => {
+  small.add(MEDIA.phone, () => {
     const cover = document.querySelector<HTMLElement>('.cats-cover')!;
     const section = document.getElementById('cats')!;
     const sheet = section.querySelector<HTMLElement>('.cats-sheet')!;
@@ -21,8 +26,7 @@ export function initMobile() {
     const items = gsap.utils.toArray<HTMLElement>(':scope > .cats-intro, :scope > .cat', track);
     const cats = items.slice(1);
     const n = items.length;
-    const PER = 0.75; // screens of swiping per cat
-    const pad = (i: number) => String(i).padStart(2, '0');
+    const last = n - 1; // transitions between items; one unit of timeline time = one screen
 
     cover.dataset.mobile = '';
     section.dataset.mobile = '';
@@ -33,15 +37,15 @@ export function initMobile() {
     // the sheet sits in a tall box and sticks with CSS
     const box = document.createElement('div');
     box.dataset.stick = '';
-    box.style.cssText = `position:relative;height:calc(100lvh * ${1 + PER * (n - 1)})`;
+    box.style.cssText = `position:relative;height:calc(100lvh * ${1 + C.screensPerCat * last})`;
     sheet.parentNode!.insertBefore(box, sheet);
     box.appendChild(sheet);
 
     const ctx = gsap.context(() => {
       const imgs = cats.map((c) => c.querySelector<HTMLElement>('img')!);
       // the photos are simply there (no mask, no zoom): while the row slides the photo must not also be "appearing"
-      gsap.set(imgs, { scale: 1.12 });
-      gsap.set(fill, { clipPath: 'inset(0% 100% 0% 0%)' });
+      gsap.set(imgs, { scale: C.photoScale });
+      gsap.set(fill, { clipPath: CLIP.closedX });
 
       const tl = gsap.timeline({
         defaults: { immediateRender: false },
@@ -50,38 +54,38 @@ export function initMobile() {
           start: 'top top',
           end: () => `+=${box.offsetHeight - sheet.offsetHeight}`,
           invalidateOnRefresh: true,
-          scrub: 0.6,
-          snap: { snapTo: 1 / (n - 1), duration: { min: 0.15, max: 0.45 }, delay: 0.12, ease: 'power2.inOut' },
+          scrub: C.scrub,
+          snap: { snapTo: 1 / last, ...C.snap },
           onUpdate: (self) => {
-            const i = Math.round(self.progress * (n - 1));
-            count.textContent = i ? `${pad(i)} / ${pad(n - 1)}` : '';
+            const i = Math.round(self.progress * last);
+            count.textContent = i ? `${pad(i)} / ${pad(last)}` : '';
           },
         },
       });
-      // one unit of time = one screen: item i is centred at time i
-      tl.fromTo(track, { x: 0 }, { x: () => -(n - 1) * window.innerWidth, ease: 'none', duration: n - 1 }, 0);
-      tl.fromTo(fill, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none', duration: n - 1 }, 0);
-      cats.forEach((_, j) => {
-        const t = j + 1; // its item index
-        const end = n - 1; // nothing may run past the last screen, or the whole row would be stretched
-        // the only effect left: the photo drifts against its card (depth). Names and captions are simply there.
-        tl.fromTo(imgs[j], { xPercent: 5 }, { xPercent: -5, duration: Math.min(2, end - (t - 1)), ease: 'none' }, t - 1);
+      // item i is centred at time i
+      tl.fromTo(track, { x: 0 }, { x: () => -last * window.innerWidth, ease: 'none', duration: last }, 0);
+      tl.fromTo(fill, { clipPath: CLIP.closedX }, { clipPath: CLIP.open, ease: 'none', duration: last }, 0);
+      // the only effect left: the photo drifts against its card (depth). Names and captions are simply there.
+      // Nothing may run past the last screen, or the whole row would be stretched.
+      imgs.forEach((img, j) => {
+        tl.fromTo(img, { xPercent: C.drift }, { xPercent: -C.drift, duration: Math.min(C.driftSpan, last - j), ease: 'none' }, j);
       });
-      tl.set({}, {}, n - 1);
+      tl.set({}, {}, last);
 
       // the calendar, now a vertical block: months draw in as it is reached
       const months = gsap.utils.toArray<HTMLElement>('.cal-month', cal);
       const lines = gsap.utils.toArray<HTMLElement>('.cal-line', cal);
       const head = gsap.utils.toArray<HTMLElement>('.cal-head > *', cal);
       const foot = gsap.utils.toArray<HTMLElement>('.cal-foot > *', cal);
-      gsap.set([head, months, foot].flat(), { autoAlpha: 0, y: 24 });
-      gsap.set(lines, { clipPath: 'inset(0% 100% 0% 0%)' });
+      const k = C.calendar;
+      gsap.set([head, months, foot].flat(), { autoAlpha: 0, y: RISE.block });
+      gsap.set(lines, { clipPath: CLIP.closedX });
       gsap
-        .timeline({ scrollTrigger: { trigger: cal, start: 'top 80%', toggleActions: 'play none none reverse' }, defaults: { ease: 'power3.out' } })
-        .to(head, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, 0)
-        .to(months, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.08 }, 0.25)
-        .to(lines, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.2, stagger: 0.08, ease: 'power3.inOut' }, 0.4)
-        .to(foot, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.1 }, 0.9);
+        .timeline({ scrollTrigger: { trigger: cal, start: C.calendarStart, toggleActions: 'play none none reverse' }, defaults: { ease: 'power3.out' } })
+        .to(head, { autoAlpha: 1, y: 0, duration: k.head.dur, stagger: k.head.stagger }, 0)
+        .to(months, { autoAlpha: 1, y: 0, duration: k.months.dur, stagger: k.months.stagger }, k.months.at)
+        .to(lines, { clipPath: CLIP.open, duration: k.lines.dur, stagger: k.lines.stagger, ease: k.lines.ease }, k.lines.at)
+        .to(foot, { autoAlpha: 1, y: 0, duration: k.foot.dur, stagger: k.foot.stagger }, k.foot.at);
     }, cover);
 
     document.fonts.ready.then(() => ScrollTrigger.refresh());
@@ -91,7 +95,6 @@ export function initMobile() {
       sheet.style.cssText = '';
       box.parentNode?.insertBefore(sheet, box);
       box.remove();
-      track.appendChild(cal);
       track.insertBefore(cal, track.querySelector('.cats-end'));
       gsap.set([track, ...items], { clearProps: 'all' });
       delete cover.dataset.mobile;

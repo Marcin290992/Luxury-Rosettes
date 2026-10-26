@@ -1,12 +1,17 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { CATS, CLIP, MEDIA, RISE, ZOOM_IN } from '../settings';
 
 gsap.registerPlugin(ScrollTrigger);
+
+const REVEAL_EASE = 'power3.out';
+const SETTLE_EASE = 'power2.out';
+const ARRIVE_EASE = 'power2.inOut';
 
 /** Laptops and wider: the pinned row of cats slides sideways, ending on the breeding calendar with a hold. */
 export function initDesktop() {
   const mm = gsap.matchMedia();
-  mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+  mm.add(MEDIA.laptop, () => {
     const cover = document.querySelector<HTMLElement>('.cats-cover')!;
     const section = document.getElementById('cats')!;
     const sheet = section.querySelector<HTMLElement>('.cats-sheet')!; // animated; the section only gets pinned
@@ -16,8 +21,7 @@ export function initDesktop() {
     const intro = gsap.utils.toArray<HTMLElement>('.cats-intro > *', section);
     const distance = () => Math.max(0, track.scrollWidth - window.innerWidth); // sideways travel
     const arrival = () => window.innerHeight; // scroll spent sliding the sheet in
-    const hold = () => window.innerHeight * 0.5; // scroll spent resting on the calendar, so it can't be skimmed past
-    const SMOOTH = 1.2; // same "cinematic lag" feel as the stage before it
+    const hold = () => window.innerHeight * CATS.hold;
     let ctx: gsap.Context | undefined;
     let cancelled = false;
 
@@ -38,6 +42,13 @@ export function initDesktop() {
           invalidateOnRefresh: true,
         });
         const at = (offset = 0) => () => pin.start + offset;
+        const scrubbed = (start: () => number, end: () => number) => ({
+          trigger: section,
+          start,
+          end,
+          scrub: CATS.smooth,
+          invalidateOnRefresh: true,
+        });
 
         // 1. Arrival: the sheet rises over the expanding photo (photo drifts up and dims)
         const before = cover.previousElementSibling as HTMLElement | null;
@@ -47,83 +58,84 @@ export function initDesktop() {
         gsap.set(sheet, { yPercent: 100 });
         const arrive = gsap.timeline({
           defaults: { immediateRender: false },
-          scrollTrigger: { trigger: section, start: at(), end: () => pin.start + arrival(), scrub: SMOOTH, invalidateOnRefresh: true },
+          scrollTrigger: scrubbed(at(), () => pin.start + arrival()),
         });
-        arrive.fromTo(sheet, { yPercent: 100 }, { yPercent: 0, ease: 'power2.inOut' }, 0);
+        arrive.fromTo(sheet, { yPercent: 100 }, { yPercent: 0, ease: ARRIVE_EASE }, 0);
         if (stage && dim) {
           arrive
-            .fromTo(stage, { y: 0 }, { y: () => -window.innerHeight * 0.18, ease: 'power2.inOut' }, 0)
-            .fromTo(dim, { opacity: 0 }, { opacity: 0.7, ease: 'power2.inOut' }, 0);
+            .fromTo(stage, { y: 0 }, { y: () => -window.innerHeight * CATS.arrivalExit.stage, ease: ARRIVE_EASE }, 0)
+            .fromTo(dim, { opacity: 0 }, { opacity: CATS.arrivalExit.dim, ease: ARRIVE_EASE }, 0);
         }
 
         // 2. Sideways travel (this tween is also the "scroller" the cards react to)
-        const range = { trigger: section, start: at(arrival()), end: () => pin.end - hold(), scrub: SMOOTH, invalidateOnRefresh: true };
+        const range = scrubbed(at(arrival()), () => pin.end - hold());
         const move = gsap.to(track, { x: () => -distance(), ease: 'none', scrollTrigger: range });
-        gsap.fromTo(photos, { xPercent: 7 }, { xPercent: -7, ease: 'none', scrollTrigger: range });
-        gsap.fromTo(
-          '.cats-fill',
-          { clipPath: 'inset(0% 100% 0% 0%)' },
-          { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none', scrollTrigger: range },
-        );
+        gsap.fromTo(photos, { xPercent: CATS.photoDrift }, { xPercent: -CATS.photoDrift, ease: 'none', scrollTrigger: range });
+        gsap.fromTo('.cats-fill', { clipPath: CLIP.closedX }, { clipPath: CLIP.open, ease: 'none', scrollTrigger: range });
 
         // 3. Each photo is revealed like in the story chapter: a mask opens while the image settles from a slow zoom
         const hide = (card: HTMLElement) => {
-          gsap.set(card.querySelector('.cat-photo'), { clipPath: 'inset(0% 100% 0% 0%)' });
-          gsap.set(card.querySelector('img'), { scale: 1.3 });
-          gsap.set(card.querySelectorAll('h3, p'), { autoAlpha: 0, y: 16 });
+          gsap.set(card.querySelector('.cat-photo'), { clipPath: CLIP.closedX });
+          gsap.set(card.querySelector('img'), { scale: ZOOM_IN });
+          gsap.set(card.querySelectorAll('h3, p'), { autoAlpha: 0, y: RISE.text });
         };
         const reveal = (card: HTMLElement) =>
           gsap
-            .timeline({ paused: true, defaults: { ease: 'power3.out' } })
-            .to(card.querySelector('.cat-photo'), { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.3 }, 0)
-            .to(card.querySelector('img'), { scale: 1, duration: 2, ease: 'power2.out' }, 0)
-            .to(card.querySelectorAll('h3, p'), { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, 0.5);
+            .timeline({ paused: true, defaults: { ease: REVEAL_EASE } })
+            .to(card.querySelector('.cat-photo'), { clipPath: CLIP.open, duration: CATS.card.mask }, 0)
+            .to(card.querySelector('img'), { scale: 1, duration: CATS.card.img, ease: SETTLE_EASE }, 0)
+            .to(
+              card.querySelectorAll('h3, p'),
+              { autoAlpha: 1, y: 0, duration: CATS.card.text, stagger: CATS.card.textStagger },
+              CATS.card.textAt,
+            );
 
         // the calendar panel: heading, then the month columns draw in one by one, then the legend and button
         const panel = section.querySelector<HTMLElement>('.cal')!;
         const calHead = gsap.utils.toArray<HTMLElement>('.cal-head > *', panel);
         const calMonths = gsap.utils.toArray<HTMLElement>('.cal-month', panel);
         const calFoot = gsap.utils.toArray<HTMLElement>('.cal-foot > *', panel);
-        gsap.set(calHead, { autoAlpha: 0, y: 24 });
-        gsap.set(calMonths, { autoAlpha: 0, y: 28 });
-        gsap.set(calFoot, { autoAlpha: 0, y: 16 });
+        const cal = CATS.calendar;
+        gsap.set(calHead, { autoAlpha: 0, y: RISE.block });
+        gsap.set(calMonths, { autoAlpha: 0, y: RISE.card });
+        gsap.set(calFoot, { autoAlpha: 0, y: RISE.text });
         const calReveal = gsap
-          .timeline({ paused: true, defaults: { ease: 'power3.out' } })
-          .to(calHead, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.12 }, 0)
-          .to(calMonths, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.1 }, 0.3)
-          .to(calFoot, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.12 }, 0.9);
+          .timeline({ paused: true, defaults: { ease: REVEAL_EASE } })
+          .to(calHead, { autoAlpha: 1, y: 0, duration: cal.head.dur, stagger: cal.head.stagger }, 0)
+          .to(calMonths, { autoAlpha: 1, y: 0, duration: cal.months.dur, stagger: cal.months.stagger }, cal.months.at)
+          .to(calFoot, { autoAlpha: 1, y: 0, duration: cal.foot.dur, stagger: cal.foot.stagger }, cal.foot.at);
         // while the pin holds on the calendar, a line draws across the months — the page is "doing" something,
         // and the scroll that remains is clearly part of this screen rather than dead space
         const lines = gsap.utils.toArray<HTMLElement>('.cal-line', panel);
-        gsap.set(lines, { clipPath: 'inset(0% 100% 0% 0%)' });
+        gsap.set(lines, { clipPath: CLIP.closedX });
         const draw = gsap.timeline({
           defaults: { ease: 'none', immediateRender: false },
-          scrollTrigger: { trigger: section, start: () => pin.end - hold(), end: () => pin.end, scrub: SMOOTH, invalidateOnRefresh: true },
+          scrollTrigger: scrubbed(() => pin.end - hold(), () => pin.end),
         });
         lines.forEach((l, i) =>
-          draw.fromTo(l, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.5 }, i * 0.5),
+          draw.fromTo(l, { clipPath: CLIP.closedX }, { clipPath: CLIP.open, duration: cal.line.dur }, i * cal.line.step),
         ); // one after another
 
         ScrollTrigger.create({
           trigger: panel,
           containerAnimation: move,
-          start: 'left 80%',
+          start: CATS.calendarStart,
           animation: calReveal,
           toggleActions: 'play none none reverse',
         });
 
-        gsap.set(intro, { autoAlpha: 0, y: 24 });
-        const visibleAtStart = cards.filter((c) => c.getBoundingClientRect().left < window.innerWidth * 0.98);
+        gsap.set(intro, { autoAlpha: 0, y: RISE.block });
+        const visibleAtStart = cards.filter((c) => c.getBoundingClientRect().left < window.innerWidth * CATS.visibleAtStart);
         const later = cards.filter((c) => !visibleAtStart.includes(c));
         cards.forEach(hide);
 
         // the ones already on screen when the row starts moving play together once the sheet is mostly in
         const first = gsap.timeline({ paused: true });
-        first.to(intro, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.12, ease: 'power3.out' }, 0);
-        visibleAtStart.forEach((c, i) => first.add(reveal(c).play(0), 0.25 + i * 0.22));
+        first.to(intro, { autoAlpha: 1, y: 0, duration: CATS.intro.dur, stagger: CATS.intro.stagger, ease: REVEAL_EASE }, 0);
+        visibleAtStart.forEach((c, i) => first.add(reveal(c).play(0), CATS.firstCards.at + i * CATS.firstCards.step));
         ScrollTrigger.create({
           trigger: section,
-          start: () => pin.start + arrival() * 0.55,
+          start: () => pin.start + arrival() * CATS.firstShare,
           animation: first,
           toggleActions: 'play none none reverse',
         });
@@ -133,7 +145,7 @@ export function initDesktop() {
           ScrollTrigger.create({
             trigger: c,
             containerAnimation: move,
-            start: 'left 92%',
+            start: CATS.laterStart,
             animation: reveal(c),
             toggleActions: 'play none none reverse',
           });
@@ -148,5 +160,4 @@ export function initDesktop() {
       delete cover.dataset.pinned;
     };
   });
-
 }

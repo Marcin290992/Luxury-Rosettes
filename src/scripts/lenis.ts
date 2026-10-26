@@ -1,6 +1,7 @@
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SMOOTH_WHEEL } from './settings';
 
 let lenis: Lenis | undefined;
 
@@ -14,8 +15,7 @@ export function initLenis() {
 
   gsap.registerPlugin(ScrollTrigger);
 
-  // duration = how long one wheel notch glides; higher = softer, more "floaty"
-  lenis = new Lenis({ duration: 2, wheelMultiplier: 0.85, smoothWheel: true, syncTouch: false, autoRaf: false });
+  lenis = new Lenis({ ...SMOOTH_WHEEL, smoothWheel: true, syncTouch: false, autoRaf: false });
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((time) => lenis?.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);

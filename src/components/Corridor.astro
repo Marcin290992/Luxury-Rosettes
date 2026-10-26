@@ -36,7 +36,7 @@ const items = [
       </div>
 
       {
-        items.map((it, i) => (
+        items.map((it) => (
           <figure class="cor-item">
             <div class="cor-frame">
               <Image src={it.img} alt={it.title} widths={[500, 800, 1100]} sizes="(min-width:1024px) 30vw, 90vw" loading="lazy" draggable="false" />
@@ -75,6 +75,7 @@ const items = [
 <script>
   import { createDolly, type Dolly } from '../scripts/dolly-gallery';
   import { clamp, smoothstep as smooth } from '../scripts/math';
+  import { CORRIDOR_PHONE_KEEP, CORRIDOR_SPACING, CORRIDOR_LEAD, CORRIDOR_PX_PER_STEP } from '../scripts/settings';
 
 
   const section = document.getElementById('corridor')!;
@@ -90,12 +91,9 @@ const items = [
   const finCopy = section.querySelector<HTMLElement>('.cor-finale-copy')!;
   const finCtas = section.querySelector<HTMLElement>('.cor-ctas')!;
 
-  // Phones and tablets show the seven strongest photos (the others are hidden while the corridor runs): six screens
-  // of swiping would be too many on a phone.
-  const PHONE_KEEP = [0, 1, 3, 4, 5, 6, 9];
-
-  const SPACING = 600; // depth between photos, in px
-  const LEAD = 2;
+  const PHONE_KEEP = CORRIDOR_PHONE_KEEP; // the others are hidden while the corridor runs on a phone
+  const SPACING = CORRIDOR_SPACING;
+  const LEAD = CORRIDOR_LEAD;
   const INK = [26, 26, 26];
   const PAPER = [250, 248, 243];
   const WHITE = [255, 255, 255];
@@ -109,7 +107,7 @@ const items = [
     const tiles = phone ? PHONE_KEEP.map((k) => allTiles[k]) : allTiles;
     allTiles.forEach((t) => { if (!tiles.includes(t)) t.hidden = true; });
     const items = tiles.length;
-    const PX_PER_STEP = phone ? 400 : 560; // page scroll per photo
+    const PX_PER_STEP = phone ? CORRIDOR_PX_PER_STEP.phone : CORRIDOR_PX_PER_STEP.laptop;
     // Finale, in steps from the first photo (the last photo is in place at items - 1): first the words arrive on the
     // paper, then they turn white as the kittens photo fades in and everything goes dark.
     const TEXT_IN: [number, number] = [items - 0.5, items + 0.2];

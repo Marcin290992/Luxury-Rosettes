@@ -78,6 +78,7 @@ const has = Astro.slots.has('default');
 
 <script>
   import { clamp, smoothstep } from '../scripts/math';
+  import { EXPAND_PHONE_BOX_WIDTH } from '../scripts/settings';
 
   function init(root: HTMLElement) {
     const num = (key: string, fallback: number) => {
@@ -120,7 +121,7 @@ const has = Astro.slots.has('default');
     // visible part of the screen.
     const start = () => {
       if (boxW >= 1024) return { w: c.startWidth, h: c.startHeight, cy: 50 };
-      const side = Math.min(boxW * 0.74, visibleH * 0.5);
+      const side = Math.min(boxW * EXPAND_PHONE_BOX_WIDTH, visibleH * 0.5);
       return { w: (side / boxW) * 100, h: (side / stageH) * 100, cy: (visibleH / 2 / stageH) * 100 };
     };
     let st = { w: c.startWidth, h: c.startHeight, cy: 50 };

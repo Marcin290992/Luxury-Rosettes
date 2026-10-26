@@ -189,7 +189,7 @@ export const CATS = {
 };
 export const CATS_PHONE = {
   screensPerCat: 0.75, // screens of swiping per cat
-  endHold: 1, // screens of swiping the last cat rests for, so the calendar below cannot be flung into before it is seen
+  endHold: 0.5, // screens of swiping the last cat rests for, so the calendar below cannot be flung into before it is seen
   scrub: 0.6, // the row follows the finger; no snapping, which tugs the scroll while the finger is still moving
   photoScale: 1.12, // the photos are simply there (no mask, no zoom)
   drift: 5, // % the photo drifts against its card

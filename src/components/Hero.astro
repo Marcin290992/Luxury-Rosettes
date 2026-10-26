@@ -40,6 +40,7 @@ import hero from '../assets/img/hero_img.webp';
 <script>
   import gsap from 'gsap';
   import { clamp } from '../scripts/math';
+  import { HERO, WORD_HIDDEN } from '../scripts/settings';
 
   // Opening sequence: the photo settles from a slow zoom, the name rises letter by letter across the bottom edge,
   // then the rail of keywords, and finally the navigation arrives. Time-based; the scroll sequence is separate.
@@ -70,29 +71,29 @@ import hero from '../assets/img/hero_img.webp';
     if (!words.length) return;
     const size = parseFloat(getComputedStyle(title).fontSize);
     const width = words[words.length - 1].getBoundingClientRect().right - words[0].getBoundingClientRect().left;
-    if (width > 0) title.style.fontSize = `${Math.min((size * innerWidth * 0.94) / width, hero.clientHeight * 0.12)}px`;
+    if (width > 0) title.style.fontSize = `${Math.min((size * innerWidth * HERO.fitWidth) / width, hero.clientHeight * HERO.fitHeight)}px`;
   };
 
   // Where the cat sits. The photo is "cover"-cropped, so on wide or short windows the cat would slide low and the
-  // name would end up on its face. Instead the vertical crop is chosen so that the eyes land at 40% of the height;
+  // name would end up on its face. Instead the vertical crop is chosen so that the eyes land at HERO.eyeAtHeight of the height;
   // the horizontal crop centres the pair of eyes. The spot of the left eye is published for the scroll zoom.
-  const EYE = { x: 0.371, y: 0.442, mid: 0.46 }; // left eye, and the middle between both eyes, as fractions of the photo
+  const EYE = HERO.eye;
   const photo = hero.querySelector<HTMLImageElement>('.hero-img')!;
   const placeCat = () => {
     const W = hero.clientWidth;
     const H = hero.clientHeight;
-    const iw = +(photo.dataset.w ?? 2000);
-    const ih = +(photo.dataset.h ?? 1334);
+    const iw = +(photo.dataset.w ?? HERO.photoFallback.w);
+    const ih = +(photo.dataset.h ?? HERO.photoFallback.h);
     const k = Math.max(W / iw, H / ih);
     const sW = iw * k;
     const sH = ih * k;
-    const py = sH > H ? clamp((EYE.y * sH - H * 0.4) / (sH - H), 0, 1) : 0.5;
+    const py = sH > H ? clamp((EYE.y * sH - H * HERO.eyeAtHeight) / (sH - H), 0, 1) : 0.5;
     const px = sW > W ? clamp((EYE.mid * sW - W / 2) / (sW - W), 0, 1) : 0.5;
     photo.style.objectPosition = `${px * 100}% ${py * 100}%`;
     const eyeX = EYE.x * sW - px * (sW - W);
     const eyeY = EYE.y * sH - py * (sH - H);
-    // w = width of the eye in px (the eye is ~7.5% of the photo's width): lets the scroll zoom pick a scale that fits the screen
-    photo.dataset.eye = JSON.stringify({ ox: (eyeX / W) * 100, oy: (eyeY / H) * 100, w: 0.075 * sW });
+    // w = width of the eye in px (see HERO.eyeWidth): lets the scroll zoom pick a scale that fits the screen
+    photo.dataset.eye = JSON.stringify({ ox: (eyeX / W) * 100, oy: (eyeY / H) * 100, w: HERO.eyeWidth * sW });
   };
   placeCat();
 
@@ -111,18 +112,18 @@ import hero from '../assets/img/hero_img.webp';
   });
 
   if (!reduceMotion) {
-    gsap.set(chars, { yPercent: 115 });
+    gsap.set(chars, { yPercent: WORD_HIDDEN });
     gsap.set(title, { opacity: 1 });
-    gsap.set(rail, { y: 14 });
-    gsap.set(media, { scale: 1.18 });
+    gsap.set(rail, { y: HERO.railRise });
+    gsap.set(media, { scale: HERO.mediaZoom });
     if (nav) gsap.set(nav, { autoAlpha: 0 });
   }
 
-  // wait for the web font and the photo, but never longer than ~1.8 s
+  // wait for the web font and the photo, but never longer than HERO.maxWait
   const img = hero.querySelector<HTMLImageElement>('.hero-img');
   Promise.race([
     Promise.all([document.fonts.ready, img?.decode?.().catch(() => undefined)]),
-    new Promise((r) => setTimeout(r, 1800)),
+    new Promise((r) => setTimeout(r, HERO.maxWait)),
   ]).then(() => {
     fit();
     // everything is measured and laid out: lift the curtain and show the nav (until now the page stays black)
@@ -132,12 +133,13 @@ import hero from '../assets/img/hero_img.webp';
       gsap.set('[data-intro]', { opacity: 1 });
       return;
     }
+    const T = HERO.timeline;
     gsap
       .timeline({ defaults: { ease: 'power3.out' } })
-      .to(media, { scale: 1, duration: 2.8 }, 0)
-      .to(chars, { yPercent: 0, duration: 1.3, stagger: 0.05 }, 0.45)
-      .to(rail, { opacity: 1, y: 0, duration: 1 }, 1.7)
-      .to(nav, { autoAlpha: 1, duration: 1, clearProps: 'opacity,visibility' }, 1.2);
+      .to(media, { scale: 1, duration: T.zoom }, 0)
+      .to(chars, { yPercent: 0, duration: T.chars.dur, stagger: T.chars.stagger }, T.chars.at)
+      .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at)
+      .to(nav, { autoAlpha: 1, duration: T.nav.dur, clearProps: 'opacity,visibility' }, T.nav.at);
   });
 </script>
 

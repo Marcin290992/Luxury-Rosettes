@@ -218,3 +218,46 @@ export const EYE_FALLBACK = {
   laptop: { ox: 37, oy: 48, w: 0 },
   phone: { ox: 40, oy: 40, w: 0 },
 };
+
+// ---- hero opening sequence -------------------------------------------------------------------------------------------
+export const HERO = {
+  maxWait: 1800, // ms: never wait longer than this for the web font and the photo
+  fitWidth: 0.94, // the name spans this share of the screen width ...
+  fitHeight: 0.12, // ... but is never taller than this share of the hero
+  photoFallback: { w: 2000, h: 1334 }, // px, when the photo does not say its own size
+  // Where the cat sits, as fractions of the photo: the left eye, and the middle between both eyes
+  eye: { x: 0.371, y: 0.442, mid: 0.46 },
+  eyeAtHeight: 0.4, // the vertical crop puts the eyes at this share of the hero's height
+  eyeWidth: 0.075, // the eye is about this share of the photo's width
+  railRise: 14, // px the keyword rail rises while fading in
+  mediaZoom: 1.18, // the photo settles from this scale
+  timeline: {
+    zoom: 2.8,
+    chars: { at: 0.45, dur: 1.3, stagger: 0.05 },
+    rail: { at: 1.7, dur: 1 },
+    nav: { at: 1.2, dur: 1 },
+  },
+};
+
+// ---- photo corridor: camera, finale and colours ----------------------------------------------------------------------
+export const CORRIDOR = {
+  colors: { ink: [26, 26, 26], paper: [250, 248, 243], white: [255, 255, 255], black: [0, 0, 0] },
+  // Finale, in steps from the first photo (items = number of photos): first the words arrive on the paper, then they
+  // turn white as the kittens photo fades in and everything goes dark.
+  textIn: [-0.5, 0.2], // relative to items
+  darken: [0.7, 1.8],
+  endAfter: 2.7,
+  ctaFrom: 0.6, // the buttons arrive once this share of the darkening is done
+  ctaPad: 0.2,
+  interactiveAt: 0.6, // text and buttons accept clicks once this visible
+  gate: [-1.3, -0.7], // the title leaves first; only then do the photos fade in, so the two never overlap
+  intro: { fadeStart: 0.2, fadeEnd: -1.4, grow: 1.5, scale: 0.5 }, // the title fades from -LEAD + fadeStart to fadeEnd, in steps
+  rise: { copy: 22, ctas: 14 },
+  finale: { zoom: 0.15, scrim: 0.65 },
+  // phones: tall, narrow photos that alternate sides; the one nearest the camera grows huge and runs off the edge of the
+  // screen while the next one stands small on the other side
+  dolly: {
+    laptop: { maxWidth: 380, height: 0.42, spread: 1.75, scatter: 0.12, revealRange: 3, passRange: 0.35, passHold: 0 },
+    phone: { width: 0.5, height: 0.3, aspectRatio: 0.56, perspective: 900, spread: 0.62, scatter: 0.05, revealRange: 3.6, passRange: 0.8, passHold: 0.15 },
+  },
+};

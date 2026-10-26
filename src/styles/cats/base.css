@@ -63,7 +63,7 @@
   overflow: hidden;
   border-radius: 6px;
   aspect-ratio: 3 / 4;
-  background: #e9e4d9;
+  background: var(--placeholder);
 }
 .cats-cover .cat-photo img {
   width: 100%;

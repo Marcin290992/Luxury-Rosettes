@@ -75,7 +75,7 @@ const items = [
 <script>
   import { createDolly, type Dolly } from '../scripts/dolly-gallery';
   import { clamp, smoothstep as smooth } from '../scripts/math';
-  import { CORRIDOR_PHONE_KEEP, CORRIDOR_SPACING, CORRIDOR_LEAD, CORRIDOR_PX_PER_STEP } from '../scripts/settings';
+  import { CORRIDOR_PHONE_KEEP, CORRIDOR_SPACING, CORRIDOR_LEAD, CORRIDOR_PX_PER_STEP, CORRIDOR as C } from '../scripts/settings';
 
 
   const section = document.getElementById('corridor')!;
@@ -94,9 +94,7 @@ const items = [
   const PHONE_KEEP = CORRIDOR_PHONE_KEEP; // the others are hidden while the corridor runs on a phone
   const SPACING = CORRIDOR_SPACING;
   const LEAD = CORRIDOR_LEAD;
-  const INK = [26, 26, 26];
-  const PAPER = [250, 248, 243];
-  const WHITE = [255, 255, 255];
+  const { ink: INK, paper: PAPER, white: WHITE, black: BLACK } = C.colors;
 
   let dolly: Dolly | undefined;
   let onScroll: (() => void) | undefined;
@@ -110,9 +108,10 @@ const items = [
     const PX_PER_STEP = phone ? CORRIDOR_PX_PER_STEP.phone : CORRIDOR_PX_PER_STEP.laptop;
     // Finale, in steps from the first photo (the last photo is in place at items - 1): first the words arrive on the
     // paper, then they turn white as the kittens photo fades in and everything goes dark.
-    const TEXT_IN: [number, number] = [items - 0.5, items + 0.2];
-    const DARKEN: [number, number] = [items + 0.7, items + 1.8];
-    const END_AT = items + 2.7;
+    const TEXT_IN = C.textIn.map((v) => items + v);
+    const DARKEN = C.darken.map((v) => items + v);
+    const END_AT = items + C.endAfter;
+    const dollyLook = phone ? C.dolly.phone : C.dolly.laptop;
     const MIN = -LEAD * SPACING;
     const MAX = END_AT * SPACING;
 
@@ -123,28 +122,28 @@ const items = [
 
     dolly = createDolly(stage, tiles, {
       // phones: the photo is as wide as the screen allows and no taller than ~half of what is visible
-      // phones: tall, narrow photos (smaller but taller) that alternate sides, and the one nearest the camera grows
-      // huge and runs off the edge of the screen while the next one stands small on the other side
-      itemWidth: phone ? Math.min(window.innerWidth * 0.5, window.innerHeight * 0.3) : Math.min(380, window.innerHeight * 0.42),
-      ...(phone ? { aspectRatio: 0.56, perspective: 900 } : {}), // (undefined would overwrite the engine's defaults)
+      itemWidth: 'width' in dollyLook
+        ? Math.min(window.innerWidth * dollyLook.width, window.innerHeight * dollyLook.height)
+        : Math.min(dollyLook.maxWidth, window.innerHeight * dollyLook.height),
+      ...('aspectRatio' in dollyLook ? { aspectRatio: dollyLook.aspectRatio, perspective: dollyLook.perspective } : {}), // (undefined would overwrite the engine's defaults)
       spacing: SPACING,
-      spread: phone ? 0.62 : 1.75,
-      scatter: phone ? 0.05 : 0.12,
-      revealRange: phone ? 3.6 : 3, // phones: the upcoming photo is nearly solid, not a ghost
-      passRange: phone ? 0.8 : 0.35, // phones: the photo that has passed the camera is gone quickly ...
-      passHold: phone ? 0.15 : 0,
+      spread: dollyLook.spread,
+      scatter: dollyLook.scatter,
+      revealRange: dollyLook.revealRange, // phones: the upcoming photo is nearly solid, not a ghost
+      passRange: dollyLook.passRange, // phones: the photo that has passed the camera is gone quickly ...
+      passHold: dollyLook.passHold,
       lead: LEAD,
       tail: END_AT - (items - 1),
       grayscale: 0,
       // the title leaves first; only then do the photos fade in, so the two never overlap
-      gate: (offset) => smooth(-1.3, -0.7, offset / SPACING),
+      gate: (offset) => smooth(C.gate[0], C.gate[1], offset / SPACING),
       onIndexChange: (i) => {
         count.textContent = String(Math.min(i, items - 1) + 1).padStart(2, '0');
       },
       onFrame: (offset) => {
         const e = offset / SPACING;
-        intro.style.opacity = (1 - smooth(-LEAD + 0.2, -1.4, e)).toFixed(3);
-        intro.style.transform = `scale(${(1 + clamp((e + LEAD) / 1.5, 0, 1) * 0.5).toFixed(3)})`;
+        intro.style.opacity = (1 - smooth(-LEAD + C.intro.fadeStart, C.intro.fadeEnd, e)).toFixed(3);
+        intro.style.transform = `scale(${(1 + clamp((e + LEAD) / C.intro.grow, 0, 1) * C.intro.scale).toFixed(3)})`;
         fill.style.clipPath = `inset(0% ${((1 - clamp((offset - MIN) / (MAX - MIN), 0, 1)) * 100).toFixed(2)}% 0% 0%)`;
         const mix = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',');
         const at = offset / SPACING;
@@ -153,20 +152,20 @@ const items = [
         // the words first, in ink on the paper...
         fin.style.visibility = textIn > 0 ? 'visible' : 'hidden';
         finCopy.style.opacity = textIn.toFixed(3);
-        finCopy.style.transform = `translate3d(0, ${((1 - textIn) * 22).toFixed(1)}px, 0)`;
-        finCopy.style.pointerEvents = textIn > 0.6 ? 'auto' : 'none';
+        finCopy.style.transform = `translate3d(0, ${((1 - textIn) * C.rise.copy).toFixed(1)}px, 0)`;
+        finCopy.style.pointerEvents = textIn > C.interactiveAt ? 'auto' : 'none';
         // ...then they turn white while the photo fades in and the lights go down
         finCopy.style.setProperty('--fg', `rgb(${mix(INK, WHITE, dark)})`);
         finCopy.style.setProperty('--inv', `rgb(${mix(WHITE, INK, dark)})`);
         // the buttons only arrive once the photo is there
-        const ctaIn = smooth(DARKEN[0] + 0.6 * (DARKEN[1] - DARKEN[0]), DARKEN[1] + 0.2, at);
+        const ctaIn = smooth(DARKEN[0] + C.ctaFrom * (DARKEN[1] - DARKEN[0]), DARKEN[1] + C.ctaPad, at);
         finCtas.style.opacity = ctaIn.toFixed(3);
-        finCtas.style.transform = `translate3d(0, ${((1 - ctaIn) * 14).toFixed(1)}px, 0)`;
-        finCtas.style.pointerEvents = ctaIn > 0.6 ? 'auto' : 'none';
+        finCtas.style.transform = `translate3d(0, ${((1 - ctaIn) * C.rise.ctas).toFixed(1)}px, 0)`;
+        finCtas.style.pointerEvents = ctaIn > C.interactiveAt ? 'auto' : 'none';
         finImg.style.opacity = dark.toFixed(3);
-        finImg.style.transform = `scale(${(1.15 - 0.15 * dark).toFixed(4)})`;
-        finScrim.style.opacity = (0.65 * dark).toFixed(3);
-        stage.style.backgroundColor = `rgb(${mix(PAPER, [0, 0, 0], dark)})`;
+        finImg.style.transform = `scale(${(1 + C.finale.zoom * (1 - dark)).toFixed(4)})`;
+        finScrim.style.opacity = (C.finale.scrim * dark).toFixed(3);
+        stage.style.backgroundColor = `rgb(${mix(PAPER, BLACK, dark)})`;
         progress.style.opacity = (1 - smooth(TEXT_IN[0], TEXT_IN[1], at)).toFixed(3);
       },
     });
@@ -251,7 +250,7 @@ const items = [
     overflow: hidden;
     border-radius: 10px;
     aspect-ratio: 4 / 5;
-    background: #e9e4d9;
+    background: var(--placeholder);
   }
   .cor-frame :global(img) {
     width: 100%;

@@ -55,6 +55,28 @@ export interface Dolly {
   destroy(): void;
 }
 
+// Fixed feel of the engine (what is tunable per use is in DollyOptions)
+const MIN_STEP = 40; // px: the smallest allowed distance between tiles
+const MIN_TILE = 40; // px: the smallest a tile may get
+const SIDE_MARGIN = 32; // px kept free beside a tile
+const MIN_ASPECT = 0.1;
+const MIN_RANGE = 0.01; // divisor guard for the reveal / pass ranges
+const Z_BASE = 10000; // nearer tiles paint over farther ones
+const HIDDEN_ALPHA = 0.002; // below this a tile is not painted
+const NEAR_CLIP = 0.95; // share of the perspective distance after which a tile has gone through the camera
+const RUSH_SPEED = 2500; // px/s at which the speed effects (pulse, tilt, sway) are at full strength
+const MAX_FLICK = 4000; // px/s: the fastest a released drag keeps gliding
+const FLICK_DECAY = 0.02; // share of the flick left after one second
+const MAX_FRAME = 0.05; // s: longest frame the motion is integrated over
+const SPEED_BLEND = 8; // how fast the measured speed follows the real one
+const SWAY_BLEND = 0.6; // share of that speed the sway follows at
+const EASE_BASE = 1.5; // camera easing rate: base ...
+const EASE_RANGE = 30; // ... plus this much at smooth = 0
+const POINTER_BASE = 2; // pointer parallax easing rate: base ...
+const POINTER_RANGE = 40; // ... plus this much at parallaxSmooth = 0
+const LINE_PX = 16; // px of one wheel "line"
+const SETTLED = { target: 0.05, speed: 1, sway: 0.001, pointer: 0.001, flick: 1 }; // when the loop may go to sleep
+
 const jitter = (k: number, salt: number) => {
   const x = Math.sin(k * 12.9898 + salt * 78.233) * 43758.5453;
   return x - Math.floor(x);
@@ -91,7 +113,7 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
     ...options,
   };
 
-  const step = Math.max(40, o.spacing);
+  const step = Math.max(MIN_STEP, o.spacing);
   const min = -o.lead * step;
   const max = Math.max(min, (tiles.length - 1 + o.tail) * step);
   const settle = (v: number) => clamp(v, min, max);
@@ -120,8 +142,8 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
   const layout = () => {
     width = root.clientWidth;
     height = root.clientHeight;
-    tileWidth = Math.max(40, Math.min(o.itemWidth, width - 32));
-    tileHeight = tileWidth / Math.max(0.1, o.aspectRatio);
+    tileWidth = Math.max(MIN_TILE, Math.min(o.itemWidth, width - SIDE_MARGIN));
+    tileHeight = tileWidth / Math.max(MIN_ASPECT, o.aspectRatio);
     for (const tile of tiles) {
       // a full tile (data-full) is the size of the stage: it fills the screen when the camera reaches it
       const w = 'full' in tile.dataset ? width : tileWidth;
@@ -136,7 +158,7 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
 
   const paint = (offset: number) => {
     if (!height) return;
-    const rush = clamp(Math.abs(speed) / 2500, 0, 1);
+    const rush = clamp(Math.abs(speed) / RUSH_SPEED, 0, 1);
     const gate = o.gate ? clamp(o.gate(offset), 0, 1) : 1;
     let nearest = -1;
     let nearestGap = Infinity;
@@ -147,9 +169,9 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
       const t = depth / step;
       const alpha =
         (t >= 0
-          ? 1 - clamp(t / Math.max(0.01, full ? o.fullReveal : o.revealRange), 0, 1)
-          : 1 - clamp((-t / Math.max(0.01, o.passRange) - o.passHold) / Math.max(0.01, 1 - o.passHold), 0, 1)) * gate;
-      if (alpha <= 0.002 || -depth >= o.perspective * 0.95) {
+          ? 1 - clamp(t / Math.max(MIN_RANGE, full ? o.fullReveal : o.revealRange), 0, 1)
+          : 1 - clamp((-t / Math.max(MIN_RANGE, o.passRange) - o.passHold) / Math.max(MIN_RANGE, 1 - o.passHold), 0, 1)) * gate;
+      if (alpha <= HIDDEN_ALPHA || -depth >= o.perspective * NEAR_CLIP) {
         tile.style.visibility = 'hidden';
         return;
       }
@@ -162,7 +184,7 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
       if (full) {
         tile.style.opacity = alpha.toFixed(3);
         tile.style.setProperty('--a', alpha.toFixed(3));
-        tile.style.zIndex = String(Math.round(10000 - depth));
+        tile.style.zIndex = String(Math.round(Z_BASE - depth));
         tile.style.transform = `translate3d(0, 0, ${(-depth).toFixed(1)}px)`;
         return;
       }
@@ -177,7 +199,7 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
       tile.style.opacity = alpha.toFixed(3);
       tile.style.setProperty('--a', alpha.toFixed(3));
       // the stage is flattened (overflow hidden), so stack by depth: nearer tiles paint over farther ones
-      tile.style.zIndex = String(Math.round(10000 - depth));
+      tile.style.zIndex = String(Math.round(Z_BASE - depth));
       tile.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, ${(-depth).toFixed(1)}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${swell.toFixed(4)})`;
     });
     if (nearest >= 0 && nearest !== lastIndex) {
@@ -193,36 +215,36 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
     stamp = 0;
     const tick = (now: number) => {
       const reduced = reducedQuery.matches;
-      const dt = stamp ? Math.min(0.05, (now - stamp) / 1000) : 1 / 60;
+      const dt = stamp ? Math.min(MAX_FRAME, (now - stamp) / 1000) : 1 / 60;
       stamp = now;
       const drifting = o.autoScroll !== 0 && visible && !(o.pauseOnHover && hovering) && !drag;
       if (drifting) target = settle(target + o.autoScroll * dt);
-      if (Math.abs(flick) > 1) {
+      if (Math.abs(flick) > SETTLED.flick) {
         target = settle(target + flick * dt);
-        flick *= Math.pow(0.02, dt);
+        flick *= Math.pow(FLICK_DECAY, dt);
       } else {
         flick = 0;
       }
-      const rate = 1.5 + (1 - clamp(o.smooth, 0, 1)) * 30;
+      const rate = EASE_BASE + (1 - clamp(o.smooth, 0, 1)) * EASE_RANGE;
       const ease = reduced ? 1 : 1 - Math.exp(-dt * rate);
       const next = shown + (target - shown) * ease;
       const moved = next - shown;
       shown = next;
       const velocity = reduced ? 0 : moved / dt;
-      const blend = 1 - Math.exp(-dt * 8);
+      const blend = 1 - Math.exp(-dt * SPEED_BLEND);
       speed += (velocity - speed) * blend;
-      sway += (clamp(-velocity / 2500, -1, 1) - sway) * blend * 0.6;
-      const pointerRate = 2 + (1 - clamp(o.parallaxSmooth, 0, 1)) * 40;
+      sway += (clamp(-velocity / RUSH_SPEED, -1, 1) - sway) * blend * SWAY_BLEND;
+      const pointerRate = POINTER_BASE + (1 - clamp(o.parallaxSmooth, 0, 1)) * POINTER_RANGE;
       const pointerEase = reduced ? 1 : 1 - Math.exp(-dt * pointerRate);
       eased.x += (aim.x - eased.x) * pointerEase;
       eased.y += (aim.y - eased.y) * pointerEase;
       paint(shown);
       const restless =
-        Math.abs(target - shown) > 0.05 ||
-        Math.abs(speed) > 1 ||
-        Math.abs(sway) > 0.001 ||
-        Math.abs(aim.x - eased.x) > 0.001 ||
-        Math.abs(aim.y - eased.y) > 0.001;
+        Math.abs(target - shown) > SETTLED.target ||
+        Math.abs(speed) > SETTLED.speed ||
+        Math.abs(sway) > SETTLED.sway ||
+        Math.abs(aim.x - eased.x) > SETTLED.pointer ||
+        Math.abs(aim.y - eased.y) > SETTLED.pointer;
       if (restless || drifting || flick !== 0) {
         raf = requestAnimationFrame(tick);
       } else {
@@ -270,11 +292,11 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
     if (!drag) return;
     drag = null;
     if (root.hasPointerCapture(e.pointerId)) root.releasePointerCapture(e.pointerId);
-    flick = clamp(flick, -4000, 4000);
+    flick = clamp(flick, -MAX_FLICK, MAX_FLICK);
     wake();
   };
   const onWheel = (e: WheelEvent) => {
-    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? height : 1;
+    const unit = e.deltaMode === 1 ? LINE_PX : e.deltaMode === 2 ? height : 1;
     const before = target;
     target = settle(before + e.deltaY * unit * o.wheelSpeed);
     if (target === before) return; // at an end: let the page scroll on

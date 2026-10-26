@@ -13,7 +13,7 @@
 <style>
   .end {
     background: #0d0b09;
-    color: #efe9dc;
+    color: var(--cream);
     text-align: center;
     min-height: 80vh;
     display: grid;
@@ -53,7 +53,7 @@
     font-size: 0.78rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #efe9dc;
+    color: var(--cream);
     border: 1px solid rgba(239, 233, 220, 0.5);
     border-radius: 999px;
     padding: 1.05rem 1.9rem;
@@ -64,22 +64,22 @@
     position: absolute;
     inset: -1px;
     z-index: -1;
-    background: #d4af37;
+    background: var(--gold);
     translate: 0 101%;
     transition: translate 0.6s cubic-bezier(0.65, 0, 0.35, 1);
   }
   .cta--gold {
-    background: #d4af37;
-    border-color: #d4af37;
-    color: #1a1410;
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--ink-warm);
   }
   .cta--gold::before {
-    background: #efe9dc;
+    background: var(--cream);
   }
   .cta:hover,
   .cta:focus-visible {
-    color: #1a1410;
-    border-color: #d4af37;
+    color: var(--ink-warm);
+    border-color: var(--gold);
   }
   .cta:hover::before,
   .cta:focus-visible::before {
@@ -87,7 +87,7 @@
   }
   .cta--gold:hover,
   .cta--gold:focus-visible {
-    border-color: #efe9dc;
+    border-color: var(--cream);
   }
   @media (prefers-reduced-motion: reduce) {
     .cta,

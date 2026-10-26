@@ -53,6 +53,9 @@
   aspect-ratio: auto;
   border-radius: 6px;
 }
+.cats[data-mobile] .cat-photo img {
+  will-change: transform; /* its own layer: the drift while the row slides must not repaint the photo */
+}
 .cats[data-mobile] .cat h3 {
   margin: 1.1rem 0 0.25rem;
   font-size: clamp(1.8rem, 6.4vw, 2.6rem);

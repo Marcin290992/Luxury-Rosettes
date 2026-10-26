@@ -29,6 +29,7 @@ export function initMobile() {
     const last = n - 1; // transitions between items; one unit of timeline time = one cat
     const hold = C.endHold / C.screensPerCat; // the same rest on the last cat, in timeline units
     const total = last + hold;
+    const counter = (i: number) => (i ? `${pad(i)} / ${pad(last)}` : '');
 
     cover.dataset.mobile = '';
     section.dataset.mobile = '';
@@ -58,8 +59,8 @@ export function initMobile() {
           invalidateOnRefresh: true,
           scrub: C.scrub,
           onUpdate: (self) => {
-            const i = Math.min(last, Math.round(self.progress * total));
-            count.textContent = i ? `${pad(i)} / ${pad(last)}` : '';
+            const label = counter(Math.min(last, Math.round(self.progress * total)));
+            if (label !== count.textContent) count.textContent = label; // writing the same text every frame forces a repaint
           },
         },
       });

@@ -21,6 +21,7 @@ export function initDesktop() {
     const stage = document.getElementById('stage')!;
     const story = document.getElementById('story')!;
     let ctx: gsap.Context | undefined;
+    let release: (() => void) | undefined;
     let cancelled = false;
 
     stage.dataset.stage = '';
@@ -29,18 +30,22 @@ export function initDesktop() {
     // Line breaks depend on the web font, so build once fonts are ready
     document.fonts.ready.then(() => {
       if (cancelled) return;
-      ctx = gsap.context(() => build(stage, story), stage);
+      ctx = gsap.context(() => {
+        release = build(stage, story);
+      }, stage);
     });
 
     return () => {
       cancelled = true;
       ctx?.revert();
+      release?.();
       delete stage.dataset.stage;
       delete story.dataset.pinned;
     };
   });
 }
 
+/** Builds the stage timeline; returns what to undo outside the GSAP context (the global refresh listener). */
 function build(stage: HTMLElement, story: HTMLElement) {
   const q = <T extends HTMLElement>(sel: string) => gsap.utils.toArray<T>(sel, story);
 
@@ -90,9 +95,10 @@ function build(stage: HTMLElement, story: HTMLElement) {
   };
   placeStart();
   // px values go stale on resize: re-place before ScrollTrigger re-measures (the timeline then re-renders them)
-  ScrollTrigger.addEventListener('refreshInit', () => {
+  const onRefreshInit = () => {
     if ('stage' in stage.dataset) placeStart();
-  });
+  };
+  ScrollTrigger.addEventListener('refreshInit', onRefreshInit);
   steps.forEach((st, i) => gsap.set(st, { x: () => (i % 2 ? textShift() : 0) }));
   gsap.set(words.flat(), { yPercent: WORD_HIDDEN });
   gsap.set(extras.flat(), { autoAlpha: 0, y: RISE.text });
@@ -218,4 +224,6 @@ function build(stage: HTMLElement, story: HTMLElement) {
       .fromTo(story, { y: 0 }, { y: -window.innerHeight * S.coverParallax.story, ease: 'none' }, 0)
       .fromTo('.stage-dim', { opacity: 0 }, { opacity: S.coverParallax.dim, ease: 'none' }, 0);
   }
+
+  return () => ScrollTrigger.removeEventListener('refreshInit', onRefreshInit);
 }

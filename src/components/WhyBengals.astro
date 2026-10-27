@@ -12,8 +12,9 @@ const traits = [
 
 <!--
   Pinned sequence, then the text. The photo starts as two tiles, the left one lower and the right one higher, a small gap
-  between them. First the tiles level out, then the gap closes and they are one photo, which then grows to fill the whole
-  screen. Without the script (or with reduced motion): the photo is whole and everything just stacks.
+  between them. First the tiles level out, then the gap closes and they are one photo, which grows to fill the whole
+  screen, and then the paper closes in around the word BENGALS (the letters shrink from huge), leaving the photo only inside the letters.
+  Without the script (or with reduced motion): the photo is whole and everything just stacks.
 -->
 <section class="why" id="why-bengals">
   <div class="why-track">
@@ -26,6 +27,21 @@ const traits = [
           <Image src={kita} alt="" widths={[800, 1400, 2000]} sizes="100vw" loading="lazy" />
         </div>
       </div>
+
+      <!-- Knockout: a sheet of paper with the word BENGALS cut out of it, over the photo. At first the letters are so huge
+           that the whole screen is inside them (the photo shows); they shrink to the word, and the photo is left in the
+           letters. The script places the word and scales it around the centre of the stage. -->
+      <svg class="why-knock" aria-hidden="true" focusable="false">
+        <defs>
+          <mask id="why-knock-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">
+            <rect width="100%" height="100%" fill="#fff"></rect>
+            <g class="why-knock-word">
+              <text class="why-knock-text" text-anchor="middle" dominant-baseline="central" fill="#000">BENGALS</text>
+            </g>
+          </mask>
+        </defs>
+        <rect class="why-knock-paper" width="100%" height="100%" mask="url(#why-knock-mask)"></rect>
+      </svg>
     </div>
   </div>
 
@@ -88,9 +104,31 @@ const traits = [
       // 3. the finished photo grows to fill the whole screen (the width and height are animated, so the photo re-crops
       //    instead of stretching)
       tl.to(img, { width: () => stage.clientWidth, height: () => stage.clientHeight, duration: 1.4, ease: 'power2.inOut' }, 1.7);
-      tl.to({}, { duration: 0.6 }); // a rest on the full-screen photo before the page moves on
+      // 4. the paper closes in around the word: the letters start so big that the whole screen is inside them, then shrink
+      //    to the width of the screen, so the photo ends up only in the letters.
+      //    The word is placed at the centre of the stage and scaled around that centre by hand (a matrix on the <g>): GSAP's own
+      //    transform origin needs a bounding box, and elements inside a <mask> have none, so it scaled from the corner.
+      const knock = section.querySelector<SVGElement>('.why-knock')!;
+      const word = knock.querySelector<SVGGElement>('.why-knock-word')!;
+      const text = knock.querySelector<SVGTextElement>('.why-knock-text')!;
+      const zoom = { s: 8 };
+      const place = () => {
+        const cx = stage.clientWidth / 2;
+        const cy = stage.clientHeight / 2;
+        text.setAttribute('x', String(cx));
+        text.setAttribute('y', String(cy));
+        word.setAttribute('transform', `translate(${cx * (1 - zoom.s)} ${cy * (1 - zoom.s)}) scale(${zoom.s})`);
+      };
+      place();
+      ScrollTrigger.addEventListener('refresh', place); // sizes can change; the centre is read again each time
 
+      gsap.set(knock, { opacity: 0 });
+      tl.to({}, { duration: 0.3 }); // a beat on the full-screen photo
+      tl.to(knock, { opacity: 1, duration: 0.6 }, '>');
+      tl.to(zoom, { s: 1, duration: 1.8, ease: 'power3.inOut', onUpdate: place, immediateRender: false }, '<');
+      tl.to({}, { duration: 0.7 }); // a rest on the finished picture before the page moves on
       return () => {
+        ScrollTrigger.removeEventListener('refresh', place);
         delete section.dataset.live;
       };
     });
@@ -132,6 +170,9 @@ const traits = [
   .why-half--r {
     width: calc(50% + 0.5px);
     margin-left: -0.5px;
+  }
+  .why-knock {
+    display: none;
   }
   /* each tile shows its side of the same photo: the image is twice as wide as the tile */
   .why-half :global(img) {
@@ -224,7 +265,7 @@ const traits = [
 
   /* ---- pinned sequence (the script sets data-live) ---- */
   .why[data-live] .why-track {
-    --screens: 4.5; /* how many screens of scrolling the sequence lasts */
+    --screens: 6.5; /* how many screens of scrolling the sequence lasts */
     height: calc(100vh * var(--screens));
     height: calc(100lvh * var(--screens)); /* lvh: constant when the mobile address bar slides away */
     padding: 0;
@@ -249,7 +290,24 @@ const traits = [
     aspect-ratio: auto;
     margin: 0;
   }
-  @media (min-width: 1024px) {
+  .why[data-live] .why-knock {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .why-knock-paper {
+    fill: var(--paper);
+  }
+  /* the word is about 86vw wide: the letters fill the width of the screen once the zoom has settled */
+  .why-knock-text {
+    font-family: var(--font-heading);
+    font-size: 20vw;
+    letter-spacing: -0.02em;
+  }  @media (min-width: 1024px) {
     .why[data-live] .why-img {
       width: 68vw;
       height: 62vh;

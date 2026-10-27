@@ -16,7 +16,7 @@
   scroll-snap-type: none;
   width: max-content;
   gap: 4vw;
-  padding: 0 0 0 6vw; /* no padding on the right: the calendar page ends exactly at the screen edge */
+  padding: 0 0 0 6vw; /* no padding on the right: the closing panel ends exactly at the screen edge */
   align-items: center;
   will-change: transform;
 }
@@ -50,8 +50,8 @@
   margin-left: -12.5%;
   will-change: transform;
 }
-/* the calendar is a full page: exactly one screen wide, so when the row ends nothing of the cats is beside it */
-.cats[data-pinned] .cal {
+/* the closing panel is a full page: exactly one screen wide, so when the row ends nothing of the cats is beside it */
+.cats[data-pinned] .fin {
   box-sizing: border-box;
   flex: 0 0 100vw;
   height: 62vh;
@@ -59,19 +59,19 @@
   gap: 3vh;
   padding: 0 6vw;
 }
-.cats[data-pinned] .cal-head {
-  max-width: 44rem;
+.cats[data-pinned] .fin-head {
+  max-width: 48rem;
 }
-.cats[data-pinned] .cal h2 {
-  font-size: clamp(2.2rem, 3.6vw, 4rem);
+.cats[data-pinned] .fin h2 {
+  font-size: clamp(2.4rem, 4vw, 4.6rem);
 }
-.cats[data-pinned] .cal-months {
-  grid-template-columns: repeat(6, 1fr);
-  gap: 1.25vw;
-  align-self: start;
+.cats[data-pinned] .fin-pillars {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3vw;
+  align-self: center;
 }
 .cats[data-pinned] .cats-end {
-  display: none; /* no trailing space: the calendar must stop fully in view */
+  display: none; /* no trailing space: the closing panel must stop fully in view */
 }
 .cats[data-pinned] .cats-progress {
   display: block;

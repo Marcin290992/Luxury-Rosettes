@@ -43,13 +43,12 @@ const {
     --ink-warm: #1a1410; /* text on gold */
     --placeholder: #e9e4d9; /* what a photo frame shows before its image loads */
 
-    /* the dashed rule, in the four strengths the page uses */
-    --dash-faint: 1px dashed rgba(26, 26, 26, 0.22); /* calendar months */
+    /* the dashed rule, in the three strengths the page uses */
     --dash-track: 1px dashed rgba(26, 26, 26, 0.28); /* the light track behind a progress line */
     --dash-divider: 1px dashed rgba(26, 26, 26, 0.3); /* dividers between blocks */
     --dash-strong: 1px dashed #1a1a1a; /* the line that fills in over a track */
   }
-  /* The dashed rule: the page's one recurring line (hero rail, progress lines, calendar, dividers).
+  /* The dashed rule: the page's one recurring line (hero rail, progress lines, dividers).
      Elements with data-dash draw themselves in from the left when they scroll into view. */
   .dash {
     display: block;

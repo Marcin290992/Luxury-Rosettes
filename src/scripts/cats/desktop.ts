@@ -8,7 +8,7 @@ const REVEAL_EASE = 'power3.out';
 const SETTLE_EASE = 'power2.out';
 const ARRIVE_EASE = 'power2.inOut';
 
-/** Laptops and wider: the pinned row of cats slides sideways, ending on the breeding calendar with a hold. */
+/** Laptops and wider: the pinned row of cats slides sideways, ending on the closing panel with a hold. */
 export function initDesktop() {
   const mm = gsap.matchMedia();
   mm.add(MEDIA.laptop, () => {
@@ -90,37 +90,36 @@ export function initDesktop() {
               CATS.card.textAt,
             );
 
-        // the calendar panel: heading, then the month columns draw in one by one, then the legend and button
-        const panel = section.querySelector<HTMLElement>('.cal')!;
-        const calHead = gsap.utils.toArray<HTMLElement>('.cal-head > *', panel);
-        const calMonths = gsap.utils.toArray<HTMLElement>('.cal-month', panel);
-        const calFoot = gsap.utils.toArray<HTMLElement>('.cal-foot > *', panel);
-        const cal = CATS.calendar;
-        gsap.set(calHead, { autoAlpha: 0, y: RISE.block });
-        gsap.set(calMonths, { autoAlpha: 0, y: RISE.card });
-        gsap.set(calFoot, { autoAlpha: 0, y: RISE.text });
-        const calReveal = gsap
+        // the closing panel: heading first, then the pillars one by one, then the buttons
+        const panel = section.querySelector<HTMLElement>('.fin')!;
+        const finHead = gsap.utils.toArray<HTMLElement>('.fin-head > *', panel);
+        const finPillars = gsap.utils.toArray<HTMLElement>('.fin-pillar', panel);
+        const finFoot = gsap.utils.toArray<HTMLElement>('.fin-foot > *', panel);
+        const fin = CATS.finale;
+        gsap.set(finHead, { autoAlpha: 0, y: RISE.block });
+        gsap.set(finPillars, { autoAlpha: 0, y: RISE.card });
+        gsap.set(finFoot, { autoAlpha: 0, y: RISE.text });
+        const finReveal = gsap
           .timeline({ paused: true, defaults: { ease: REVEAL_EASE } })
-          .to(calHead, { autoAlpha: 1, y: 0, duration: cal.head.dur, stagger: cal.head.stagger }, 0)
-          .to(calMonths, { autoAlpha: 1, y: 0, duration: cal.months.dur, stagger: cal.months.stagger }, cal.months.at)
-          .to(calFoot, { autoAlpha: 1, y: 0, duration: cal.foot.dur, stagger: cal.foot.stagger }, cal.foot.at);
-        // while the pin holds on the calendar, a line draws across the months — the page is "doing" something,
-        // and the scroll that remains is clearly part of this screen rather than dead space
-        const lines = gsap.utils.toArray<HTMLElement>('.cal-line', panel);
+          .to(finHead, { autoAlpha: 1, y: 0, duration: fin.head.dur, stagger: fin.head.stagger }, 0)
+          .to(finPillars, { autoAlpha: 1, y: 0, duration: fin.pillars.dur, stagger: fin.pillars.stagger }, fin.pillars.at)
+          .to(finFoot, { autoAlpha: 1, y: 0, duration: fin.foot.dur, stagger: fin.foot.stagger }, fin.foot.at);
+        // while the pin holds on the panel, a gold line draws over each pillar, one after another: the page is
+        // still "doing" something, so the scroll that remains is clearly part of this screen
+        const lines = gsap.utils.toArray<HTMLElement>('.fin-line', panel);
         gsap.set(lines, { clipPath: CLIP.closedX });
         const draw = gsap.timeline({
           defaults: { ease: 'none', immediateRender: false },
           scrollTrigger: scrubbed(() => pin.end - hold(), () => pin.end),
         });
         lines.forEach((l, i) =>
-          draw.fromTo(l, { clipPath: CLIP.closedX }, { clipPath: CLIP.open, duration: cal.line.dur }, i * cal.line.step),
-        ); // one after another
-
+          draw.fromTo(l, { clipPath: CLIP.closedX }, { clipPath: CLIP.open, duration: fin.line.dur }, i * fin.line.step),
+        );
         ScrollTrigger.create({
           trigger: panel,
           containerAnimation: move,
-          start: CATS.calendarStart,
-          animation: calReveal,
+          start: CATS.finaleStart,
+          animation: finReveal,
           toggleActions: 'play none none reverse',
         });
 

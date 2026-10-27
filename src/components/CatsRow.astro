@@ -6,7 +6,6 @@ import candy from '../assets/img/cats/candy.webp';
 import charlie from '../assets/img/cats/charlie.webp';
 import chester from '../assets/img/cats/chester.webp';
 import cosmo from '../assets/img/cats/cosmo.webp';
-import { buildMonths, getLitters } from '../data/litters';
 import '../styles/cats/base.css';
 import '../styles/cats/desktop.css';
 import '../styles/cats/mobile.css';
@@ -21,8 +20,12 @@ const cats = [
   { name: 'Cosmo', line: 'Details coming soon', image: cosmo },
 ];
 
-const CALENDAR_MONTHS = 6;
-const months = buildMonths(getLitters(), CALENDAR_MONTHS);
+// Last stop of the row. Wording taken from the story section; to be replaced with the final copy
+const pillars = [
+  { title: 'Champion bloodlines', text: 'TICA registered parents with proven show records.' },
+  { title: 'Raised at home', text: 'Born in our family home and well socialised from the first days.' },
+  { title: 'Cared for, for life', text: 'Health guarantees and lifetime breeder support.' },
+];
 ---
 
 <!--
@@ -53,41 +56,25 @@ const months = buildMonths(getLitters(), CALENDAR_MONTHS);
           </article>
         ))
       }
-      <div class="cal">
-        <div class="cal-head">
-          <p class="eyebrow">Breeding calendar</p>
-          <h2>Plan your kitten</h2>
-          <p class="lead">
-            Placeholder text. How litters are planned through the year, and how to join the waiting list for the
-            next one.
-          </p>
+      <div class="fin">
+        <div class="fin-head">
+          <p class="eyebrow">The promise</p>
+          <h2>Raised at home, guaranteed for life</h2>
         </div>
-        <ol class="cal-months" data-months>
+        <ul class="fin-pillars">
           {
-            months.map((m) => (
-              <li class="cal-month">
-                <span class="cal-line" />
-                <span class="cal-name">{m.name}</span>
-                <span class="cal-year">{m.year}</span>
-                {m.events.map((e) => (
-                  <span class="cal-slot">
-                    <i class={`dot dot--${e.kind}`} />
-                    <span class="cal-event">{e.label}</span>
-                    <span class="cal-parents">{e.parents}</span>
-                  </span>
-                ))}
-                {!m.events.length && <span class="cal-slot cal-slot--ghost">Nothing planned</span>}
+            pillars.map((p) => (
+              <li class="fin-pillar">
+                <span class="fin-line" />
+                <h3>{p.title}</h3>
+                <p>{p.text}</p>
               </li>
             ))
           }
-        </ol>
-        <div class="cal-foot">
-          <ul class="cal-legend">
-            <li><i class="dot dot--pair"></i>Pairing</li>
-            <li><i class="dot dot--exp"></i>Expected litter</li>
-            <li><i class="dot dot--ready"></i>Kittens ready</li>
-          </ul>
+        </ul>
+        <div class="fin-foot">
           <a class="cta" href="#">Join the waiting list</a>
+          <a class="fin-link" href="#kittens">Meet the kittens</a>
         </div>
       </div>
       <div class="cats-end" aria-hidden="true"></div>

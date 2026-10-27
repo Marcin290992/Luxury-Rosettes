@@ -5,35 +5,56 @@ import cosmo from '../assets/img/cats/cosmo.webp';
 import charlie from '../assets/img/cats/charlie.webp';
 import chester from '../assets/img/cats/chester.webp';
 
-// Hard-coded for now; later this comes from the CMS
-const kittens = [
-  { name: 'Candy', gender: 'Girl', img: candy, text: 'Curious about everything, with a glittering coat and a soft, affectionate side.' },
-  { name: 'Cosmo', gender: 'Boy', img: cosmo, text: 'A bold little explorer with a true Bengal spirit and a taste for climbing.' },
-  { name: 'Charlie', gender: 'Boy', img: charlie, text: 'Cheeky and clever, always first to work out the new toy.' },
-  { name: 'Chester', gender: 'Boy', img: chester, text: 'The friendliest of the bunch, happy to be part of whatever you are doing.' },
-];
+import { getKittens, getLitters, nextLitter, monthLabel } from '../data/litters';
+
+const photos = { candy, cosmo, charlie, chester };
+
+// Sold kittens never show. With nobody left, the section turns into "next litter + waiting list".
+const kittens = getKittens().filter((k) => k.status !== 'sold');
+const next = nextLitter(getLitters());
 ---
 
 <section class="kit" id="kittens">
-  <div class="kit-head">
-    <p class="eyebrow" data-reveal>Meet the kittens</p>
-    <h2 data-reveal>Waiting for a home</h2>
-  </div>
-  <div class="kit-grid">
-    {
-      kittens.map((k) => (
-        <article class="kit-card" data-reveal>
-          <div class="kit-photo">
-            <Image src={k.img} alt={`${k.name}, a Bengal kitten`} widths={[400, 700]} sizes="(min-width:1024px) 22vw, 70vw" loading="lazy" />
-          </div>
-          <h3>{k.name}</h3>
-          <p class="kit-meta">{k.gender}</p>
-          <p class="kit-text">{k.text}</p>
-        </article>
-      ))
-    }
-  </div>
-  <p class="kit-more" data-reveal><a href="/available-kittens">View all kittens</a></p>
+  {
+    kittens.length > 0 ? (
+      <>
+        <div class="kit-head">
+          <p class="eyebrow" data-reveal>Meet the kittens</p>
+          <h2 data-reveal>Waiting for a home</h2>
+        </div>
+        <div class="kit-grid">
+          {kittens.map((k) => (
+            <article class="kit-card" data-reveal>
+              <div class="kit-photo">
+                <Image src={photos[k.photo]} alt={`${k.name}, a Bengal kitten`} widths={[400, 700]} sizes="(min-width:1024px) 22vw, 70vw" loading="lazy" />
+              </div>
+              <h3>{k.name}</h3>
+              <p class="kit-meta">
+                {k.gender}
+                {k.status === 'reserved' && <span class="kit-reserved">Reserved</span>}
+              </p>
+              <p class="kit-text">{k.text}</p>
+            </article>
+          ))}
+        </div>
+        <p class="kit-more" data-reveal><a href="/available-kittens">View all kittens</a></p>
+      </>
+    ) : (
+      <div class="kit-empty">
+        <p class="eyebrow" data-reveal>Kittens</p>
+        <h2 data-reveal>{next ? 'Our next litter' : 'Be the first to know'}</h2>
+        <p class="kit-text kit-empty-text" data-reveal>
+          {next
+            ? `Expected in ${monthLabel(next.expected)}, from ${next.dam} and ${next.sire}. Their kittens will be ready to go home around ${monthLabel(next.ready)}.`
+            : 'No litters are planned at the moment. Join the waiting list and you will hear from us before anyone else.'}
+        </p>
+        <p class="kit-empty-actions" data-reveal>
+          <a class="kit-pill" href="#">Join the waiting list</a>
+          <a class="kit-more-link" href="#cats">Meet the parents</a>
+        </p>
+      </div>
+    )
+  }
 </section>
 
 <style>
@@ -95,6 +116,55 @@ const kittens = [
     color: var(--gold-deep);
     margin: 0 0 0.5rem;
   }
+  .kit-reserved {
+    margin-left: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid rgba(26, 26, 26, 0.3);
+    color: var(--ink);
+    opacity: 0.55;
+  }
+  /* no kittens right now: next litter + waiting list */
+  .kit-empty {
+    text-align: center;
+    max-width: 38rem;
+    margin: 0 auto;
+  }
+  .kit-empty h2 { margin-bottom: 1.25rem; }
+  .kit-empty-text { font-size: 1rem; margin: 0 auto 2.25rem; }
+  .kit-empty-actions {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1.75rem;
+  }
+  .kit-pill {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--ink);
+    text-decoration: none;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    padding: 1rem 1.75rem;
+    transition: background 0.4s, color 0.4s;
+  }
+  .kit-pill:hover { background: transparent; color: var(--ink); }
+  .kit-more-link {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(26, 26, 26, 0.4);
+    padding-bottom: 0.4rem;
+    transition: color 0.4s, border-color 0.4s;
+  }
+  .kit-more-link:hover { color: var(--gold-deep); border-color: var(--gold-deep); }
   .kit-text {
     font-family: var(--font-body);
     font-size: 0.85rem;

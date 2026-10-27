@@ -85,8 +85,12 @@ import expandImg from '../assets/img/expand.webp';
     line-height: 1.5;
     margin: 0;
   }
+  /* The rest of the page is a sheet of paper that slides up over the corridor's finale (which stays put, see Corridor). */
   .content {
+    position: relative;
+    z-index: 5; /* above the corridor (4) */
     background: var(--paper);
     font-family: var(--font-heading);
+    box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.25);
   }
 </style>

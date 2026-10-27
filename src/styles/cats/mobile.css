@@ -91,8 +91,8 @@
   font-size: 0.75rem;
   letter-spacing: 0.08em;
 }
-/* the calendar is a normal block after the row */
-.cats-cover[data-mobile] > .cal {
+/* the closing panel is a normal block after the row */
+.cats-cover[data-mobile] > .fin {
   flex: none;
   display: grid;
   box-sizing: border-box;

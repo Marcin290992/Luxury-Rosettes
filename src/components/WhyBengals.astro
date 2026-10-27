@@ -3,58 +3,157 @@ import { Image } from 'astro:assets';
 import kita from '../assets/img/cats/kita.webp';
 
 const traits = [
-  { n: '01', title: 'Rosette markings', text: 'A coat as unique as a fingerprint, with wild-inspired patterns impossible to replicate.' },
-  { n: '02', title: 'Wild by nature', text: 'Descended from Asian Leopard Cats, with an untamed spirit refined for home life.' },
-  { n: '03', title: 'Remarkable intelligence', text: 'Quick to learn, endlessly curious and deeply engaged with their world.' },
-  { n: '04', title: 'Devoted companions', text: 'Bengals form lasting bonds: loyal, affectionate and uniquely present.' },
+  { title: 'Rosette markings', text: 'A coat as unique as a fingerprint, with wild-inspired patterns impossible to replicate.' },
+  { title: 'Wild by nature', text: 'Descended from Asian Leopard Cats, with an untamed spirit refined for home life.' },
+  { title: 'Remarkable intelligence', text: 'Quick to learn, endlessly curious and deeply engaged with their world.' },
+  { title: 'Devoted companions', text: 'Bengals form lasting bonds: loyal, affectionate and uniquely present.' },
 ];
 ---
 
+<!--
+  Pinned sequence, then the text. The photo starts as two tiles, the left one lower and the right one higher, a small gap
+  between them. First the tiles level out, then the gap closes and they are one photo, which then grows to fill the whole
+  screen. Without the script (or with reduced motion): the photo is whole and everything just stacks.
+-->
 <section class="why" id="why-bengals">
-  <div class="why-photo" data-reveal>
-    <Image src={kita} alt="Kita, a golden Bengal queen" widths={[500, 800, 1100]} sizes="(min-width:1024px) 40vw, 90vw" loading="lazy" />
+  <div class="why-track">
+    <div class="why-stage">
+      <div class="why-img">
+        <div class="why-half why-half--l">
+          <Image src={kita} alt="Kita, a golden Bengal queen" widths={[800, 1400, 2000]} sizes="100vw" loading="lazy" />
+        </div>
+        <div class="why-half why-half--r" aria-hidden="true">
+          <Image src={kita} alt="" widths={[800, 1400, 2000]} sizes="100vw" loading="lazy" />
+        </div>
+      </div>
+    </div>
   </div>
+
   <div class="why-copy">
-    <p class="eyebrow" data-reveal>Bengal excellence</p>
-    <h2 data-reveal>Why <em>Bengals?</em></h2>
-    <i class="dash" data-dash aria-hidden="true"></i>
-    <ol class="traits">
+    <header class="why-head">
+      <p class="eyebrow" data-reveal>Bengal excellence</p>
+      <h2 data-reveal>Why <em>Bengals?</em></h2>
+    </header>
+    <ul class="traits">
       {
         traits.map((t) => (
           <li data-reveal>
-            <span class="num">{t.n}</span>
-            <div>
-              <h3>{t.title}</h3>
-              <p>{t.text}</p>
-            </div>
+            <i class="trait-line" data-dash aria-hidden="true"></i>
+            <h3>{t.title}</h3>
+            <p>{t.text}</p>
           </li>
         ))
       }
-    </ol>
+    </ul>
   </div>
 </section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { mount } from '../scripts/lifecycle';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  mount(() => {
+    const mm = gsap.matchMedia();
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      const section = document.getElementById('why-bengals')!;
+      const track = section.querySelector<HTMLElement>('.why-track')!;
+      const stage = section.querySelector<HTMLElement>('.why-stage')!;
+      const img = section.querySelector<HTMLElement>('.why-img')!;
+      const halfL = section.querySelector<HTMLElement>('.why-half--l')!;
+      const halfR = section.querySelector<HTMLElement>('.why-half--r')!;
+
+      section.dataset.live = '';
+
+      const H = () => stage.clientHeight;
+      const W = () => window.innerWidth;
+
+      // start: the left tile lower, the right one higher, and a small gap between them
+      gsap.set(halfL, { x: () => -W() * 0.007, y: () => H() * 0.06 });
+      gsap.set(halfR, { x: () => W() * 0.007, y: () => -H() * 0.06 });
+
+      // A sticky stage inside a tall track: the scroll position scrubs the timeline (no GSAP pin: on touch screens it
+      // would switch the stage to position:fixed on the main thread and jitter).
+      const tl = gsap.timeline({
+        defaults: { ease: 'none' },
+        scrollTrigger: { trigger: track, start: 'top top', end: 'bottom bottom', scrub: 1, invalidateOnRefresh: true },
+      });
+
+      // 1. the tiles level out
+      tl.to([halfL, halfR], { y: 0, duration: 1, ease: 'power2.inOut' }, 0);
+      // 2. then the gap closes: one photo
+      tl.to([halfL, halfR], { x: 0, duration: 0.8, ease: 'power2.inOut' }, 0.9);
+      // 3. the finished photo grows to fill the whole screen (the width and height are animated, so the photo re-crops
+      //    instead of stretching)
+      tl.to(img, { width: () => stage.clientWidth, height: () => stage.clientHeight, duration: 1.4, ease: 'power2.inOut' }, 1.7);
+      tl.to({}, { duration: 0.6 }); // a rest on the full-screen photo before the page moves on
+
+      return () => {
+        delete section.dataset.live;
+      };
+    });
+    return () => mm.revert();
+  });
+</script>
 
 <style>
   .why {
     background: var(--paper);
     color: var(--ink);
-    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
-    display: grid;
-    gap: 2.5rem;
+  }
+
+  /* ---- plain stack: photo, heading, traits (no script / reduced motion) ---- */
+  .why-track {
+    padding: clamp(4rem, 12vh, 9rem) 1.5rem 0;
+  }
+  .why-stage {
     max-width: 72rem;
     margin: 0 auto;
   }
-  .why-photo {
-    border-radius: 10px;
-    overflow: hidden;
+  /* the two tiles side by side; together they are one photo */
+  .why-img {
+    display: flex;
+    width: min(100%, 52rem);
     aspect-ratio: 4 / 5;
-    background: var(--placeholder);
+    margin: 0 auto;
   }
-  .why-photo :global(img) {
-    width: 100%;
+  /* No shadow on the tiles (each would cast a dark line onto the other where they meet), and the right tile tucks half a
+     pixel under the left one so no hairline of paper shows between them at fractional widths. */
+  .why-half {
+    position: relative;
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--placeholder);
+    will-change: transform;
+  }
+  .why-half--r {
+    width: calc(50% + 0.5px);
+    margin-left: -0.5px;
+  }
+  /* each tile shows its side of the same photo: the image is twice as wide as the tile */
+  .why-half :global(img) {
+    position: absolute;
+    top: 0;
+    width: 200%;
+    max-width: none;
     height: 100%;
     object-fit: cover;
-    display: block;
+    object-position: 50% 35%;
+  }
+  .why-half--l :global(img) { left: 0; }
+  .why-half--r :global(img) { right: 0; }
+
+  .why-copy {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: clamp(3.5rem, 10vh, 7rem) 1.5rem clamp(4rem, 12vh, 9rem);
+  }
+  .why-head {
+    text-align: center;
+    margin-bottom: clamp(2.5rem, 7vh, 4.5rem);
   }
   .eyebrow {
     font-family: var(--font-body);
@@ -69,46 +168,92 @@ const traits = [
     font-weight: 400;
     font-size: clamp(2.4rem, 5vw, 4rem);
     line-height: 1.05;
-    margin: 0 0 1.5rem;
+    margin: 0;
   }
   .traits {
     list-style: none;
-    margin: 2rem 0 0;
+    margin: 0;
     padding: 0;
     display: grid;
-    gap: 1.75rem;
+    gap: 2rem;
   }
   .traits li {
-    display: grid;
-    grid-template-columns: 2.5rem 1fr;
-    gap: 1rem;
+    position: relative;
+    border-top: var(--dash-track);
+    padding-top: 1.4rem;
   }
-  .num {
-    font-family: var(--font-body);
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    color: var(--gold-deep);
-    padding-top: 0.5rem;
+  /* the strong line over the light one, drawn in from the left when it scrolls into view */
+  .trait-line {
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: var(--dash-strong);
   }
   h3 {
     font-family: var(--font-heading);
     font-weight: 400;
-    font-size: 1.6rem;
+    font-size: 1.75rem;
     line-height: 1.1;
-    margin: 0 0 0.4rem;
+    margin: 0 0 0.5rem;
   }
   .traits p {
     font-family: var(--font-body);
     font-size: 0.9rem;
-    line-height: 1.7;
+    line-height: 1.75;
     opacity: 0.75;
+    margin: 0;
+    max-width: 30rem;
+  }
+  @media (min-width: 700px) {
+    .why-img {
+      aspect-ratio: 16 / 9;
+    }
+    .traits {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2.5rem 3rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .traits {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2.5rem;
+    }
+  }
+
+  /* ---- pinned sequence (the script sets data-live) ---- */
+  .why[data-live] .why-track {
+    --screens: 4.5; /* how many screens of scrolling the sequence lasts */
+    height: calc(100vh * var(--screens));
+    height: calc(100lvh * var(--screens)); /* lvh: constant when the mobile address bar slides away */
+    padding: 0;
+  }
+  .why[data-live] .why-stage {
+    position: sticky;
+    top: 0;
+    max-width: none;
+    margin: 0;
+    height: 100vh;
+    height: 100lvh;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+  }
+  .why[data-live] .why-img {
+    position: relative;
+    z-index: 1;
+    width: 88vw;
+    height: 52vh;
+    height: 52lvh;
+    aspect-ratio: auto;
     margin: 0;
   }
   @media (min-width: 1024px) {
-    .why {
-      grid-template-columns: 5fr 6fr;
-      gap: 6rem;
-      align-items: center;
+    .why[data-live] .why-img {
+      width: 68vw;
+      height: 62vh;
+      height: 62lvh;
     }
   }
 </style>

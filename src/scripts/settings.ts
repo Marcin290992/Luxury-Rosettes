@@ -170,36 +170,37 @@ export const INSTANT = 0.01; // a visibility flip: effectively instant, but stil
 // ---- cats row (chapter 4) --------------------------------------------------------------------------------------------
 export const CATS = {
   smooth: 1.2, // scrub lag on laptops: same "cinematic" feel as the stage before it
-  hold: 0.5, // screens of scrolling spent resting on the calendar, so it can't be skimmed past
+  hold: 0.5, // screens of scrolling spent resting on the last cat, so the row doesn't end abruptly
   arrivalExit: { stage: 0.18, dim: 0.7 }, // the photo behind the arriving sheet: share of a screen it drifts up, final dim
   photoDrift: 7, // % the photos drift against their card while the row slides
   firstShare: 0.55, // share of the arrival after which the cats already on screen play
   visibleAtStart: 0.98, // a card counts as on screen when its left edge is left of this share of the width
   laterStart: 'left 92%',
-  calendarStart: 'left 80%',
   card: { mask: 2.2, img: 3.2, textAt: 0.9, text: 0.8, textStagger: 0.1 },
   intro: { dur: 0.9, stagger: 0.12 },
   firstCards: { at: 0.25, step: 0.22 },
-  calendar: {
+  finaleStart: 'left 80%',
+  // the closing panel: heading, then the three pillars, then the buttons; the lines draw while the pin holds
+  finale: {
     head: { dur: 0.9, stagger: 0.12 },
-    months: { at: 0.3, dur: 0.9, stagger: 0.1 },
-    foot: { at: 0.9, dur: 0.8, stagger: 0.12 },
-    line: { dur: 1.5, step: 0.5 }, // the month lines draw one after another while the pin holds
+    pillars: { at: 0.3, dur: 0.9, stagger: 0.15 },
+    foot: { at: 1, dur: 0.8, stagger: 0.12 },
+    line: { dur: 1.5, step: 0.5 },
   },
 };
 export const CATS_PHONE = {
   screensPerCat: 0.75, // screens of swiping per cat
-  endHold: 0.5, // screens of swiping the last cat rests for, so the calendar below cannot be flung into before it is seen
+  endHold: 0.5, // screens of swiping the last cat rests for, so the page cannot be flung past it
   scrub: 0.6, // the row follows the finger; no snapping, which tugs the scroll while the finger is still moving
   photoScale: 1.12, // the photos are simply there (no mask, no zoom)
   drift: 5, // % the photo drifts against its card
   driftSpan: 2, // in screens
-  calendarStart: 'top 80%',
-  calendar: {
+  finaleStart: 'top 80%',
+  finale: {
     head: { dur: 0.8, stagger: 0.1 },
-    months: { at: 0.25, dur: 0.8, stagger: 0.08 },
-    lines: { at: 0.4, dur: 1.2, stagger: 0.08, ease: 'power3.inOut' },
-    foot: { at: 0.9, dur: 0.7, stagger: 0.1 },
+    pillars: { at: 0.25, dur: 0.8, stagger: 0.12 },
+    lines: { at: 0.4, dur: 1.2, stagger: 0.15, ease: 'power3.inOut' },
+    foot: { at: 1, dur: 0.7, stagger: 0.1 },
   },
 };
 

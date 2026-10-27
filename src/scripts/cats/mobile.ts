@@ -7,11 +7,11 @@ gsap.registerPlugin(ScrollTrigger);
 const pad = (i: number) => String(i).padStart(2, '0');
 
 /**
- * Phones and tablets: the row is pinned with CSS sticky, one cat per screen; the calendar follows as a vertical block.
+ * Phones and tablets: the row is pinned with CSS sticky, one cat per screen; the closing panel follows as a vertical block.
  *
  * The row is pinned (CSS sticky, so the compositor does it: no jitter) and swiping up slides it sideways, one cat per
- * screen. The photo of each cat drifts against its card and the scroll settles on the nearest cat. The breeding
- * calendar is a normal vertical block after the row (six columns do not fit on a phone).
+ * screen. The photo of each cat drifts against its card and the scroll settles on the nearest cat. The closing panel
+ * (three pillars side by side do not fit on a phone) is a normal vertical block after the row.
  */
 export function initMobile() {
   const small = gsap.matchMedia();
@@ -20,7 +20,7 @@ export function initMobile() {
     const section = document.getElementById('cats')!;
     const sheet = section.querySelector<HTMLElement>('.cats-sheet')!;
     const track = section.querySelector<HTMLElement>('.cats-track')!;
-    const cal = section.querySelector<HTMLElement>('.cal')!;
+    const fin = section.querySelector<HTMLElement>('.fin')!;
     const fill = section.querySelector<HTMLElement>('.cats-fill')!;
     const count = section.querySelector<HTMLElement>('.cats-count')!;
     const items = gsap.utils.toArray<HTMLElement>(':scope > .cats-intro, :scope > .cat', track);
@@ -34,8 +34,8 @@ export function initMobile() {
     cover.dataset.mobile = '';
     section.dataset.mobile = '';
 
-    // the calendar leaves the row and follows it as a normal block
-    cover.appendChild(cal);
+    // the closing panel leaves the row and follows it as a normal block
+    cover.appendChild(fin);
 
     // the sheet sits in a tall box and sticks with CSS
     const box = document.createElement('div');
@@ -72,20 +72,20 @@ export function initMobile() {
       imgs.forEach((img, j) => {
         tl.fromTo(img, { xPercent: C.drift }, { xPercent: -C.drift, duration: Math.min(C.driftSpan, last - j), ease: 'none' }, j);
       });
-      tl.set({}, {}, total); // the last cat rests for a while before the page moves on to the calendar
+      tl.set({}, {}, total); // the last cat rests for a while before the page moves on to the closing panel
 
-      // the calendar, now a vertical block: months draw in as it is reached
-      const months = gsap.utils.toArray<HTMLElement>('.cal-month', cal);
-      const lines = gsap.utils.toArray<HTMLElement>('.cal-line', cal);
-      const head = gsap.utils.toArray<HTMLElement>('.cal-head > *', cal);
-      const foot = gsap.utils.toArray<HTMLElement>('.cal-foot > *', cal);
-      const k = C.calendar;
-      gsap.set([head, months, foot].flat(), { autoAlpha: 0, y: RISE.block });
+      // the closing panel, now a vertical block: heading, pillars with their gold lines, then the buttons as it is reached
+      const head = gsap.utils.toArray<HTMLElement>('.fin-head > *', fin);
+      const pillars = gsap.utils.toArray<HTMLElement>('.fin-pillar', fin);
+      const lines = gsap.utils.toArray<HTMLElement>('.fin-line', fin);
+      const foot = gsap.utils.toArray<HTMLElement>('.fin-foot > *', fin);
+      const k = C.finale;
+      gsap.set([head, pillars, foot].flat(), { autoAlpha: 0, y: RISE.block });
       gsap.set(lines, { clipPath: CLIP.closedX });
       gsap
-        .timeline({ scrollTrigger: { trigger: cal, start: C.calendarStart, toggleActions: 'play none none reverse' }, defaults: { ease: 'power3.out' } })
+        .timeline({ scrollTrigger: { trigger: fin, start: C.finaleStart, toggleActions: 'play none none reverse' }, defaults: { ease: 'power3.out' } })
         .to(head, { autoAlpha: 1, y: 0, duration: k.head.dur, stagger: k.head.stagger }, 0)
-        .to(months, { autoAlpha: 1, y: 0, duration: k.months.dur, stagger: k.months.stagger }, k.months.at)
+        .to(pillars, { autoAlpha: 1, y: 0, duration: k.pillars.dur, stagger: k.pillars.stagger }, k.pillars.at)
         .to(lines, { clipPath: CLIP.open, duration: k.lines.dur, stagger: k.lines.stagger, ease: k.lines.ease }, k.lines.at)
         .to(foot, { autoAlpha: 1, y: 0, duration: k.foot.dur, stagger: k.foot.stagger }, k.foot.at);
     }, cover);
@@ -97,7 +97,7 @@ export function initMobile() {
       sheet.style.cssText = '';
       box.parentNode?.insertBefore(sheet, box);
       box.remove();
-      track.insertBefore(cal, track.querySelector('.cats-end'));
+      track.insertBefore(fin, track.querySelector('.cats-end'));
       gsap.set([track, ...items], { clearProps: 'all' });
       delete cover.dataset.mobile;
       delete section.dataset.mobile;

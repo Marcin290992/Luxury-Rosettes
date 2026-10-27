@@ -186,6 +186,9 @@ const items = [
         const rect = section.getBoundingClientRect();
         const p = clamp(-rect.top / travel, 0, 1);
         d.setTarget(d.min + p * (d.max - d.min));
+        // parallax: while the paper slides up over the pinned finale, the finale drifts up a little, slower than the paper
+        const covered = clamp((-rect.top - travel) / window.innerHeight, 0, 1);
+        stage.style.transform = covered > 0 ? `translate3d(0, ${(-covered * window.innerHeight * 0.18).toFixed(1)}px, 0)` : '';
       };
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onScroll);
@@ -428,8 +431,15 @@ const items = [
     --bar: calc(100lvh - 100svh);
   }
   .cor[data-pinned] .cor-track {
-    height: calc(100vh + var(--cor-travel));
-    height: calc(100lvh + var(--cor-travel)); /* lvh: constant when the mobile address bar slides away */
+    /* one extra screen: the finale stays pinned while the page's paper slides up over it (see the rule below) */
+    height: calc(200vh + var(--cor-travel));
+    height: calc(200lvh + var(--cor-travel)); /* lvh: constant when the mobile address bar slides away */
+  }
+  /* the sheet starts on that extra screen, so it covers the finale instead of waiting for it to scroll away
+     (~, not +: Astro puts this component's <script> between the section and the sheet) */
+  .cor[data-pinned] ~ :global(.content) {
+    margin-top: -100vh;
+    margin-top: -100lvh;
   }
   .cor[data-pinned] .cor-stage {
     position: sticky;

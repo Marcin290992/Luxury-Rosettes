@@ -136,6 +136,16 @@
   background: rgba(26, 26, 26, 0.05);
   border-radius: 4px;
 }
+.cats-cover .cal-slot {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.5rem;
+  align-items: center;
+}
+.cats-cover .cal-parents {
+  grid-column: 2;
+  opacity: 0.6;
+}
 .cats-cover .cal-slot--ghost {
   opacity: 0.55;
   background: rgba(26, 26, 26, 0.03);

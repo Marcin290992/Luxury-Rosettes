@@ -6,6 +6,7 @@ import candy from '../assets/img/cats/candy.webp';
 import charlie from '../assets/img/cats/charlie.webp';
 import chester from '../assets/img/cats/chester.webp';
 import cosmo from '../assets/img/cats/cosmo.webp';
+import { buildMonths, getLitters } from '../data/litters';
 import '../styles/cats/base.css';
 import '../styles/cats/desktop.css';
 import '../styles/cats/mobile.css';
@@ -19,6 +20,9 @@ const cats = [
   { name: 'Chester', line: 'Details coming soon', image: chester },
   { name: 'Cosmo', line: 'Details coming soon', image: cosmo },
 ];
+
+const CALENDAR_MONTHS = 6;
+const months = buildMonths(getLitters(), CALENDAR_MONTHS);
 ---
 
 <!--
@@ -60,13 +64,19 @@ const cats = [
         </div>
         <ol class="cal-months" data-months>
           {
-            Array.from({ length: 6 }).map(() => (
+            months.map((m) => (
               <li class="cal-month">
                 <span class="cal-line" />
-                <span class="cal-name" />
-                <span class="cal-year" />
-                <span class="cal-slot">Litter details soon</span>
-                <span class="cal-slot cal-slot--ghost">Placeholder</span>
+                <span class="cal-name">{m.name}</span>
+                <span class="cal-year">{m.year}</span>
+                {m.events.map((e) => (
+                  <span class="cal-slot">
+                    <i class={`dot dot--${e.kind}`} />
+                    <span class="cal-event">{e.label}</span>
+                    <span class="cal-parents">{e.parents}</span>
+                  </span>
+                ))}
+                {!m.events.length && <span class="cal-slot cal-slot--ghost">Nothing planned</span>}
               </li>
             ))
           }
@@ -91,7 +101,6 @@ const cats = [
 <script>
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
-  import { fillMonths } from '../scripts/cats/months';
   import { initDesktop } from '../scripts/cats/desktop';
   import { initMobile } from '../scripts/cats/mobile';
   import { mount } from '../scripts/lifecycle';
@@ -99,7 +108,6 @@ const cats = [
   gsap.registerPlugin(ScrollTrigger);
 
   mount(() => {
-    fillMonths();
     const stopDesktop = initDesktop();
     const stopMobile = initMobile();
     return () => {

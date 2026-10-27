@@ -462,6 +462,7 @@ const spots = [
     background: var(--ink-warm);
     color: var(--cream);
     padding: clamp(3rem, 8vh, 6rem) 1.5rem clamp(5rem, 14vh, 10rem);
+    overflow-x: clip; /* the rings around the spots reach past the edge of a narrow screen; clip, so nothing is made to scroll */
   }
   .why-scene {
     display: grid;

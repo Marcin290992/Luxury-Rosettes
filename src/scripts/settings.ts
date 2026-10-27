@@ -284,5 +284,19 @@ export const EMBER = {
   loadAhead: 'top 150%', // the three.js chunk is fetched when the section is this close
 };
 
+// ---- scroll stack (the "Before you decide" steps: cards that arrive over each other) -----------------------------------------
+export const SCROLL_STACK = {
+  variant: 'stack' as const, // 'stack' | 'deck' | 'fade' | 'flip' | 'zoom' | 'reveal': 'stack' slides each card up from the bottom over the last ('reveal' opens it in place with a clip-path, which looks like it morphs)
+  scrollLength: 1, // screens of scrolling given to each card
+  peek: 26, // px a covered card slides up so its edge shows above the next one
+  scaleStep: 0.07, // how much a covered card shrinks per step
+  blur: 3, // px, covered cards
+  dim: 0.3, // how far covered cards darken
+  smooth: 0.16, // 0 = follows the scroll exactly, 1 = very loose
+  depth: 3, // covered cards kept painted behind the front one
+  borderRadius: 18, // px
+  perspective: 1400, // px, for the turning variants
+};
+
 // ---- nav pill ---------------------------------------------------------------------------------------------------------
 export const NAV_SCROLLED_AT = 40; // px of scrolling after which the glass gets stronger

@@ -1,37 +1,104 @@
 ---
-// Steps taken from the cattery's own FAQ answers
+import { Image } from 'astro:assets';
+import kittens from '../assets/img/kittens.webp';
+import candy from '../assets/img/cats/candy.webp';
+import draco from '../assets/img/cats/draco.webp';
+import chester from '../assets/img/cats/chester.webp';
+import charlie from '../assets/img/cats/charlie.webp';
+import kita from '../assets/img/cats/kita.webp';
+
+// Steps taken from the cattery's own FAQ answers. Photos already on the site, for now: swap them for the real ones.
 const steps = [
-  { title: 'Consultation', text: 'A short conversation to understand your lifestyle and what you are looking for.' },
-  { title: 'Application & contract', text: 'A simple application, then a contract that sets out everything clearly.' },
-  { title: 'Deposit', text: 'A deposit secures your chosen kitten.' },
-  { title: 'Updates', text: 'Regular photos and videos while your kitten grows, until collection day.' },
-  { title: 'Collection', text: 'Ready at 12 to 14 weeks, fully vaccinated, with a written health guarantee.' },
-  { title: 'Lifelong support', text: 'Guidance on nutrition, behaviour and health for as long as you need it.' },
+  { img: kittens, alt: 'Bengal kittens', title: 'Consultation', text: 'A short conversation to understand your lifestyle and what you are looking for.' },
+  { img: candy, alt: 'Candy, one of our Bengals', title: 'Application & contract', text: 'A simple application, then a contract that sets out everything clearly.' },
+  { img: draco, alt: 'Draco, one of our Bengals', title: 'Deposit', text: 'A deposit secures your chosen kitten.' },
+  { img: chester, alt: 'Chester, one of our Bengals', title: 'Updates', text: 'Regular photos and videos while your kitten grows, until collection day.' },
+  { img: charlie, alt: 'Charlie, one of our Bengals', title: 'Collection', text: 'Ready at 12 to 14 weeks, fully vaccinated, with a written health guarantee.' },
+  { img: kita, alt: 'Kita, a golden Bengal queen', title: 'Lifelong support', text: 'Guidance on nutrition, behaviour and health for as long as you need it.' },
 ];
 ---
 
 <section class="process" id="process">
-  <p class="eyebrow" data-reveal>Before you decide</p>
-  <h2 data-reveal>From first message<br />to your kitten at home</h2>
-  <ol class="steps">
-    {
-      steps.map((s) => (
-        <li data-reveal>
-          <h3>{s.title}</h3>
-          <p>{s.text}</p>
-        </li>
-      ))
-    }
-  </ol>
+  <!--
+    A stack of cards, one per step. Pinned, scrolling moves through them: each next card slides up from the bottom over the
+    last one while the covered ones step back, shrink a little and dim (see scripts/scroll-stack.ts).
+    The heading stays in the pinned stage (to the left of the cards on a laptop, above them on a phone) with a list of the
+    steps, the current one lit, so it is always clear which section this is and where in it you are.
+    Without the script, or with reduced motion, the heading is followed by the cards listed one under the other.
+  -->
+  <div class="stack">
+    <div class="stack-pin">
+      <div class="stack-aside">
+        <header class="process-head">
+          <p class="eyebrow">Before you decide</p>
+          <h2>From first message<br />to your kitten at home</h2>
+        </header>
+        <ol class="stack-nav" aria-hidden="true">
+          {steps.map((s) => <li>{s.title}</li>)}
+        </ol>
+      </div>
+
+      <ol class="stack-frame">
+        {
+          steps.map((s) => (
+            <li class="stack-slot">
+              <article class="stack-card">
+                <Image class="stack-image" src={s.img} alt={s.alt} widths={[600, 1000, 1400]} sizes="(min-width:1024px) 840px, 92vw" loading="lazy" draggable="false" />
+                <span class="stack-scrim" aria-hidden="true"></span>
+                <div class="stack-copy">
+                  <i class="stack-line" aria-hidden="true"></i>
+                  <h3>{s.title}</h3>
+                  <p>{s.text}</p>
+                </div>
+              </article>
+            </li>
+          ))
+        }
+      </ol>
+      <div class="stack-hud" aria-hidden="true">
+        <span class="stack-rail"><span class="stack-fill"></span></span>
+      </div>
+    </div>
+  </div>
 </section>
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initScrollStack } from '../scripts/scroll-stack';
+  import { SCROLL_STACK } from '../scripts/settings';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('#process .stack')!;
+    const motion = window.matchMedia('(prefers-reduced-motion: no-preference)');
+    let destroy: (() => void) | undefined;
+
+    // the stack runs whenever motion is allowed (and follows the setting if it changes while the page is open)
+    const sync = () => {
+      destroy?.();
+      destroy = undefined;
+      delete root.dataset.live;
+      if (motion.matches) {
+        root.dataset.live = '';
+        destroy = initScrollStack(root, SCROLL_STACK);
+      }
+    };
+    motion.addEventListener('change', sync);
+    sync();
+
+    return () => {
+      motion.removeEventListener('change', sync);
+      destroy?.();
+      delete root.dataset.live;
+    };
+  });
+</script>
 
 <style>
   .process {
     background: var(--paper);
     color: var(--ink);
-    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
-    max-width: 72rem;
-    margin: 0 auto;
+  }
+  .process-head {
+    margin: 0;
   }
   .eyebrow {
     font-family: var(--font-body);
@@ -46,67 +113,239 @@ const steps = [
     font-weight: 400;
     font-size: clamp(2.2rem, 5vw, 3.8rem);
     line-height: 1.05;
-    margin: 0 0 3rem;
-  }
-  .steps {
-    list-style: none;
     margin: 0;
+  }
+
+  /* ---- plain list: the heading, then the cards one under the other (no script / reduced motion) ---- */
+  .stack {
+    padding: clamp(4rem, 12vh, 9rem) 1.5rem clamp(4rem, 12vh, 9rem);
+  }
+  .stack-aside {
+    max-width: 55rem;
+    margin: 0 auto 3rem;
+  }
+  .stack-nav {
+    display: none;
+  }
+  .stack-frame {
+    list-style: none;
+    margin: 0 auto;
     padding: 0;
+    max-width: 55rem;
     display: grid;
-    gap: 2rem;
-    counter-reset: step;
-    border-left: var(--dash-divider);
-    padding-left: 1.75rem;
+    gap: 1.25rem;
   }
-  .steps li {
+  .stack-slot {
     position: relative;
-    counter-increment: step;
+    height: clamp(20rem, 58vh, 30rem);
   }
-  .steps li::before {
-    content: '';
+  .stack-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--stack-radius, 18px);
+    background: var(--ink-warm);
+    color: var(--cream);
+  }
+  .stack-card :global(.stack-image) {
     position: absolute;
-    left: calc(-1.75rem - 5px);
-    top: 0.55rem;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--paper);
-    border: 1px solid var(--ink);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 35%;
+  }
+  .stack-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(12, 9, 7, 0.86), rgba(12, 9, 7, 0.35) 52%, rgba(12, 9, 7, 0.12));
+  }
+  .stack-copy {
+    position: relative;
+    padding: 1.5rem;
+    max-width: 34rem;
+  }
+  /* the site's gold line */
+  .stack-line {
+    display: block;
+    width: min(16rem, 60%);
+    height: 0;
+    margin-bottom: 1rem;
+    border-top: 1px dashed var(--gold);
   }
   h3 {
     font-family: var(--font-heading);
     font-weight: 400;
-    font-size: 1.6rem;
-    line-height: 1.1;
-    margin: 0 0 0.4rem;
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    line-height: 1.08;
+    margin: 0 0 0.5rem;
   }
-  .steps p {
+  .stack-copy p {
     font-family: var(--font-body);
     font-size: 0.9rem;
     line-height: 1.7;
-    opacity: 0.75;
+    opacity: 0.82;
     margin: 0;
-    max-width: 34rem;
   }
-  /* wide screens: the line runs along the top, steps sit in a row */
+  .stack-hud {
+    display: none;
+  }
+
+  /* ---- pinned stack (the script sets data-live) ---- */
+  .stack[data-live] {
+    --runway: 100; /* in screens: the script sets the real value from the number of cards */
+    height: calc(var(--runway) * 1vh);
+    height: calc(var(--runway) * 1lvh); /* lvh: constant when the mobile address bar slides away */
+    padding: 0;
+  }
+  /* phone: the heading above the cards */
+  .stack[data-live] .stack-pin {
+    position: sticky;
+    top: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr); /* the heading, then the cards take the rest */
+    row-gap: 1.1rem;
+    height: 100vh;
+    height: 100lvh;
+    overflow: hidden;
+    padding: max(6.5rem, 14vh) 1rem max(3.5rem, 7vh);
+    padding-top: max(6.5rem, 14lvh); /* clear of the nav pill */
+    padding-bottom: max(3.5rem, 7lvh);
+  }
+  .stack[data-live] .stack-aside {
+    max-width: none;
+    margin: 0;
+  }
+  .stack[data-live] .stack-aside h2 {
+    font-size: clamp(1.55rem, 6.4vw, 2.1rem);
+  }
+  .stack[data-live] .stack-aside .eyebrow {
+    margin-bottom: 0.5rem;
+  }
+  .stack[data-live] .stack-frame {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 55rem;
+    margin: 0 auto;
+    height: 100%;
+    min-height: 0;
+  }
+  .stack[data-live] .stack-slot {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+  }
+  .stack[data-live] .stack-hud {
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: max(1.25rem, 3vh);
+    pointer-events: none;
+  }
+  /* progress: the site's dashed line, filled in by clipping (so the dashes are never stretched) */
+  .stack-rail {
+    position: relative;
+    width: min(11rem, 40vw);
+    height: 0;
+    border-top: var(--dash-track);
+  }
+  .stack-fill {
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: var(--dash-strong);
+    clip-path: inset(0 100% 0 0);
+  }
+  @media (min-width: 700px) {
+    .stack-copy {
+      padding: 2.25rem;
+    }
+    .stack-copy p {
+      font-size: 1rem;
+    }
+  }
+
+  /* laptop: the heading and the list of steps on the left, the cards on the right */
   @media (min-width: 1024px) {
-    .steps {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 1.5rem;
-      border-left: 0;
-      padding-left: 0;
-      border-top: var(--dash-divider);
-      padding-top: 2rem;
+    .stack[data-live] .stack-pin {
+      grid-template-columns: minmax(0, 27rem) minmax(0, 50rem);
+      grid-template-rows: auto;
+      justify-content: center;
+      align-content: center;
+      align-items: center;
+      column-gap: clamp(2rem, 5vw, 6rem);
+      padding: max(6rem, 12vh) 4vw max(3.5rem, 7vh);
+      padding-top: max(6rem, 12lvh);
+      padding-bottom: max(3.5rem, 7lvh);
     }
-    .steps li::before {
-      left: 0;
-      top: calc(-2rem - 5px);
+    .stack[data-live] .stack-aside h2 {
+      font-size: clamp(2.2rem, 3.6vw, 3.4rem);
     }
-    h3 {
+    .stack[data-live] .stack-aside .eyebrow {
+      margin-bottom: 1rem;
+    }
+    .stack[data-live] .stack-frame {
+      height: 68vh;
+      height: 68lvh;
+      margin: 0;
+    }
+    /* the steps, the one in front lit; the script keeps data-front on the section */
+    .stack[data-live] .stack-nav {
+      display: grid;
+      gap: 0.35rem;
+      list-style: none;
+      margin: 2.25rem 0 0;
+      padding: 0;
+      font-family: var(--font-heading);
       font-size: 1.35rem;
+      line-height: 1.2;
     }
-    .steps p {
-      font-size: 0.82rem;
+    .stack[data-live] .stack-nav li {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      opacity: 0.32;
+      transition: opacity 0.5s ease;
+    }
+    .stack[data-live] .stack-nav li::before {
+      content: '';
+      flex: none;
+      width: 0;
+      border-top: 1px dashed var(--gold-deep);
+      transition: width 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    .stack[data-live][data-front='0'] .stack-nav li:nth-child(1),
+    .stack[data-live][data-front='1'] .stack-nav li:nth-child(2),
+    .stack[data-live][data-front='2'] .stack-nav li:nth-child(3),
+    .stack[data-live][data-front='3'] .stack-nav li:nth-child(4),
+    .stack[data-live][data-front='4'] .stack-nav li:nth-child(5),
+    .stack[data-live][data-front='5'] .stack-nav li:nth-child(6) {
+      opacity: 1;
+    }
+    .stack[data-live][data-front='0'] .stack-nav li:nth-child(1)::before,
+    .stack[data-live][data-front='1'] .stack-nav li:nth-child(2)::before,
+    .stack[data-live][data-front='2'] .stack-nav li:nth-child(3)::before,
+    .stack[data-live][data-front='3'] .stack-nav li:nth-child(4)::before,
+    .stack[data-live][data-front='4'] .stack-nav li:nth-child(5)::before,
+    .stack[data-live][data-front='5'] .stack-nav li:nth-child(6)::before {
+      width: 2.25rem;
     }
   }
-</style>
+  @media (prefers-reduced-motion: reduce) {
+    .stack-nav li,
+    .stack-nav li::before {
+      transition: none !important;
+    }
+  }</style>

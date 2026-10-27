@@ -204,8 +204,6 @@ export const CATS_PHONE = {
 };
 
 // ---- photo corridor --------------------------------------------------------------------------------------------------
-// Phones and tablets show the seven strongest photos: six screens of swiping would be too many on a phone.
-export const CORRIDOR_PHONE_KEEP = [0, 1, 3, 4, 5, 6, 9];
 export const CORRIDOR_SPACING = 600; // depth between photos, in px
 export const CORRIDOR_LEAD = 2;
 export const CORRIDOR_PX_PER_STEP = { laptop: 560, phone: 400 }; // page scroll per photo

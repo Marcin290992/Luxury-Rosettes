@@ -43,7 +43,11 @@ const items = [
             </div>
             <figcaption class="cor-cap">
               <p class="cor-eyebrow">{it.eyebrow}</p>
-              <h3>{it.title}</h3>
+              <h3 aria-label={it.title}>
+                {it.title.split(' ').map((w, n) => (
+                  <span class="cor-w" aria-hidden="true" style={`--i:${n}`}><span>{w}</span></span>
+                ))}
+              </h3>
               <p class="cor-text">{it.text}</p>
             </figcaption>
           </figure>
@@ -58,15 +62,26 @@ const items = [
           <h2>Meet your Bengal</h2>
           <p class="cor-finale-text">Placeholder text. A calm sentence or two about the next litter and how to reserve a kitten.</p>
           <div class="cor-ctas">
-            <a class="cor-cta cor-cta--solid" href="#">View available kittens</a>
-            <a class="cor-cta" href="#">Join the waiting list</a>
+            {
+              [
+                { label: 'View available kittens', solid: true },
+                { label: 'Join the waiting list', solid: false },
+              ].map(({ label, solid }) => (
+                <a class:list={['cor-cta', { 'cor-cta--solid': solid }]} href="#" aria-label={label}>
+                  <span class="cor-cta-label" aria-hidden="true">
+                    <span class="cor-cta-word">
+                      {[...label].map((ch, n) => <span class="cor-cta-char" style={`--n:${n}`} data-ch={ch}>{ch}</span>)}
+                    </span>
+                  </span>
+                </a>
+              ))
+            }
           </div>
         </div>
       </div>
 
       <div class="cor-progress" aria-hidden="true">
         <div class="cor-line"><div class="cor-fill"></div></div>
-        <span class="cor-count">01</span>
       </div>
     </div>
   </div>
@@ -76,7 +91,7 @@ const items = [
   import { createDolly, type Dolly } from '../scripts/dolly-gallery';
   import { clamp, smoothstep as smooth } from '../scripts/math';
   import { mount } from '../scripts/lifecycle';
-  import { CORRIDOR_PHONE_KEEP, CORRIDOR_SPACING, CORRIDOR_LEAD, CORRIDOR_PX_PER_STEP, CORRIDOR as C } from '../scripts/settings';
+  import { CORRIDOR_SPACING, CORRIDOR_LEAD, CORRIDOR_PX_PER_STEP, CORRIDOR as C } from '../scripts/settings';
 
 
   mount(() => {
@@ -86,14 +101,12 @@ const items = [
     const intro = section.querySelector<HTMLElement>('.cor-intro')!;
     const fill = section.querySelector<HTMLElement>('.cor-fill')!;
     const progress = section.querySelector<HTMLElement>('.cor-progress')!;
-    const count = section.querySelector<HTMLElement>('.cor-count')!;
     const fin = section.querySelector<HTMLElement>('.cor-finale')!;
     const finImg = section.querySelector<HTMLElement>('.cor-finale-img')!;
     const finScrim = section.querySelector<HTMLElement>('.cor-finale-scrim')!;
     const finCopy = section.querySelector<HTMLElement>('.cor-finale-copy')!;
     const finCtas = section.querySelector<HTMLElement>('.cor-ctas')!;
 
-    const PHONE_KEEP = CORRIDOR_PHONE_KEEP; // the others are hidden while the corridor runs on a phone
     const SPACING = CORRIDOR_SPACING;
     const LEAD = CORRIDOR_LEAD;
     const { ink: INK, paper: PAPER, white: WHITE, black: BLACK } = C.colors;
@@ -104,8 +117,7 @@ const items = [
     // Plain sticky pin: the section is taller than the screen and the stage sticks while the page scrolls past.
     // The scroll position only sets the camera target; the dolly eases towards it.
     const start = (phone: boolean) => {
-      const tiles = phone ? PHONE_KEEP.map((k) => allTiles[k]) : allTiles;
-      allTiles.forEach((t) => { if (!tiles.includes(t)) t.hidden = true; });
+      const tiles = allTiles;
       const items = tiles.length;
       const PX_PER_STEP = phone ? CORRIDOR_PX_PER_STEP.phone : CORRIDOR_PX_PER_STEP.laptop;
       // Finale, in steps from the first photo (the last photo is in place at items - 1): first the words arrive on the
@@ -139,9 +151,6 @@ const items = [
         grayscale: 0,
         // the title leaves first; only then do the photos fade in, so the two never overlap
         gate: (offset) => smooth(C.gate[0], C.gate[1], offset / SPACING),
-        onIndexChange: (i) => {
-          count.textContent = String(Math.min(i, items - 1) + 1).padStart(2, '0');
-        },
         onFrame: (offset) => {
           const e = offset / SPACING;
           intro.style.opacity = (1 - smooth(-LEAD + C.intro.fadeStart, C.intro.fadeEnd, e)).toFixed(3);
@@ -234,6 +243,11 @@ const items = [
     padding: clamp(4rem, 10vh, 7rem) 1.5rem 3rem;
     display: grid;
     gap: 3rem;
+    /* paper texture: a faint film grain and a soft vignette. The colour itself is set by the script as the finale darkens. */
+    background-image:
+      radial-gradient(ellipse at center, transparent 55%, rgba(26, 20, 16, 0.07) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.06 0.14 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 100% 100%, 220px 220px;
   }
   .cor-intro {
     text-align: center;
@@ -255,11 +269,13 @@ const items = [
   .cor-item {
     margin: 0;
   }
+  /* gallery photo: square corners and a deep soft shadow */
   .cor-frame {
     overflow: hidden;
-    border-radius: 10px;
+    border-radius: 0;
     aspect-ratio: 4 / 5;
     background: var(--placeholder);
+    box-shadow: 0 34px 60px -28px rgba(26, 20, 16, 0.45), 0 10px 24px -14px rgba(26, 20, 16, 0.3);
   }
   .cor-frame :global(img) {
     width: 100%;
@@ -268,20 +284,43 @@ const items = [
     display: block;
   }
   .cor-cap {
-    padding-top: 1rem;
+    padding-top: 1.25rem;
+  }
+  .cor-cap .cor-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.26em;
+    margin-bottom: 0.9rem;
+    opacity: 1;
+    color: color-mix(in srgb, var(--ink) 62%, transparent);
   }
   .cor-cap h3 {
     font-size: 1.75rem;
     font-weight: 400;
     line-height: 1.1;
-    margin: 0 0 0.5rem;
+    letter-spacing: 0.005em;
+    margin: 0 0 0.75rem;
   }
+  /* each word sits in its own window; in the pinned corridor it rises into it as its photo arrives */
+  .cor-w {
+    display: inline-block;
+    overflow: hidden;
+    padding-bottom: 0.14em; /* room for descenders inside the window */
+    margin-bottom: -0.14em;
+    vertical-align: top;
+  }
+  .cor-w + .cor-w { margin-left: 0.26em; }
+  .cor-w > span { display: inline-block; }
   .cor-text {
     font-family: var(--font-body);
-    font-size: 0.85rem;
-    line-height: 1.6;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    letter-spacing: 0.02em;
     margin: 0;
-    opacity: 0.75;
+    max-width: 30em;
+    color: color-mix(in srgb, var(--ink) 66%, transparent);
   }
   .cor-progress {
     display: none;
@@ -350,19 +389,34 @@ const items = [
     border: 1px solid color-mix(in srgb, var(--fg) 60%, transparent);
     border-radius: 999px;
     padding: 1rem 1.75rem;
-    transition: background 0.3s, color 0.3s;
-  }
-  .cor-cta:hover {
-    background: var(--fg);
-    color: var(--inv);
+    transition: border-color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
   }
   .cor-cta--solid {
     background: var(--fg);
     color: var(--inv);
   }
-  .cor-cta--solid:hover {
-    background: transparent;
-    color: var(--fg);
+  /* same hover as the nav: the letters slide up one after another, a gold copy slides in from below */
+  .cor-cta-label { display: block; overflow: hidden; line-height: 1.5; }
+  .cor-cta-word { display: block; white-space: pre; }
+  .cor-cta-char {
+    display: inline-block;
+    position: relative;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    transition-delay: calc(var(--n) * 0.025s);
+  }
+  .cor-cta-char::after {
+    content: attr(data-ch);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    color: var(--gold);
+  }
+  .cor-cta--solid .cor-cta-char::after { color: var(--gold-deep); } /* gold would vanish on the light button */
+  @media (hover: hover) {
+    .cor-cta:hover { border-color: var(--gold); }
+    .cor-cta--solid:hover { border-color: var(--fg); }
+    .cor-cta:hover .cor-cta-char,
+    .cor-cta:focus-visible .cor-cta-char { transform: translateY(-100%); }
   }
   .cor-finale-copy .cor-eyebrow {
     color: var(--fg);
@@ -424,6 +478,11 @@ const items = [
   .cor[data-pinned] .cor-cap h3 {
     font-size: clamp(1.4rem, 2vw, 2.2rem);
   }
+  .cor[data-pinned] .cor-w > span {
+    /* per-word progress from the photo's --a, each word a little later than the one before */
+    --p: clamp(0, calc(var(--a, 0) * 1.7 - var(--i) * 0.16), 1);
+    transform: translateY(calc((1 - var(--p)) * 110%));
+  }
   .cor[data-pinned] .cor-progress {
     display: flex;
     align-items: center;
@@ -432,8 +491,7 @@ const items = [
     left: 4.5vw;
     bottom: calc(5vh + var(--bar, 0px));
     z-index: 200;
-    font-family: var(--font-body);
-    font-size: 0.75rem;
+    color: var(--ink);
   }
   .cor[data-pinned] .cor-finale {
     position: absolute;
@@ -447,6 +505,16 @@ const items = [
   .cor[data-pinned] .cor-finale :global(.cor-finale-img) {
     opacity: 0;
     will-change: transform, opacity;
+  }
+  /* once the photo is there it keeps drifting very slowly (the script drives `transform`, this drives `scale`) */
+  @media (prefers-reduced-motion: no-preference) {
+    .cor[data-pinned] .cor-finale :global(.cor-finale-img) {
+      animation: cor-drift 26s ease-in-out infinite alternate;
+    }
+  }
+  @keyframes cor-drift {
+    from { scale: 1; }
+    to { scale: 1.07; }
   }
   .cor[data-pinned] .cor-finale-scrim {
     opacity: 0;
@@ -496,6 +564,11 @@ const items = [
   .cor[data-phone] .cor-cap .cor-eyebrow {
     margin-bottom: 0.4rem;
     font-size: 0.65rem;
+  }
+  .cor[data-phone] .cor-cap { padding-top: 1.4rem; }
+  .cor[data-phone] .cor-w > span {
+    --p: clamp(0, calc(var(--a, 0) * 2 - var(--i) * 0.2), 1);
+    transform: translateY(calc((1 - var(--p)) * 110%));
   }
   .cor[data-phone] .cor-finale-copy {
     padding: 0 8vw;

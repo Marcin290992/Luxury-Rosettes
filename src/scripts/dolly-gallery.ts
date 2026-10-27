@@ -259,6 +259,7 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
   };
 
   const onPointerMove = (e: PointerEvent) => {
+    if (e.pointerType === 'touch') return; // a finger scrolling the page is not a cursor: no parallax from touch
     const rect = root.getBoundingClientRect();
     aim.x = clamp(((e.clientX - rect.left) / rect.width) * 2 - 1, -1, 1);
     aim.y = clamp(((e.clientY - rect.top) / rect.height) * 2 - 1, -1, 1);
@@ -273,7 +274,8 @@ export function createDolly(root: HTMLElement, tiles: HTMLElement[], options: Do
     }
     wake();
   };
-  const onPointerEnter = () => {
+  const onPointerEnter = (e: PointerEvent) => {
+    if (e.pointerType === 'touch') return;
     hovering = true;
   };
   const onPointerLeave = () => {

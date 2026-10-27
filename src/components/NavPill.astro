@@ -22,19 +22,24 @@ const isCurrent = (href: string) =>
       id="menu-btn"
       type="button"
       class="nav-btn"
+      aria-label="Menu"
       aria-expanded="false"
       aria-controls="nav-panel"
     >
       <span class="menu-lines" aria-hidden="true"><span></span><span></span></span>
-      <span id="menu-text">Menu</span>
+      <span id="menu-text" class="inquire-label" aria-hidden="true">
+        <span class="nav-word">{[...'Menu'].map((ch, n) => <span class="nav-char" style={`--n:${n}`} data-ch={ch}>{ch}</span>)}</span>
+      </span>
     </button>
 
     <a href="/" class="nav-logo" aria-label="Luxury Rosettes — home">
       <Image src={logo} alt="" height={56} loading="eager" />
     </a>
 
-    <button type="button" class="nav-btn inquire-btn" data-contact-trigger>
-      Inquire
+    <button type="button" class="nav-btn inquire-btn" aria-label="Inquire" data-contact-trigger>
+      <span class="inquire-label" aria-hidden="true">
+        <span class="nav-word">{[...'Inquire'].map((ch, n) => <span class="nav-char" style={`--n:${n}`} data-ch={ch}>{ch}</span>)}</span>
+      </span>
       <svg class="arrow-icon" viewBox="0 0 30 12" fill="none" stroke="currentColor" aria-hidden="true">
         <path d="M0 6H29M24 1L29 6L24 11" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
@@ -74,20 +79,34 @@ const isCurrent = (href: string) =>
   mount(() => {
     const nav = document.getElementById('main-nav')!;
     const btn = nav.querySelector<HTMLElement>('#menu-btn')!;
-    const text = nav.querySelector<HTMLElement>('#menu-text')!;
+    const word = nav.querySelector<HTMLElement>('#menu-text .nav-word')!;
     const panel = nav.querySelector<HTMLElement>('#nav-panel')!;
+
+    // one span per letter, like the server-rendered label, so the hover effect works on both words
+    // (cloned, so the letters keep Astro's scoped-style attribute)
+    const proto = word.firstElementChild!.cloneNode(false) as HTMLElement;
+    const setLabel = (label: string) => {
+      word.replaceChildren(...[...label].map((ch, n) => {
+        const el = proto.cloneNode(false) as HTMLElement;
+        el.style.setProperty('--n', String(n));
+        el.dataset.ch = ch;
+        el.textContent = ch;
+        return el;
+      }));
+    };
 
     const setOpen = (open: boolean) => {
       nav.classList.toggle('expanded', open);
       btn.setAttribute('aria-expanded', String(open));
-      text.textContent = open ? 'Close' : 'Menu';
+      setLabel(open ? 'Close' : 'Menu');
       panel.toggleAttribute('inert', !open);
     };
 
     const onToggle = () => setOpen(!nav.classList.contains('expanded'));
     // Close on outside click, Escape, or after choosing a link
     const onOutsideClick = (e: MouseEvent) => {
-      if (!nav.contains(e.target as Node)) setOpen(false); // target on purpose: where the click really landed
+      // the path, not the target: clicking the Menu button swaps its letters, so the target is already detached by now
+      if (!e.composedPath().includes(nav)) setOpen(false);
     };
     const onKeydown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && nav.classList.contains('expanded')) {
@@ -193,7 +212,7 @@ const isCurrent = (href: string) =>
     color: var(--text);
     transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
   }
-  .nav-btn:hover { color: var(--gold); }
+  .nav-btn:hover { color: var(--text); } /* the gold comes from the sliding letters and lines, not the whole button */
   .nav-btn:focus-visible,
   .nav-links a:focus-visible,
   .nav-logo:focus-visible {
@@ -207,8 +226,10 @@ const isCurrent = (href: string) =>
     width: 22px;
     height: 1px;
     background: currentColor;
-    transition: transform 0.4s var(--ease);
+    transition: transform 0.4s var(--ease), background 0.6s var(--ease);
   }
+  #menu-btn:hover .menu-lines span,
+  #menu-btn:focus-visible .menu-lines span { background: var(--gold); }
   .expanded .menu-lines span:first-child { transform: translateY(3px) rotate(45deg); }
   .expanded .menu-lines span:last-child { transform: translateY(-3px) rotate(-45deg); }
 
@@ -226,33 +247,13 @@ const isCurrent = (href: string) =>
     border-radius: 999px;
     font-size: 0.78rem;
     letter-spacing: 0.12em;
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    transition: color 0.6s var(--ease), border-color 0.6s var(--ease), letter-spacing 0.6s var(--ease), translate 0.6s var(--ease);
   }
-  /* gold slides up from the bottom like a curtain; the label turns dark on it */
-  .inquire-btn::before {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    z-index: -1;
-    background: var(--gold);
-    translate: 0 101%;
-    transition: translate 0.6s var(--ease);
-  }
-  .inquire-btn:hover,
-  .inquire-btn:focus-visible {
-    color: var(--ink-warm);
-    border-color: var(--gold);
-    letter-spacing: 0.135em;
-    translate: 0 -1px;
-  }
-  .inquire-btn:hover::before,
-  .inquire-btn:focus-visible::before { translate: 0 0; }
-  .arrow-icon { width: 30px; height: 12px; transition: translate 0.6s var(--ease); }
+  /* same hover as the menu links: the letters slide up, a gold copy slides in from below */
+  .inquire-btn:hover { color: var(--text); }
+  .inquire-label { display: block; overflow: hidden; line-height: 1.35; }
+  .arrow-icon { width: 30px; height: 12px; transition: color 0.6s var(--ease); }
   .inquire-btn:hover .arrow-icon,
-  .inquire-btn:focus-visible .arrow-icon { translate: 5px 0; }
+  .inquire-btn:focus-visible .arrow-icon { color: var(--gold); }
 
   /* Height animation without JS: 0fr -> 1fr */
   .nav-content {
@@ -362,7 +363,11 @@ const isCurrent = (href: string) =>
   }
   @media (hover: hover) {
     .nav-links a:hover .nav-char,
-    .nav-links a:focus-visible .nav-char { transform: translateY(-100%); }
+    .nav-links a:focus-visible .nav-char,
+    #menu-btn:hover .nav-char,
+    #menu-btn:focus-visible .nav-char,
+    .inquire-btn:hover .nav-char,
+    .inquire-btn:focus-visible .nav-char { transform: translateY(-100%); }
   }
   .nav-links a[aria-current='page'] { color: var(--gold); font-style: italic; }
 
@@ -400,13 +405,11 @@ const isCurrent = (href: string) =>
       gap: 0.55rem;
       padding: 0.5rem 0.4rem;
     }
-    .inquire-btn:hover,
-    .inquire-btn:focus-visible { letter-spacing: 0.1em; } /* the label must not grow inside the fixed width */
     .arrow-icon { width: 18px; height: 10px; }
     .nav-logo :global(img) { height: 52px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .nav-pill, .nav-content, .nav-links li, .nav-brand, .nav-footer, .menu-lines span, .nav-char, .inquire-btn, .inquire-btn::before, .arrow-icon { transition-duration: 0.01ms !important; transition-delay: 0s !important; }
+    .nav-pill, .nav-content, .nav-links li, .nav-brand, .nav-footer, .menu-lines span, .nav-char, .inquire-btn, .arrow-icon { transition-duration: 0.01ms !important; transition-delay: 0s !important; }
   }
 </style>

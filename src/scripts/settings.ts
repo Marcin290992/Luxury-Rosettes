@@ -177,7 +177,7 @@ export const CATS = {
   visibleAtStart: 0.98, // a card counts as on screen when its left edge is left of this share of the width
   laterStart: 'left 92%',
   calendarStart: 'left 80%',
-  card: { mask: 1.3, img: 2, textAt: 0.5, text: 0.8, textStagger: 0.1 },
+  card: { mask: 2.2, img: 3.2, textAt: 0.9, text: 0.8, textStagger: 0.1 },
   intro: { dur: 0.9, stagger: 0.12 },
   firstCards: { at: 0.25, step: 0.22 },
   calendar: {

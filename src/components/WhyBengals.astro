@@ -1,19 +1,57 @@
 ---
 import { Image } from 'astro:assets';
 import kita from '../assets/img/cats/kita.webp';
+import candy from '../assets/img/cats/candy.webp';
+import draco from '../assets/img/cats/draco.webp';
+import chester from '../assets/img/cats/chester.webp';
+import cosmo from '../assets/img/cats/cosmo.webp';
 
-const traits = [
-  { title: 'Rosette markings', text: 'A coat as unique as a fingerprint, with wild-inspired patterns impossible to replicate.' },
-  { title: 'Wild by nature', text: 'Descended from Asian Leopard Cats, with an untamed spirit refined for home life.' },
-  { title: 'Remarkable intelligence', text: 'Quick to learn, endlessly curious and deeply engaged with their world.' },
-  { title: 'Devoted companions', text: 'Bengals form lasting bonds: loyal, affectionate and uniquely present.' },
+// Photos already on the site, for now: swap them for the real ones (one per trait). `side` is the side of the page the photo is
+// on, `speed` how far it drifts against the page while it passes, `tilt` how far the spot is turned (degrees).
+const scenes = [
+  { img: candy, name: 'Candy', alt: 'Candy, one of our Bengals', side: 'right', speed: 0.75, tilt: -3, title: 'Rosette markings', text: 'A coat as unique as a fingerprint, with wild-inspired patterns impossible to replicate.' },
+  { img: draco, name: 'Draco', alt: 'Draco, one of our Bengals', side: 'left', speed: 1.3, tilt: 2, title: 'Wild by nature', text: 'Descended from Asian Leopard Cats, with an untamed spirit refined for home life.' },
+  { img: chester, name: 'Chester', alt: 'Chester, one of our Bengals', side: 'right', speed: 0.95, tilt: -2, title: 'Remarkable intelligence', text: 'Quick to learn, endlessly curious and deeply engaged with their world.' },
+  { img: cosmo, name: 'Cosmo', alt: 'Cosmo, one of our Bengals', side: 'left', speed: 1.2, tilt: 3, title: 'Devoted companions', text: 'Bengals form lasting bonds: loyal, affectionate and uniquely present.' },
+];
+
+// The photos are cut to the spots of a Bengal's coat: soft, uneven, no two alike. Each spot is a ring of points around the
+// middle of a unit square (a radius per point, so the edge wanders), joined into one smooth closed curve (Catmull-Rom turned
+// into cubic Béziers). Used twice: as the clip of the photo and as the thin ring drawn around it, like the outline of a rosette.
+const spotPath = (radii: number[], stretch: [number, number], turn: number) => {
+  const n = radii.length;
+  const pts = radii.map((r, i) => {
+    const a = (i / n) * Math.PI * 2 + turn;
+    return [0.5 + Math.cos(a) * r * stretch[0], 0.5 + Math.sin(a) * r * stretch[1]];
+  });
+  const f = (v: number) => v.toFixed(4);
+  let d = `M ${f(pts[0][0])} ${f(pts[0][1])}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % n];
+    const p3 = pts[(i + 2) % n];
+    d += ` C ${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
+  }
+  return `${d} Z`;
+};
+const lobes = (n: number, base: number, amount: number, count: number, phase: number) =>
+  Array.from({ length: n }, (_, i) => base + amount * Math.cos(count * ((i / n) * Math.PI * 2) + phase));
+const spots = [
+  spotPath([0.46, 0.43, 0.47, 0.44, 0.46, 0.42, 0.47, 0.45, 0.43, 0.46], [1, 1], 0.2), // a rounded, slightly lumpy spot
+  spotPath([0.48, 0.4, 0.38, 0.44, 0.48, 0.47, 0.4, 0.37, 0.43, 0.47], [0.86, 1], 1.1), // a tall, tapering one
+  spotPath([0.46, 0.47, 0.44, 0.3, 0.25, 0.33, 0.44, 0.47, 0.46, 0.45], [1, 0.96], 0.5), // a kidney: dented on one side
+  spotPath(lobes(12, 0.4, 0.07, 3, 0.5), [1, 1], 0), // three soft lobes, like a rosette
 ];
 ---
 
 <!--
-  Pinned sequence, then the text. The photo starts as two tiles, the left one lower and the right one higher, a small gap
-  between them. First the tiles level out, then the gap closes and they are one photo, which grows to fill the whole
-  screen, and then the paper closes in around the word BENGALS (the letters shrink from huge), leaving the photo only inside the letters.
+  Pinned sequence, then a long scroll. The photo starts as two tiles, the left one lower and the right one higher, a small
+  gap between them. First the tiles level out, then the gap closes and they are one photo, which grows to fill the whole
+  screen, and then the paper closes in around the word BENGALS (the letters shrink from huge), leaving the photo only
+  inside the letters. The paper burns away from the middle and shows the dark page with the big heading; the pin ends
+  and the page goes on scrolling down: framed photos drift in parallax and open with a clip-path as they arrive, each
+  beside one of the four traits.
   Without the script (or with reduced motion): the photo is whole and everything just stacks.
 -->
 <section class="why" id="why-bengals">
@@ -42,32 +80,67 @@ const traits = [
         </defs>
         <rect class="why-knock-paper" width="100%" height="100%" mask="url(#why-knock-mask)"></rect>
       </svg>
+
+      <!-- What the burn reveals: the first screen of the dark page. In the pinned chapter it sits under the photo and under
+           the ember canvas; without the script it is simply the heading that follows the photo. -->
+      <div class="why-copy">
+        <header class="why-head">
+          <p class="eyebrow">Bengal excellence</p>
+          <h2><span class="why-line"><span>Why</span></span><em class="why-line"><span>Bengals?</span></em></h2>
+        </header>
+      </div>
     </div>
   </div>
 
-  <div class="why-copy">
-    <header class="why-head">
-      <p class="eyebrow" data-reveal>Bengal excellence</p>
-      <h2 data-reveal>Why <em>Bengals?</em></h2>
-    </header>
-    <ul class="traits">
-      {
-        traits.map((t) => (
-          <li data-reveal>
-            <i class="trait-line" data-dash aria-hidden="true"></i>
-            <h3>{t.title}</h3>
-            <p>{t.text}</p>
-          </li>
-        ))
-      }
-    </ul>
-  </div>
-</section>
+  <!-- The rest of the dark page. It starts under the end of the pinned chapter, so the first photo rises over the bottom of
+       the heading's screen before the pin lets go. -->
+  <!-- The spots the photos are cut to (objectBoundingBox: the same curve fits any size of box) -->
+  <svg class="why-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      {spots.map((d, i) => (
+        <clipPath id={`why-spot-${i}`} clipPathUnits="objectBoundingBox"><path d={d}></path></clipPath>
+      ))}
+    </defs>
+  </svg>
+
+  <div class="why-more">
+    {
+      scenes.map((s, i) => (
+        <article class={`why-scene why-scene--${s.side}`}>
+          <div class="why-spot" data-speed={s.speed} data-tilt={s.tilt} style={`--tilt:${s.tilt}deg`}>
+            <svg class="why-ring" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+              <path d={spots[i % spots.length]} vector-effect="non-scaling-stroke"></path>
+            </svg>
+            <figure class="why-fig">
+              <div class="why-shape" style={`clip-path:url(#why-spot-${i % spots.length})`}>
+                <Image src={s.img} alt={s.alt} widths={[600, 1000, 1400]} sizes="(min-width:1024px) 40vw, 80vw" loading="lazy" />
+              </div>
+            </figure>
+          </div>
+          <div class="why-text">
+            <p class="why-statement" aria-label={s.text}>
+              {s.text.split(' ').map((w) => (
+                <Fragment>
+                  <span class="w" aria-hidden="true"><span>{w}</span></span>{' '}
+                </Fragment>
+              ))}
+            </p>
+            <i class="trait-line" aria-hidden="true"></i>
+            <div class="why-by">
+              <h3>{s.title}</h3>
+              <p>{s.name}</p>
+            </div>
+          </div>        </article>
+      ))
+    }
+  </div></section>
 
 <script>
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { mount } from '../scripts/lifecycle';
+  import { EMBER } from '../scripts/settings';
+  import type { EmberBurn } from '../scripts/ember-burn';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -94,7 +167,9 @@ const traits = [
       // would switch the stage to position:fixed on the main thread and jitter).
       const tl = gsap.timeline({
         defaults: { ease: 'none' },
-        scrollTrigger: { trigger: track, start: 'top top', end: 'bottom bottom', scrub: 1, invalidateOnRefresh: true },
+        // refreshPriority: this chapter is far down the page, below pins that are made later (the stage, the cats row). A lower
+        // priority makes it measure itself after them, so their spacers are counted in its start and end.
+        scrollTrigger: { trigger: track, start: 'top top', end: 'bottom bottom', scrub: 1, invalidateOnRefresh: true, refreshPriority: -1 },
       });
 
       // 1. the tiles level out
@@ -123,12 +198,180 @@ const traits = [
       ScrollTrigger.addEventListener('refresh', place); // sizes can change; the centre is read again each time
 
       gsap.set(knock, { opacity: 0 });
+
+      // 5. the ember. When the word has settled the paper catches fire in the middle and burns away, and the dark page under
+      //    it (the heading) shows through the hole. The burn is the scroll position: scrub it back and the paper grows
+      //    back. three.js and the burn shader are fetched shortly before the section arrives.
+      const copy = section.querySelector<HTMLElement>('.why-copy')!;
+      const eyebrow = copy.querySelector<HTMLElement>('.eyebrow')!;
+      const headLines = gsap.utils.toArray<HTMLElement>('.why-line > span', copy);
+      const photo = halfL.querySelector<HTMLImageElement>('img')!;
+      let ember: EmberBurn | null = null;
+      let disposed = false;
+      const swap = { v: 0 }; // 0 = the real photo and word are on screen, 1 = the canvas has taken over
+      const burn = { p: 0 }; // 0 = untouched, 1 = burnt away
+
+      gsap.set(eyebrow, { autoAlpha: 0, y: 12 });
+      gsap.set(headLines, { yPercent: 115 }); // each line waits below its own window
+      copy.style.visibility = 'hidden';
+
+      const apply = () => {
+        const swapped = swap.v > 0.5;
+        copy.style.visibility = swapped ? 'visible' : 'hidden';
+        if (ember) {
+          copy.style.opacity = '1';
+          // the canvas shows the finished picture, so the real photo and word step aside; the canvas hides itself when burnt
+          img.style.visibility = swapped ? 'hidden' : '';
+          knock.style.visibility = swapped ? 'hidden' : '';
+          ember.show(swapped && burn.p < 0.999);
+        } else {
+          copy.style.opacity = String(burn.p); // no WebGL (or not loaded yet): the page simply fades in over the word
+        }
+      };
+
+      // the finished picture as a flat image for the shader: paper, with the photo showing through the word
+      const bake = (): HTMLCanvasElement => {
+        const w = stage.clientWidth;
+        const h = stage.clientHeight;
+        const r = Math.min(window.devicePixelRatio || 1, EMBER.maxPixelRatio);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(w * r);
+        canvas.height = Math.round(h * r);
+        const ctx = canvas.getContext('2d')!;
+        ctx.scale(r, r);
+        ctx.fillStyle = getComputedStyle(section).getPropertyValue('--paper').trim() || '#faf8f3';
+        ctx.fillRect(0, 0, w, h);
+        const iw = photo.naturalWidth;
+        const ih = photo.naturalHeight;
+        if (!iw || !ih) return canvas;
+        const layer = document.createElement('canvas');
+        layer.width = canvas.width;
+        layer.height = canvas.height;
+        const lctx = layer.getContext('2d')!;
+        lctx.scale(r, r);
+        // the photo, covering the stage with the same focal point as the tiles (50% 35%)
+        const s = Math.max(w / iw, h / ih);
+        lctx.drawImage(photo, (w - iw * s) * 0.5, (h - ih * s) * 0.35, iw * s, ih * s);
+        // keep it only inside the letters, set exactly like the SVG word
+        const style = getComputedStyle(text);
+        lctx.globalCompositeOperation = 'destination-in';
+        lctx.font = `${parseFloat(style.fontSize)}px ${style.fontFamily}`;
+        if ('letterSpacing' in lctx && style.letterSpacing !== 'normal') (lctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = style.letterSpacing;
+        lctx.textAlign = 'center';
+        lctx.textBaseline = 'middle';
+        lctx.fillStyle = '#000';
+        lctx.fillText(text.textContent ?? '', w / 2, h / 2);
+        ctx.drawImage(layer, 0, 0, w, h);
+        return canvas;
+      };
+
+      const load = async () => {
+        try {
+          const module = await import('../scripts/ember-burn');
+          photo.loading = 'eager';
+          await Promise.all([photo.decode().catch(() => undefined), document.fonts.ready]);
+          if (disposed) return;
+          const created = await module.createEmberBurn(stage, {
+            paper: bake(),
+            origin: EMBER.origin,
+            emberColor: EMBER.color,
+            charColor: EMBER.char,
+            glow: EMBER.glow,
+            edge: EMBER.edge,
+            roughness: EMBER.roughness,
+            detail: EMBER.detail,
+            scorch: EMBER.scorch,
+            gold: EMBER.gold,
+            lobes: EMBER.lobes,
+            charWidth: EMBER.charWidth,
+            speckle: EMBER.speckle,
+            flicker: EMBER.flicker,
+            sparks: EMBER.sparks,
+            maxPixelRatio: EMBER.maxPixelRatio,
+          });
+          if (disposed) {
+            created?.destroy();
+            return;
+          }
+          ember = created;
+          ember?.setProgress(burn.p);
+          apply();
+        } catch {
+          ember = null; // the fade-in fallback in apply() takes over
+        }
+      };
+      ScrollTrigger.create({ trigger: section, start: EMBER.loadAhead, once: true, refreshPriority: -1, onEnter: () => void load() });
+
+      // sizes can change: the canvas and the flat picture are made again
+      const onRefresh = () => {
+        if (!ember) return;
+        ember.resize();
+        ember.setPaper(bake());
+      };
+      ScrollTrigger.addEventListener('refresh', onRefresh);
+
       tl.to({}, { duration: 0.3 }); // a beat on the full-screen photo
       tl.to(knock, { opacity: 1, duration: 0.6 }, '>');
-      tl.to(zoom, { s: 1, duration: 1.8, ease: 'power3.inOut', onUpdate: place, immediateRender: false }, '<');
-      tl.to({}, { duration: 0.7 }); // a rest on the finished picture before the page moves on
+      tl.to(zoom, { s: 1, duration: 1.5, ease: 'power3.inOut', onUpdate: place, immediateRender: false }, '<');
+      tl.to({}, { duration: 0.4 }); // a beat on the finished word
+      tl.to(swap, { v: 1, duration: 0.02, onUpdate: apply }, '>');
+      tl.addLabel('burn');
+      tl.to(burn, { p: 1, duration: 2, ease: 'none', onUpdate: () => { ember?.setProgress(burn.p); apply(); } }, 'burn');
+      // the heading waits until the burn has opened most of the screen, then rises into its lines one after the other
+      tl.to(eyebrow, { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, 'burn+=1.5');
+      tl.to(headLines, { yPercent: 0, duration: 1.5, stagger: 0.3, ease: 'power3.out' }, 'burn+=1.7');
+      tl.to({}, { duration: 0.9 }); // a rest on the heading before the pin lets go and the page scrolls on
+
+      // 6. the long scroll. Each scene is a photo cut to the shape of a spot of the coat, beside one trait. A clip-path opens the
+      //    photo from a narrow slit to its full width as the scene arrives; the spot drifts against the page while it passes
+      //    (each at its own speed, a little turned) and the picture inside drifts the other way; a thin ring around it turns
+      //    slowly the opposite way, like the outline of a rosette; the statement rises in word by word, its gold line draws and the caption fades in.
+      const CLOSED = 'inset(0% 100% 0% 0%)';
+      const OPEN = 'inset(0% 0% 0% 0%)';
+      // both ends in full (fromTo): the browser shortens "inset(0% 44% 0% 44%)" to "inset(0% 44%)" when GSAP reads it back,
+      // and the two strings would then no longer line up value by value
+      const SLIT = 'inset(0% 44% 0% 44%)';
+      const scenes = gsap.utils.toArray<HTMLElement>('.why-scene', section);
+      scenes.forEach((scene) => {
+        const spot = scene.querySelector<HTMLElement>('.why-spot')!;
+        const fig = scene.querySelector<HTMLElement>('.why-fig')!;
+        const ring = scene.querySelector<SVGElement>('.why-ring')!;
+        const pic = fig.querySelector<HTMLElement>('img')!;
+        const words = gsap.utils.toArray<HTMLElement>('.why-statement .w > span', scene);
+        const by = scene.querySelector<HTMLElement>('.why-by')!;
+        const line = scene.querySelector<HTMLElement>('.trait-line')!;
+        const speed = Number(spot.dataset.speed) || 1;
+        const tilt = Number(spot.dataset.tilt) || 0;
+        // refreshPriority: see the main timeline above; these also sit below the pins that are made later
+        const through = { trigger: scene, start: 'top bottom', end: 'bottom top', scrub: true, invalidateOnRefresh: true, refreshPriority: -1 };
+        const arrive = { trigger: scene.querySelector('.why-text'), start: 'top 85%', toggleActions: 'play none none reverse', refreshPriority: -1 };
+
+        gsap.set(spot, { rotation: tilt });
+        gsap.set(pic, { scale: 1.3 });
+        gsap.set(ring, { autoAlpha: 0 });
+        gsap.set(words, { yPercent: 115 }); // each word waits below its own window
+        gsap.set(by, { autoAlpha: 0, y: 16 });
+        gsap.set(line, { clipPath: CLOSED });
+
+        gsap.fromTo(fig, { clipPath: SLIT }, { clipPath: OPEN, ease: 'power2.inOut', scrollTrigger: { trigger: scene, start: 'top 92%', end: 'top 35%', scrub: 0.8, refreshPriority: -1 } });
+        gsap.fromTo(spot, { y: () => 90 * speed }, { y: () => -90 * speed, ease: 'none', scrollTrigger: through });
+        gsap.fromTo(pic, { yPercent: -9 }, { yPercent: 9, ease: 'none', scrollTrigger: through });
+        gsap.fromTo(ring, { rotation: 10 }, { rotation: -10, ease: 'none', scrollTrigger: through });
+        gsap.to(ring, { autoAlpha: 1, duration: 1.2, ease: 'power2.out', scrollTrigger: arrive });
+        gsap.to(words, { yPercent: 0, duration: 1.1, stagger: 0.045, ease: 'power3.out', scrollTrigger: arrive });
+        gsap.to(by, { autoAlpha: 1, y: 0, duration: 0.9, delay: 0.5, ease: 'power2.out', scrollTrigger: arrive });
+        gsap.to(line, { clipPath: OPEN, duration: 1.1, ease: 'power3.inOut', scrollTrigger: arrive });
+      });
       return () => {
+        disposed = true;
+        ember?.destroy();
+        ember = null;
         ScrollTrigger.removeEventListener('refresh', place);
+        ScrollTrigger.removeEventListener('refresh', onRefresh);
+        copy.style.visibility = '';
+        copy.style.opacity = '';
+        img.style.visibility = '';
+        knock.style.visibility = '';
         delete section.dataset.live;
       };
     });
@@ -142,7 +385,7 @@ const traits = [
     color: var(--ink);
   }
 
-  /* ---- plain stack: photo, heading, traits (no script / reduced motion) ---- */
+  /* ---- plain stack: photo, heading, scenes (no script / reduced motion) ---- */
   .why-track {
     padding: clamp(4rem, 12vh, 9rem) 1.5rem 0;
   }
@@ -188,13 +431,10 @@ const traits = [
   .why-half--r :global(img) { right: 0; }
 
   .why-copy {
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: clamp(3.5rem, 10vh, 7rem) 1.5rem clamp(4rem, 12vh, 9rem);
+    padding: clamp(3.5rem, 10vh, 7rem) 0 clamp(2rem, 6vh, 4rem);
   }
   .why-head {
     text-align: center;
-    margin-bottom: clamp(2.5rem, 7vh, 4.5rem);
   }
   .eyebrow {
     font-family: var(--font-body);
@@ -211,61 +451,154 @@ const traits = [
     line-height: 1.05;
     margin: 0;
   }
-  .traits {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 2rem;
-  }
-  .traits li {
-    position: relative;
-    border-top: var(--dash-track);
-    padding-top: 1.4rem;
-  }
-  /* the strong line over the light one, drawn in from the left when it scrolls into view */
-  .trait-line {
+
+  /* the scenes on a dark page: a photo in the shape of a spot of the coat, and one trait */
+  .why-defs {
     position: absolute;
-    top: -1px;
-    left: 0;
-    right: 0;
+    width: 0;
     height: 0;
-    border-top: var(--dash-strong);
   }
-  h3 {
-    font-family: var(--font-heading);
-    font-weight: 400;
-    font-size: 1.75rem;
-    line-height: 1.1;
-    margin: 0 0 0.5rem;
+  .why-more {
+    background: var(--ink-warm);
+    color: var(--cream);
+    padding: clamp(3rem, 8vh, 6rem) 1.5rem clamp(5rem, 14vh, 10rem);
   }
-  .traits p {
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    line-height: 1.75;
-    opacity: 0.75;
+  .why-scene {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: clamp(2rem, 8vh, 5rem) 0;
+  }
+  /* the cell the spot lives in: the photo fills it, the ring is a little larger */
+  .why-spot {
+    position: relative;
+    width: 78%;
+    aspect-ratio: 1 / 1.08;
+  }
+  .why-scene--right .why-spot { margin-left: auto; }
+  .why:not([data-live]) .why-spot { rotate: var(--tilt, 0deg); }
+  .why-fig {
+    position: absolute;
+    inset: 0;
     margin: 0;
-    max-width: 30rem;
+    z-index: 1;
   }
-  @media (min-width: 700px) {
-    .why-img {
-      aspect-ratio: 16 / 9;
-    }
-    .traits {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 2.5rem 3rem;
-    }
+  .why-shape {
+    width: 100%;
+    height: 100%;
+    background: #0c0907;
+  }
+  .why-shape :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    will-change: transform;
+  }
+  /* the thin ring around the spot, drawn with the same curve, a little larger and turned: the outline of a rosette */
+  .why-ring {
+    position: absolute;
+    left: -7%;
+    top: -7%;
+    width: 114%;
+    height: 114%;
+    z-index: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .why-ring path {
+    fill: none;
+    stroke: var(--gold);
+    stroke-width: 1px;
+    stroke-dasharray: 3 6;
+    opacity: 0.8;
+  }  /* the statement: large, upper case, the first line set in; under it a gold line and a small caption */
+  .why-text {
+    --indent: clamp(2rem, 7vw, 5rem);
+    position: relative;
+    margin-top: 1.75rem;
+  }
+  .why-statement {
+    margin: 0 0 1.3rem;
+    font-family: var(--font-heading);
+    font-size: clamp(1.35rem, 5.4vw, 1.8rem);
+    line-height: 1.1;
+    letter-spacing: 0.005em;
+    text-transform: uppercase;
+    text-indent: var(--indent); /* the first line starts further in, the rest hang to the left */
+  }
+  /* every word sits in its own window; the script lifts it into view */
+  .why-statement .w {
+    display: inline-block;
+    text-indent: 0; /* text-indent is inherited: without this every word would get the first-line indent too */
+    overflow: hidden;
+    vertical-align: top;
+    padding-bottom: 0.14em;
+    margin-bottom: -0.14em;
+  }
+  .why-statement .w > span {
+    display: inline-block;
+  }
+  /* the gold line over the dim one, drawn in when the text arrives */
+  .trait-line {
+    display: block;
+    position: relative;
+    width: min(24rem, 60%);
+    height: 0;
+    margin: 0 0 1rem var(--indent);
+    border-top: 1px dashed var(--gold);
+  }
+  .why-by {
+    margin-left: var(--indent);
+  }
+  .why-by h3 {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .why-by p {
+    margin: 0.25rem 0 0;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.7;
   }
   @media (min-width: 1024px) {
-    .traits {
-      grid-template-columns: repeat(4, 1fr);
-      gap: 2.5rem;
+    .why-more {
+      padding-left: 6vw;
+      padding-right: 6vw;
     }
+    .why-scene {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: end;
+      padding: clamp(3rem, 9vh, 6rem) 0;
+    }
+    .why-spot {
+      width: auto;
+      grid-row: 1;
+    }
+    /* The text sits low, not level with the middle of the photo, and runs on past the photo's edge so the two overlap a little:
+       a photo on the right has its statement lower left, a photo on the left has it lower right. */
+    .why-text {
+      grid-row: 1;
+      margin: 0 0 -3.5rem;
+      z-index: 2;
+      text-shadow: 0 0 28px rgba(12, 9, 7, 0.85);
+    }
+    .why-statement {
+      font-size: clamp(1.5rem, 2.7vw, 2.8rem);
+    }
+    .why-scene--right .why-spot { grid-column: 7 / 12; margin-left: 0; }
+    .why-scene--right .why-text { grid-column: 1 / 8; padding-left: 2vw; }
+    .why-scene--left .why-spot { grid-column: 2 / 6; }
+    .why-scene--left .why-text { grid-column: 5 / 12; padding-left: 4vw; }
   }
-
   /* ---- pinned sequence (the script sets data-live) ---- */
   .why[data-live] .why-track {
-    --screens: 6.5; /* how many screens of scrolling the sequence lasts */
+    --screens: 10; /* how many screens of scrolling the pinned part lasts */
     height: calc(100vh * var(--screens));
     height: calc(100lvh * var(--screens)); /* lvh: constant when the mobile address bar slides away */
     padding: 0;
@@ -307,6 +640,60 @@ const traits = [
     font-family: var(--font-heading);
     font-size: 20vw;
     letter-spacing: -0.02em;
+  }
+
+  /* What the burn reveals: the first screen of the dark page, under the photo and the ember canvas (hidden until the
+     script lets the photo give way, so it never shows around the small tiles). A huge heading at the top left. */
+  .why[data-live] .why-copy {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    padding: max(6.5rem, 14vh) 6vw 0;
+    background: var(--ink-warm);
+    color: var(--cream);
+    visibility: hidden;
+  }
+  .why[data-live] .why-head {
+    text-align: left;
+  }
+  .why[data-live] .eyebrow {
+    margin-bottom: 0.8rem;
+  }
+  .why[data-live] h2 {
+    font-size: clamp(3.4rem, 12vw, 11rem);
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+  /* each line sits in its own window: the heading rises into it from below */
+  .why[data-live] .why-line {
+    display: block; /* "Why" on one line, "Bengals?" on the next */
+    overflow: hidden;
+    padding-bottom: 0.1em; /* room for descenders and the italic's overhang inside the window */
+    margin-bottom: -0.1em;
+  }
+  .why[data-live] .why-line > span {
+    display: inline-block;
+  }
+
+  /* The rest of the dark page starts under the end of the pinned part: the first photo rises over the bottom of the heading's
+     screen while the pin is still holding it, then the pin lets go and the page goes on scrolling. */
+  .why[data-live] .why-more {
+    position: relative;
+    z-index: 3;
+    margin-top: -30vh;
+    margin-top: -30lvh;
+    padding-top: 0;
+  }
+  .why[data-live] .why-scene:first-child {
+    padding-top: 0;
+  }
+  /* the photo reveals with a clip-path on the figure (a slit that opens), the shape is the clip of the box inside it */
+  .why[data-live] .why-fig {
+    will-change: clip-path;
+  }
+  .why[data-live] .why-spot {
+    will-change: transform;
   }  @media (min-width: 1024px) {
     .why[data-live] .why-img {
       width: 68vw;

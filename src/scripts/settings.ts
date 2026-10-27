@@ -261,5 +261,28 @@ export const CORRIDOR = {
   },
 };
 
+// ---- ember burn (Why Bengals: the paper burns away and the traits show through) ---------------------------------------
+// The look is gold leaf rather than flame: a thin steady line of the site's gold that eats the paper away along a soft,
+// slightly wavy edge, with a narrow dark seam behind it. To turn it back into a fire: color '#e3a130', roughness 0.5,
+// scorch 0.7, charWidth 1, speckle 1, flicker 1, sparks 0.6.
+export const EMBER = {
+  color: '#d4af37', // the glowing edge: the site's gold
+  char: '#1a1410', // the seam behind it (the page's warm ink)
+  gold: 1, // 1 = gold leaf (gold core, a faint gold wash), 0 = fire (white-hot core, rust-red halo)
+  lobes: 0.5, // how far the whole shape wanders from a circle: large and slow, so it is a tear and not a spotlight
+  glow: 0.75,
+  edge: 0.65, // thinner line
+  roughness: 0.2, // how ragged the edge itself is: a soft wave, not a tear
+  detail: 3, // scale of the wave: larger and calmer
+  scorch: 0.12, // the paper barely browns ahead of the edge
+  charWidth: 0.3, // a narrow seam, not a burnt strip
+  speckle: 0, // no glowing specks in the seam
+  flicker: 0.15, // a steady line of light, with only a slight breathing
+  sparks: 0, // no flying sparks
+  maxPixelRatio: 1.5, // the canvas never renders sharper than this: it is a full-screen shader
+  origin: { x: 0.5, y: 0.5 }, // where it starts burning (the middle of the word)
+  loadAhead: 'top 150%', // the three.js chunk is fetched when the section is this close
+};
+
 // ---- nav pill ---------------------------------------------------------------------------------------------------------
 export const NAV_SCROLLED_AT = 40; // px of scrolling after which the glass gets stronger

@@ -42,6 +42,18 @@
 
 **Gdyby wracało:** przyspieszony start → `power2.in` zamiast `power1.in`. Skok zdjęcia w literach → sprawdzić zgodność kadru (`object-position` w CSS i `0.35` w `drawImage`).
 
+## Hero i druga sekcja zostają przyciemnione po powrocie na górę
+
+**Objaw:** po przewinięciu strony w dół i powrocie na samą górę hero (razem z napisem) było ciemniejsze, jakby leżała na nim szara warstwa. Zostawało tak już na stałe, do odświeżenia strony. Dotyczyło laptopów i szerszych ekranów.
+
+**Przyczyna:** hero przyciemnia się (`.stage-dim`), gdy zasłania je następna sekcja. Trigger tego przyciemnienia zależy od pozycji tej sekcji, która z kolei zależy od pin-spacera hero. Przy zmianie rozmiaru okna (także zmiana skali strony, otwarcie DevTools) ScrollTrigger mierzy wszystko od nowa. Trigger przyciemnienia był wtedy mierzony przed pin-spacerem hero, więc dostawał start `-870` i koniec `0`. Dla niego scroll od zawsze był „za końcem”, więc przyciemnienie zostawało na 0,5 na każdej pozycji. Odtworzone testem: przewinąć w głąb, zmienić rozmiar okna, wrócić na górę.
+
+**Poprawka:** hero ma `refreshPriority: 2` (mierzone pierwsze), a trigger przyciemnienia `refreshPriority: 1` i `invalidateOnRefresh: true`. Po zmianie rozmiaru start wraca do tej samej wartości co przed nią (4680), a przyciemnienie na górze jest 0.
+
+**Plik:** `src/scripts/stage/desktop.ts` (timeline hero i przyciemnienie przy zasłanianiu).
+
+**Gdyby wracało:** to ten sam mechanizm, co przy WhyBengals: trigger zależny od pozycji elementu pod pinem musi mieć niższy `refreshPriority` niż pin, od którego zależy. Sprawdzić `ScrollTrigger.getAll()` po zmianie rozmiaru: start i koniec triggera nie mogą być ujemne.
+
 ## Commity
 
 - `51afbee` — wyjście z About na telefonie/tablecie przez czarną warstwę

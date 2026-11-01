@@ -132,6 +132,7 @@ function build(stage: HTMLElement, story: HTMLElement) {
       anticipatePin: 1,
       invalidateOnRefresh: true, // the eye's spot depends on the window size
       scrub: S.scrub,
+      refreshPriority: 2, // measured first: the sections below depend on this pin's spacer
     },
   });
 
@@ -221,7 +222,7 @@ function build(stage: HTMLElement, story: HTMLElement) {
 
   if (next) {
     gsap
-      .timeline({ scrollTrigger: { trigger: next, start: 'top bottom', end: 'top top', scrub: true } })
+      .timeline({ scrollTrigger: { trigger: next, start: 'top bottom', end: 'top top', scrub: true, invalidateOnRefresh: true, refreshPriority: 1 } })
       .fromTo(story, { y: 0 }, { y: -window.innerHeight * S.coverParallax.story, ease: 'none' }, 0)
       .fromTo('.stage-dim', { opacity: 0 }, { opacity: S.coverParallax.dim, ease: 'none' }, 0);
   }

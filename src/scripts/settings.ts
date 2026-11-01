@@ -298,5 +298,36 @@ export const SCROLL_STACK = {
   perspective: 1400, // px, for the turning variants
 };
 
+// ---- tile reveal (photo tiles fly in, the grid zooms past the camera, the tiles part and leave the headline) -----------
+// Ported from React Bits' TileReveal; the numbers are its props. The timeline is in "units": one unit is the flight of
+// one tile (stagger and overlap are shares of a unit), the whole thing is scrubbed by the scroll position.
+export const TILE_REVEAL = {
+  columns: 3,
+  gap: 20, // px between tiles
+  gridWidth: 760, // max width of the grid before it zooms (px)
+  tileAspect: 0.8, // width / height of a tile
+  direction: 'alternate' as 'alternate' | 'top' | 'bottom', // which side the tiles of each column fly in from
+  stagger: 0.12, // delay between tiles of a column
+  overlap: 0.6, // how much of the last flight the zoom overlaps
+  zoom: 2.4, // how big the grid grows before the tiles part
+  spread: 0.4, // minimum travel of a tile when it steps aside (share of its own size)
+  scrollLength: 3.5, // screens of scrolling the whole sequence takes
+  smooth: 0.18, // seconds the picture takes to catch up with the scroll
+  contentGap: 28, // px between the headline and the text under it
+};
+
+// ---- FAQ chat (each question and answer is a bubble: a dot with typing dots that opens into the message) --------------
+export const FAQ_CHAT = {
+  dot: 56, // px: the size of the bubble while it is still a dot
+  popAt: 'top 88%', // the dot pops in when the bubble is this far up the screen
+  openAt: 'top 78%', // and opens into the message here
+  pop: 0.35, // s
+  fade: 0.2, // s the typing dots take to fade
+  widen: 0.5, // s the bubble takes to widen
+  heighten: 0.45, // s and to grow tall
+  text: 0.35, // s each paragraph takes to appear
+  textStagger: 0.08,
+};
+
 // ---- nav pill ---------------------------------------------------------------------------------------------------------
 export const NAV_SCROLLED_AT = 40; // px of scrolling after which the glass gets stronger

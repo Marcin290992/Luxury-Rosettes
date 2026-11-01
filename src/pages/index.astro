@@ -8,7 +8,13 @@ import CatsRow from '../components/CatsRow.astro';
 import Corridor from '../components/Corridor.astro';
 import WhyBengals from '../components/WhyBengals.astro';
 import Process from '../components/Process.astro';
-import KittensTeaser from '../components/KittensTeaser.astro';
+import TileReveal from '../components/TileReveal.astro';
+import kita from '../assets/img/cats/kita.webp';
+import draco from '../assets/img/cats/draco.webp';
+import candy from '../assets/img/cats/candy.webp';
+import cosmo from '../assets/img/cats/cosmo.webp';
+import charlie from '../assets/img/cats/charlie.webp';
+import chester from '../assets/img/cats/chester.webp';
 import Testimonials from '../components/Testimonials.astro';
 import FAQ from '../components/FAQ.astro';
 import Closing from '../components/Closing.astro';
@@ -29,13 +35,120 @@ import expandImg from '../assets/img/expand.webp';
   <main class="content">
     <WhyBengals />
     <Process />
-    <KittensTeaser />
+    <TileReveal
+      id="kittens"
+      images={[
+        { src: kita, alt: 'Kita, a Bengal queen' },
+        { src: candy, alt: 'Candy, a Bengal kitten' },
+        { src: draco, alt: 'Draco, a Bengal stud' },
+        { src: cosmo, alt: 'Cosmo, a Bengal kitten' },
+        { src: charlie, alt: 'Charlie, a Bengal kitten' },
+        { src: chester, alt: 'Chester, a Bengal kitten' },
+      ]}
+    >
+      <Fragment slot="headline">
+        <p class="kit-eyebrow">Kittens</p>
+        <h2 class="kit-title">Your Bengal is <em>waiting</em></h2>
+      </Fragment>
+      <p class="kit-text">Every kitten is raised in our home, health-tested and TICA registered. Join the waiting list and you will hear from us first.</p>
+      <p class="kit-actions">
+        <a class="kit-pill" href="/available-kittens">View available kittens</a>
+        <a class="kit-link" href="#">Join the waiting list</a>
+      </p>
+    </TileReveal>
     <Testimonials />
     <FAQ />
   </main>
   <Closing />
   <Footer />
 </Layout>
+
+<style is:global>
+  #kittens .kit-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0 0 1.25rem;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  #kittens .kit-eyebrow::before,
+  #kittens .kit-eyebrow::after {
+    content: '';
+    width: 2.5rem;
+    border-top: 1px solid var(--gold);
+  }
+  #kittens .kit-title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 300;
+    font-size: clamp(2.8rem, 7vw, 5.6rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  #kittens .kit-title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold);
+  }
+  #kittens .tr-reveal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.75rem;
+  }
+  #kittens .kit-text {
+    max-width: 30rem;
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    opacity: 0.75;
+  }
+  #kittens .kit-actions {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1.75rem;
+  }
+  #kittens .kit-pill {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-warm);
+    background: var(--gold);
+    text-decoration: none;
+    border: 1px solid var(--gold);
+    border-radius: 999px;
+    padding: 1rem 1.75rem;
+    transition: background 0.4s, color 0.4s;
+  }
+  #kittens .kit-pill:hover {
+    background: transparent;
+    color: var(--gold);
+  }
+  #kittens .kit-link {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cream);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(239, 233, 220, 0.4);
+    padding-bottom: 0.4rem;
+    transition: color 0.4s, border-color 0.4s;
+  }
+  #kittens .kit-link:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+</style>
 
 <script>
   import gsap from 'gsap';

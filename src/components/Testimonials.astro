@@ -10,34 +10,116 @@ const others = [
   { name: 'Marcin K.', quote: 'You can truly see that Sylvia does what she does with passion and love. Amazing knowledge and understanding of cats\' behaviour. Our cat is healthy, chipped, and fully vaccinated. We also received toys and 24/7 support.' },
   { name: 'Robert S.', quote: 'We were shown all the details of our cats and their lineage and were very confident that we were getting our cats from the right person. Highly recommend Luxury Rosettes.' },
 ];
+const reviews = [featured, ...others];
 ---
 
 <section class="tm" id="reviews">
-  <p class="eyebrow" data-reveal>Families</p>
-  <h2 data-reveal>In their words</h2>
-  <blockquote class="featured" data-reveal>
-    <p>{featured.quote}</p>
-    <footer>{featured.name} <span>Facebook review</span></footer>
-  </blockquote>
-  <div class="others">
-    {
-      others.map((o) => (
-        <blockquote data-reveal>
-          <p>{o.quote}</p>
-          <footer>{o.name} <span>Facebook review</span></footer>
-        </blockquote>
-      ))
-    }
+  <div class="tm-head">
+    <div>
+      <p class="eyebrow" data-reveal>Families</p>
+      <h2 data-reveal>In their words</h2>
+    </div>
+    <div class="tm-nav" data-reveal>
+      <span class="tm-count" aria-live="polite"><b>01</b> / {String(reviews.length).padStart(2, '0')}</span>
+      <button class="tm-btn" type="button" data-dir="-1" aria-label="Previous review">&larr;</button>
+      <button class="tm-btn" type="button" data-dir="1" aria-label="Next review">&rarr;</button>
+    </div>
+  </div>
+  <div class="tm-view" data-reveal>
+    <div class="tm-track">
+      {
+        reviews.map((r) => (
+          <blockquote class="tm-slide">
+            <p>{r.quote}</p>
+            <footer>{r.name} <span>Facebook review</span></footer>
+          </blockquote>
+        ))
+      }
+    </div>
   </div>
 </section>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+
+  // The reviews sit in one row. The active one is centred and full size; the others stand beside it, smaller and dimmer,
+  // and every step slides the whole row so the next one becomes the main one.
+  mount(() => {
+    const root = document.getElementById('reviews')!;
+    const view = root.querySelector<HTMLElement>('.tm-view')!;
+    const track = root.querySelector<HTMLElement>('.tm-track')!;
+    const slides = Array.from(track.querySelectorAll<HTMLElement>('.tm-slide'));
+    const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('.tm-btn'));
+    const count = root.querySelector<HTMLElement>('.tm-count b')!;
+    let index = 0;
+
+    const place = () => {
+      const slide = slides[index];
+      const x = view.clientWidth / 2 - (slide.offsetLeft + slide.offsetWidth / 2);
+      track.style.transform = `translate3d(${x}px, 0, 0)`;
+      slides.forEach((el, i) => {
+        el.classList.toggle('is-active', i === index);
+        el.setAttribute('aria-hidden', String(i !== index));
+      });
+      buttons.forEach((btn) => (btn.disabled = index + Number(btn.dataset.dir) < 0 || index + Number(btn.dataset.dir) >= slides.length));
+      count.textContent = String(index + 1).padStart(2, '0');
+    };
+    const go = (to: number) => {
+      index = Math.min(slides.length - 1, Math.max(0, to));
+      place();
+    };
+
+    const onButton = (e: Event) => go(index + Number((e.currentTarget as HTMLElement).dataset.dir));
+    const onSlide = (e: Event) => go(slides.indexOf(e.currentTarget as HTMLElement));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') go(index - 1);
+      if (e.key === 'ArrowRight') go(index + 1);
+    };
+    // a swipe or drag moves one review
+    let startX = 0;
+    const onDown = (e: PointerEvent) => (startX = e.clientX);
+    const onUp = (e: PointerEvent) => {
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 50) go(index + (dx < 0 ? 1 : -1));
+    };
+    const resize = new ResizeObserver(place);
+
+    buttons.forEach((btn) => btn.addEventListener('click', onButton));
+    slides.forEach((el) => el.addEventListener('click', onSlide));
+    root.addEventListener('keydown', onKey);
+    view.addEventListener('pointerdown', onDown);
+    view.addEventListener('pointerup', onUp);
+    resize.observe(view);
+    root.tabIndex = -1;
+    place();
+
+    return () => {
+      buttons.forEach((btn) => btn.removeEventListener('click', onButton));
+      slides.forEach((el) => el.removeEventListener('click', onSlide));
+      root.removeEventListener('keydown', onKey);
+      view.removeEventListener('pointerdown', onDown);
+      view.removeEventListener('pointerup', onUp);
+      resize.disconnect();
+      track.style.transform = '';
+    };
+  });
+</script>
 
 <style>
   .tm {
     background: var(--paper);
     color: var(--ink);
-    padding: clamp(4rem, 12vh, 9rem) 1.5rem;
+    padding: clamp(4rem, 12vh, 9rem) 0;
+    overflow: hidden;
+  }
+  .tm-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
     max-width: 72rem;
-    margin: 0 auto;
+    margin: 0 auto clamp(2.5rem, 6vh, 4rem);
+    padding: 0 1.5rem;
   }
   .eyebrow {
     font-family: var(--font-body);
@@ -52,7 +134,54 @@ const others = [
     font-weight: 400;
     font-size: clamp(2.2rem, 5vw, 3.8rem);
     line-height: 1.05;
-    margin: 0 0 3rem;
+    margin: 0;
+  }
+  .tm-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .tm-count {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    opacity: 0.6;
+    margin-right: 0.75rem;
+  }
+  .tm-count b {
+    font-weight: 500;
+    color: var(--gold-deep);
+  }
+  .tm-btn {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 1px solid rgba(26, 26, 26, 0.35);
+    background: transparent;
+    color: var(--ink);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.4s, color 0.4s, border-color 0.4s, opacity 0.4s;
+  }
+  .tm-btn:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .tm-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+  }
+  .tm-view {
+    touch-action: pan-y;
+    user-select: none;
+  }
+  .tm-track {
+    display: flex;
+    align-items: flex-start;
+    gap: clamp(1.5rem, 4vw, 4rem);
+    width: max-content;
+    transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1);
   }
   blockquote {
     margin: 0;
@@ -60,35 +189,49 @@ const others = [
   blockquote p {
     margin: 0;
   }
+  .tm-slide {
+    width: min(46rem, 80vw);
+    flex: none;
+    padding-top: 1.75rem;
+    border-top: 1px solid rgba(26, 26, 26, 0.25);
+    opacity: 0.32;
+    transform: scale(0.92);
+    transform-origin: 50% 0;
+    cursor: pointer;
+    transition: opacity 0.9s, transform 0.9s cubic-bezier(0.65, 0, 0.35, 1), border-color 0.9s;
+  }
+  .tm-slide.is-active {
+    opacity: 1;
+    transform: none;
+    border-color: var(--gold-deep);
+    cursor: default;
+  }
+  .tm-slide p {
+    font-family: var(--font-heading);
+    font-size: clamp(1.2rem, 2.1vw, 1.7rem);
+    line-height: 1.4;
+  }
   footer {
     font-family: var(--font-body);
     font-size: 0.72rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    margin-top: 1.25rem;
+    margin-top: 1.5rem;
   }
   footer span {
     opacity: 0.5;
     margin-left: 0.75rem;
   }
-  .featured p {
-    font-family: var(--font-heading);
-    font-size: clamp(1.35rem, 2.6vw, 2rem);
-    line-height: 1.35;
-    max-width: 52rem;
+  @media (max-width: 640px) {
+    .tm-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
-  .others {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-    gap: 2.5rem;
-    margin-top: 4rem;
-    padding-top: 2.5rem;
-    border-top: var(--dash-divider);
-  }
-  .others p {
-    font-family: var(--font-body);
-    font-size: 0.88rem;
-    line-height: 1.75;
-    opacity: 0.8;
+  @media (prefers-reduced-motion: reduce) {
+    .tm-track,
+    .tm-slide {
+      transition: none;
+    }
   }
 </style>

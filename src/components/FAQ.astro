@@ -10,107 +10,223 @@ const faqs = [
   { q: 'Can I visit your cattery before adopting?', a: 'Approved applicants are warmly welcome to visit by appointment. You will meet our cats and kittens, see our home environment, and ask any questions in person. Biosecurity protocols are in place to protect our cats.' },
   { q: 'What support do you offer after adoption?', a: "We remain available for guidance throughout your Bengal's lifetime: nutrition, behaviour, health, and anything else that arises. We also love receiving updates as your kitten grows." },
 ];
+
+// each sentence is its own line of the answer, so the answer writes itself in line by line
+const lines = (text: string) => text.split(/(?<=[.!?])\s+/);
 ---
 
 <section class="faq" id="faq">
-  <p class="eyebrow" data-reveal>Before you decide</p>
-  <h2 data-reveal>Questions, answered</h2>
-  <div class="list">
+  <div class="faq-head">
+    <p class="eyebrow" data-reveal>Before you decide</p>
+    <h2 data-reveal>Questions, <em>answered</em></h2>
+  </div>
+  <div class="faq-list">
     {
       faqs.map((f) => (
-        <details data-reveal>
-          <summary>
-            <span>{f.q}</span>
-            <i aria-hidden="true"></i>
-          </summary>
-          <p>{f.a}</p>
-        </details>
+        <div class="faq-item">
+          <div class="faq-row faq-question-slot">
+            <div class="faq-question faq-message">
+              <div class="typing-indicator" aria-hidden="true"><span></span><span></span><span></span></div>
+              <div class="faq-content">
+                <p>{f.q}</p>
+              </div>
+            </div>
+          </div>
+          <div class="faq-row faq-answer-slot">
+            <div class="faq-answer faq-message">
+              <div class="typing-indicator" aria-hidden="true"><span></span><span></span><span></span></div>
+              <div class="faq-content">
+                {lines(f.a).map((line) => (
+                  <p>{line}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       ))
     }
   </div>
 </section>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initFaqChat } from '../scripts/faq-chat';
+
+  mount(() => {
+    const root = document.getElementById('faq')!;
+    const motion = window.matchMedia('(prefers-reduced-motion: no-preference)');
+    let destroy: (() => void) | undefined;
+
+    // runs whenever motion is allowed (and follows the setting if it changes while the page is open)
+    const sync = () => {
+      destroy?.();
+      destroy = undefined;
+      delete root.dataset.live;
+      if (motion.matches) {
+        root.dataset.live = '';
+        destroy = initFaqChat(root);
+      }
+    };
+    motion.addEventListener('change', sync);
+    sync();
+
+    return () => {
+      motion.removeEventListener('change', sync);
+      destroy?.();
+      delete root.dataset.live;
+    };
+  });
+</script>
 
 <style>
   .faq {
     background: var(--paper);
     color: var(--ink);
     padding: clamp(4rem, 12vh, 9rem) 1.5rem;
-    max-width: 48rem;
+    max-width: 56rem;
     margin: 0 auto;
   }
+  .faq-head {
+    margin-bottom: clamp(2.5rem, 6vh, 4rem);
+  }
   .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
     font-family: var(--font-body);
-    font-size: 0.75rem;
-    letter-spacing: 0.22em;
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
     text-transform: uppercase;
-    opacity: 0.6;
-    margin: 0 0 1rem;
+    color: var(--gold-deep);
+    margin: 0 0 1.25rem;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 2.5rem;
+    border-top: 1px solid var(--gold-deep);
   }
   h2 {
     font-family: var(--font-heading);
+    font-weight: 300;
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  h2 em {
+    font-style: italic;
     font-weight: 400;
-    font-size: clamp(2.2rem, 5vw, 3.8rem);
-    line-height: 1.05;
-    margin: 0 0 3rem;
-  }
-  details {
-    border-top: var(--dash-divider);
-  }
-  details:last-child {
-    border-bottom: var(--dash-divider);
-  }
-  summary {
-    list-style: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    padding: 1.4rem 0;
-    font-family: var(--font-heading);
-    font-size: 1.45rem;
-    line-height: 1.2;
-    transition: color 0.4s;
-  }
-  summary::-webkit-details-marker {
-    display: none;
-  }
-  summary:hover {
     color: var(--gold-deep);
   }
-  summary:focus-visible {
-    outline: 1px solid var(--gold-deep);
-    outline-offset: 4px;
+
+  /* the conversation: questions from the left, answers from the right */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2.5rem, 5vw, 3.5rem);
   }
-  summary i {
+  .faq-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .faq-row {
+    display: flex;
+    align-items: flex-start;
+  }
+  .faq-answer-slot {
+    justify-content: flex-end;
+  }
+  .faq-message {
     position: relative;
-    flex: none;
-    width: 14px;
-    height: 14px;
+    box-sizing: border-box;
+    overflow: hidden;
+    max-width: 82%;
+    padding: 1.25rem 1.75rem;
+    border-radius: 1.5rem;
   }
-  summary i::before,
-  summary i::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 1px;
-    background: currentColor;
-    transition: transform 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+  .faq-question {
+    background: var(--cream);
+    border: 1px solid rgba(26, 26, 26, 0.12);
+    border-bottom-left-radius: 0.35rem;
   }
-  summary i::after {
-    transform: rotate(90deg);
+  .faq-answer {
+    background: var(--ink-warm);
+    color: var(--cream);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    border-bottom-right-radius: 0.35rem;
   }
-  details[open] summary i::after {
-    transform: rotate(0deg);
+  .faq-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: max-content;
+    max-width: 100%;
   }
-  details p {
+  .faq-content p {
+    margin: 0;
+    text-align: left;
+  }
+  .faq-question p {
+    font-family: var(--font-heading);
+    font-size: clamp(1.25rem, 2vw, 1.55rem);
+    line-height: 1.25;
+  }
+  .faq-answer p {
     font-family: var(--font-body);
     font-size: 0.9rem;
-    line-height: 1.8;
-    opacity: 0.78;
-    margin: 0 0 1.6rem;
-    max-width: 40rem;
+    line-height: 1.75;
+    opacity: 0.88;
+  }
+
+  /* only while the script runs: the bubble starts as a dot with typing dots */
+  .typing-indicator {
+    display: none;
+  }
+  .faq[data-live] .typing-indicator {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    pointer-events: none;
+  }
+  .typing-indicator span {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--ink);
+    animation: typing-pulse 1s infinite ease-in-out;
+  }
+  .faq-answer .typing-indicator span {
+    background: var(--gold);
+  }
+  .typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  .typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  @keyframes typing-pulse {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-0.25rem);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .faq-message {
+      max-width: 92%;
+      padding: 1.1rem 1.4rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .typing-indicator span {
+      animation: none;
+    }
   }
 </style>

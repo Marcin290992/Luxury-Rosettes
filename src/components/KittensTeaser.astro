@@ -20,19 +20,25 @@ const next = nextLitter(getLitters());
       <>
         <div class="kit-head">
           <p class="eyebrow" data-reveal>Meet the kittens</p>
-          <h2 data-reveal>Waiting for a home</h2>
+          <h2 data-reveal>
+            Waiting for <em>a home</em>
+          </h2>
+          <p class="kit-lead" data-reveal>
+            Each kitten is raised in our home, health-tested and TICA registered. Reserve yours before they are gone.
+          </p>
         </div>
         <div class="kit-grid">
-          {kittens.map((k) => (
+          {kittens.map((k, i) => (
             <article class="kit-card" data-reveal>
               <div class="kit-photo">
                 <Image src={photos[k.photo]} alt={`${k.name}, a Bengal kitten`} widths={[400, 700]} sizes="(min-width:1024px) 22vw, 70vw" loading="lazy" />
+                <span class={`kit-badge${k.status === 'reserved' ? ' kit-badge--reserved' : ''}`}>{k.status === 'reserved' ? 'Reserved' : 'Available'}</span>
               </div>
-              <h3>{k.name}</h3>
-              <p class="kit-meta">
-                {k.gender}
-                {k.status === 'reserved' && <span class="kit-reserved">Reserved</span>}
-              </p>
+              <div class="kit-info">
+                <span class="kit-no">{String(i + 1).padStart(2, '0')}</span>
+                <h3>{k.name}</h3>
+                <p class="kit-meta">{k.gender}</p>
+              </div>
               <p class="kit-text">{k.text}</p>
             </article>
           ))}
@@ -65,63 +71,133 @@ const next = nextLitter(getLitters());
     max-width: 72rem;
     margin: 0 auto;
   }
+  .kit-head {
+    max-width: 40rem;
+    margin: 0 0 clamp(3rem, 7vh, 5rem);
+  }
   .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
     font-family: var(--font-body);
-    font-size: 0.75rem;
-    letter-spacing: 0.22em;
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
     text-transform: uppercase;
-    opacity: 0.6;
-    margin: 0 0 1rem;
+    color: var(--gold-deep);
+    margin: 0 0 1.5rem;
+  }
+  .kit-head .eyebrow::before {
+    content: '';
+    width: 2.5rem;
+    border-top: 1px solid var(--gold-deep);
   }
   h2 {
     font-family: var(--font-heading);
+    font-weight: 300;
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    margin: 0 0 1.5rem;
+  }
+  h2 em {
+    font-style: italic;
     font-weight: 400;
-    font-size: clamp(2.2rem, 5vw, 3.8rem);
-    line-height: 1.05;
-    margin: 0 0 3rem;
+    color: var(--gold-deep);
+  }
+  .kit-lead {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    opacity: 0.65;
+    margin: 0;
   }
   .kit-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 3vw, 2.5rem);
+  }
+  @media (min-width: 1024px) {
+    /* a gentle stagger, like a gallery wall */
+    .kit-card:nth-child(even) { margin-top: 3.5rem; }
   }
   .kit-photo {
-    border-radius: 10px;
+    position: relative;
+    border-radius: 2px;
     overflow: hidden;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 3 / 4;
     background: var(--placeholder);
+  }
+  .kit-photo::after {
+    content: '';
+    position: absolute;
+    inset: 0.75rem;
+    border: 1px solid rgba(250, 248, 243, 0.55);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s, inset 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .kit-card:hover .kit-photo::after {
+    opacity: 1;
+    inset: 1rem;
   }
   .kit-photo :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+    transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1);
   }
   .kit-card:hover .kit-photo :global(img) {
-    transform: scale(1.04);
+    transform: scale(1.05);
+  }
+  .kit-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1;
+    font-family: var(--font-body);
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-warm);
+    background: var(--gold);
+    padding: 0.5rem 0.85rem;
+  }
+  .kit-badge--reserved {
+    color: var(--cream);
+    background: rgba(26, 20, 16, 0.78);
+    backdrop-filter: blur(6px);
+  }
+  .kit-info {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+    column-gap: 0.9rem;
+    margin: 1.4rem 0 0.7rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid rgba(26, 26, 26, 0.18);
+  }
+  .kit-no {
+    grid-row: 1 / 3;
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--gold-deep);
   }
   h3 {
     font-family: var(--font-heading);
     font-weight: 400;
-    font-size: 1.8rem;
-    line-height: 1.1;
-    margin: 1rem 0 0.15rem;
+    font-size: 2rem;
+    line-height: 1.05;
+    margin: 0;
   }
   .kit-meta {
     font-family: var(--font-body);
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
+    font-size: 0.66rem;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: var(--gold-deep);
-    margin: 0 0 0.5rem;
-  }
-  .kit-reserved {
-    margin-left: 0.75rem;
-    padding-left: 0.75rem;
-    border-left: 1px solid rgba(26, 26, 26, 0.3);
-    color: var(--ink);
     opacity: 0.55;
+    margin: 0.35rem 0 0;
   }
   /* no kittens right now: next litter + waiting list */
   .kit-empty {
@@ -129,6 +205,7 @@ const next = nextLitter(getLitters());
     max-width: 38rem;
     margin: 0 auto;
   }
+  .kit-empty .eyebrow { justify-content: center; }
   .kit-empty h2 { margin-bottom: 1.25rem; }
   .kit-empty-text { font-size: 1rem; margin: 0 auto 2.25rem; }
   .kit-empty-actions {

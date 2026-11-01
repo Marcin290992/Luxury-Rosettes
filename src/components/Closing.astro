@@ -15,11 +15,11 @@
     background: #0d0b09;
     color: var(--cream);
     text-align: center;
-    min-height: 80vh;
+    min-height: 0; /* grows to fill the last screen (see .ending in index.astro) */
     display: grid;
     align-content: center;
     justify-items: center;
-    padding: clamp(5rem, 14vh, 9rem) 1.5rem;
+    padding: clamp(5.5rem, 14vh, 9rem) 1.5rem clamp(3rem, 8vh, 6rem); /* the top clears the nav pill */
   }
   .eyebrow {
     font-family: var(--font-body);
@@ -32,7 +32,7 @@
   h2 {
     font-family: var(--font-heading);
     font-weight: 400;
-    font-size: clamp(2.6rem, 7vw, 5.5rem);
+    font-size: clamp(2.6rem, min(7vw, 10vh), 5.5rem); /* short windows get a smaller line, so it still fits above the footer */
     line-height: 1.02;
     margin: 0 0 2.5rem;
   }

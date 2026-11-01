@@ -99,7 +99,11 @@ export function initTileReveal(root: HTMLElement, o: TileRevealOptions) {
       node.style.visibility = fly <= 0 ? 'hidden' : 'visible';
     });
 
-    if (headline) headline.style.transform = `translate3d(0, ${(((revealH + o.contentGap) / 2) * (1 - show)).toFixed(2)}px, 0)`;
+    if (headline) {
+      // the headline waits with the text: while the photos fly it would only be covered by them
+      headline.style.opacity = show.toFixed(3);
+      headline.style.transform = `translate3d(0, ${(((revealH + o.contentGap) / 2) * (1 - show)).toFixed(2)}px, 0)`;
+    }
     if (reveal) {
       reveal.style.opacity = show.toFixed(3);
       reveal.style.transform = `translate3d(0, ${((1 - show) * 12).toFixed(2)}px, 0)`;

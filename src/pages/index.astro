@@ -47,23 +47,31 @@ import expandImg from '../assets/img/expand.webp';
       ]}
     >
       <Fragment slot="headline">
-        <p class="kit-eyebrow">Kittens</p>
-        <h2 class="kit-title">Your Bengal is <em>waiting</em></h2>
+        <p class="kit-eyebrow">The cattery</p>
+        <h2 class="kit-title">Born at home, <em>raised</em> with love</h2>
       </Fragment>
-      <p class="kit-text">Every kitten is raised in our home, health-tested and TICA registered. Join the waiting list and you will hear from us first.</p>
+      <p class="kit-text">Every kitten grows up in our home among people, health-tested and TICA registered, until it is ready to meet you.</p>
       <p class="kit-actions">
         <a class="kit-pill" href="/available-kittens">View available kittens</a>
-        <a class="kit-link" href="#">Join the waiting list</a>
+        <a class="kit-link" href="#cats">Meet the parents</a>
       </p>
     </TileReveal>
     <Testimonials />
     <FAQ />
   </main>
-  <Closing />
-  <Footer />
+  <!-- the last screen: the closing line fills what the footer leaves, so the end of the page is always one whole screen -->
+  <div class="ending">
+    <Closing />
+    <Footer />
+  </div>
 </Layout>
 
 <style is:global>
+  /* the headline and text sit at the bottom of the stage, below where the photos fly in */
+  #kittens .tr-content {
+    justify-content: flex-end;
+    padding-bottom: clamp(3rem, 10vh, 6rem);
+  }
   #kittens .kit-eyebrow {
     display: inline-flex;
     align-items: center;
@@ -197,6 +205,17 @@ import expandImg from '../assets/img/expand.webp';
     font-size: clamp(1.05rem, 1.6vw, 1.35rem);
     line-height: 1.5;
     margin: 0;
+  }
+  .ending {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+  .ending > :global(.end) {
+    flex: 1;
   }
   /* The rest of the page is a sheet of paper that slides up over the corridor's finale (which stays put, see Corridor). */
   .content {

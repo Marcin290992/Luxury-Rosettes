@@ -57,6 +57,17 @@ const {
     border: 0;
     border-top: 1px dashed rgba(26, 26, 26, 0.4);
   }
+  /* Lenis's recommended base styles: native smooth-scroll must not fight the JS one */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: clip;
+  }
   body {
     margin: 0;
     font-family: var(--font-body);

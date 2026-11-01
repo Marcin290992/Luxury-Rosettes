@@ -258,9 +258,13 @@ const spots = [
         lctx.font = `${parseFloat(style.fontSize)}px ${style.fontFamily}`;
         if ('letterSpacing' in lctx && style.letterSpacing !== 'normal') (lctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = style.letterSpacing;
         lctx.textAlign = 'center';
-        lctx.textBaseline = 'middle';
+        // the SVG word is set with dominant-baseline: central (the middle of the font's ascent and descent), which is not
+        // the canvas 'middle'; place the baseline by the font metrics so the baked word sits exactly where the SVG one did
+        lctx.textBaseline = 'alphabetic';
+        const metrics = lctx.measureText('BENGALS');
+        const lift = ((metrics.fontBoundingBoxAscent ?? 0) - (metrics.fontBoundingBoxDescent ?? 0)) / 2;
         lctx.fillStyle = '#000';
-        lctx.fillText(text.textContent ?? '', w / 2, h / 2);
+        lctx.fillText(text.textContent ?? '', w / 2, h / 2 + lift);
         ctx.drawImage(layer, 0, 0, w, h);
         return canvas;
       };
@@ -316,7 +320,7 @@ const spots = [
       tl.to({}, { duration: 0.4 }); // a beat on the finished word
       tl.to(swap, { v: 1, duration: 0.02, onUpdate: apply }, '>');
       tl.addLabel('burn');
-      tl.to(burn, { p: 1, duration: 2, ease: 'none', onUpdate: () => { ember?.setProgress(burn.p); apply(); } }, 'burn');
+      tl.to(burn, { p: 1, duration: 2, ease: 'power1.in', onUpdate: () => { ember?.setProgress(burn.p); apply(); } }, 'burn');
       // the heading waits until the burn has opened most of the screen, then rises into its lines one after the other
       tl.to(eyebrow, { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, 'burn+=1.5');
       tl.to(headLines, { yPercent: 0, duration: 1.5, stagger: 0.3, ease: 'power3.out' }, 'burn+=1.7');

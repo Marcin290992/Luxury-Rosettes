@@ -148,8 +148,11 @@ void main() {
   vec2 away = p - (uOrigin - 0.5) * uAspect;
   float lobes = fbm(away * 2.2 + uSeed) * uLobes;
   float dist = length(away) * (1.0 + lobes);
-  float front = uBurning * (1.0 - smoothstep(uRadius - 0.16, uRadius + 0.16, dist));
-  float band = (1.0 - smoothstep(0.0, 0.12, abs(dist - uRadius))) * uBurning * uMoving;
+  // the soft edge grows with the radius, so the burn starts as a tiny spot and widens with the scroll (a fixed width
+  // would make a blob of that size appear on the first pixel of scroll)
+  float grow = clamp(uRadius / 0.35, 0.03, 1.0);
+  float front = uBurning * (1.0 - smoothstep(uRadius - 0.16 * grow, uRadius + 0.16 * grow, dist));
+  float band = (1.0 - smoothstep(0.0, 0.12 * grow, abs(dist - uRadius))) * uBurning * uMoving;
   float activity = max(previous.b * uFade, band);
   gl_FragColor = vec4(0.0, front, activity, 1.0);
 }
@@ -589,8 +592,13 @@ export async function createEmberBurn(host: HTMLElement, options: EmberBurnOptio
       wake();
     },
     show: (visible: boolean) => {
+      const wasHidden = canvas.style.visibility === 'hidden';
       canvas.style.visibility = visible ? 'visible' : 'hidden';
-      if (visible) wake();
+      if (visible) {
+        // draw right now: the caller hides the real photo in the same tick, and waiting for the next frame would leave one empty frame
+        if (wasHidden && !destroyed) render(1 / 60);
+        wake();
+      }
     },
     destroy: () => {
       destroyed = true;

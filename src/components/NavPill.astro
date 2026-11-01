@@ -193,7 +193,7 @@ const isCurrent = (href: string) =>
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    height: 64px;
+    height: 58px;
     padding: 0 1.25rem 0 1.5rem;
   }
 
@@ -221,28 +221,31 @@ const isCurrent = (href: string) =>
     border-radius: 6px;
   }
 
-  .menu-lines { display: flex; flex-direction: column; gap: 5px; }
+  /* whole pixels only (8px block in a 24px button in a 58/64px header), so both hairlines land on the pixel grid and stay equally thick */
+  #menu-btn { height: 24px; }
+  .menu-lines { display: flex; flex-direction: column; gap: 6px; }
   .menu-lines span {
     width: 22px;
-    height: 1px;
-    background: currentColor;
-    transition: transform 0.4s var(--ease), background 0.6s var(--ease);
+    height: 0;
+    /* a border, not a background: borders snap to whole device pixels, so both lines stay equally thick at 125%/150% zoom */
+    border-top: 1px solid currentColor;
+    transition: transform 0.4s var(--ease), border-color 0.6s var(--ease);
   }
   #menu-btn:hover .menu-lines span,
-  #menu-btn:focus-visible .menu-lines span { background: var(--gold); }
-  .expanded .menu-lines span:first-child { transform: translateY(3px) rotate(45deg); }
-  .expanded .menu-lines span:last-child { transform: translateY(-3px) rotate(-45deg); }
+  #menu-btn:focus-visible .menu-lines span { border-color: var(--gold); }
+  .expanded .menu-lines span:first-child { transform: translateY(3.5px) rotate(45deg); }
+  .expanded .menu-lines span:last-child { transform: translateY(-3.5px) rotate(-45deg); }
 
   .nav-logo { justify-self: center; display: block; line-height: 0; }
   .nav-logo :global(img) {
-    height: 56px;
+    height: 40px;
     width: auto;
   }
 
   .inquire-btn {
     justify-self: end;
     gap: 0.9rem;
-    padding: 0.8rem 1.5rem;
+    padding: 0.65rem 1.4rem;
     border: 1px solid rgba(243, 239, 228, 0.4);
     border-radius: 999px;
     font-size: 0.78rem;
@@ -389,6 +392,7 @@ const isCurrent = (href: string) =>
   @media (max-width: 1023px) {
     .nav-pill { --nb: 6.9rem; }
     .nav-header {
+      height: 64px;
       grid-template-columns: var(--nb) 1fr var(--nb);
       padding: 0 1.15rem;
     }

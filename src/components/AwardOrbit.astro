@@ -1,0 +1,228 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { AWARD_ORBIT as S } from '../scripts/settings';
+
+/**
+ * The awards on a ring that turns (after the Codegrid "3D Orbit Slider"): small photos stand in a circle in 3D, and the one that
+ * faces you is shown big in the middle, with the words of its award under it. When the section comes up, the photos fly in from the
+ * side and form the ring. The section is pinned and a scroll gesture turns the ring by one photo; at either end the scroll goes on
+ * and the page moves on (see scripts/award-orbit.ts).
+ * Without the script the photos are a grid and the words are listed under it.
+ */
+interface Props {
+  slides: { img: ImageMetadata; alt: string; title: string; meta: string; text: string }[];
+}
+const { slides } = Astro.props;
+---
+
+<section class="ao" aria-label="The awards" style={`--ao-exit:${S.exit};--ao-centre:${S.centre}%;--ao-persp:${S.perspective}px`}>
+  <div class="ao-pin">
+    <div class="ao-stage">
+      <div class="ao-orbit">
+        {
+          slides.map((s) => (
+            <figure class="ao-panel">
+              <Image src={s.img} alt={s.alt} widths={[240, 480]} sizes="160px" loading="eager" draggable="false" />
+            </figure>
+          ))
+        }
+        <!-- the big one in the middle: all the photos on top of each other, the one that faces you is shown -->
+        <div class="ao-preview" aria-hidden="true">
+          {slides.map((s) => <Image src={s.img} alt="" widths={[420, 840]} sizes="280px" loading="eager" draggable="false" />)}
+        </div>
+      </div>
+    </div>
+
+    <div class="ao-entries">
+      {
+        slides.map((s) => (
+          <article class="ao-entry">
+            <p class="ao-meta">{s.meta}</p>
+            <h3>{s.title}</h3>
+            <p class="ao-desc">{s.text}</p>
+          </article>
+        ))
+      }
+    </div>
+
+    <!-- the same bar as in the corridor on the home page: it fills as the ring turns -->
+    <div class="ao-progress" aria-hidden="true">
+      <div class="ao-line"><div class="ao-fill"></div></div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initAwardOrbit } from '../scripts/award-orbit';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('.ao');
+    return root ? initAwardOrbit(root) : undefined;
+  });
+</script>
+
+<style>
+  .ao {
+    position: relative;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  /* ---- without the script: a grid of the photos, then the words of the awards ---- */
+  .ao-pin {
+    padding: clamp(4rem, 12vh, 8rem) 1.5rem;
+  }
+  .ao-orbit {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 1rem;
+    max-width: 56rem;
+    margin: 0 auto 4rem;
+  }
+  .ao-panel {
+    margin: 0;
+  }
+  .ao-panel :global(img) {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+  .ao-preview,
+  .ao-progress {
+    display: none;
+  }
+  .ao-entries {
+    display: grid;
+    gap: 3rem;
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+  .ao-meta {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 0 0 0.8rem;
+  }
+  .ao-entry h3 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    line-height: 1.05;
+    margin: 0 0 0.9rem;
+  }
+  .ao-desc {
+    font-size: 0.9rem;
+    line-height: 1.75;
+    margin: 0;
+    opacity: 0.75;
+  }
+
+  /* ---- with the script: one pinned screen with the ring in 3D; the sizes are scaled by --k (the screen's height / 900) ---- */
+  .ao[data-live] {
+    --ao-pin: max(100svh, 38rem);
+    height: calc(var(--ao-pin) * (1 + var(--ao-exit))); /* the pin, and the run of scrolling left after the last award */
+  }
+  .ao[data-live] .ao-pin {
+    position: sticky;
+    top: 0;
+    height: var(--ao-pin);
+    padding: 0;
+    overflow: hidden;
+    perspective: calc(var(--ao-persp) * var(--k, 1));
+  }
+  .ao[data-live] .ao-stage {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+  }
+  .ao[data-live] .ao-orbit {
+    display: block;
+    position: absolute;
+    top: var(--ao-centre);
+    left: 50%;
+    width: calc(100px * var(--k, 1));
+    height: calc(125px * var(--k, 1));
+    max-width: none;
+    margin: 0;
+    transform-style: preserve-3d;
+    transform: translate(-50%, -50%);
+  }
+  .ao[data-live] .ao-panel {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    visibility: hidden; /* until it flies in */
+  }
+  .ao[data-live] .ao-panel :global(img) {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+  .ao[data-live] .ao-preview {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(250px * var(--k, 1));
+    height: calc(325px * var(--k, 1));
+    overflow: hidden;
+    transform: translate(-50%, -50%);
+    opacity: 0; /* it comes up when the ring is formed */
+  }
+  .ao[data-live] .ao-preview :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  .ao[data-live] .ao-preview :global(img.is-on) {
+    opacity: 1;
+  }
+
+  /* the words: under the big photo, all of them in one place, the one of the front photo shown */
+  .ao[data-live] .ao-entries {
+    position: absolute;
+    left: 50%;
+    top: calc(var(--ao-centre) + 205px * var(--k, 1));
+    width: min(30rem, 88%);
+    translate: -50% 0;
+    text-align: center;
+    max-width: none;
+    margin: 0;
+    opacity: 0;
+  }
+  .ao[data-live] .ao-entry {
+    grid-area: 1 / 1;
+    will-change: transform, opacity;
+  }
+  .ao[data-live] .ao-progress {
+    display: block;
+    position: absolute;
+    left: 50%;
+    bottom: clamp(1.5rem, 5vh, 3rem);
+    width: min(18rem, 52vw);
+    translate: -50% 0;
+    color: var(--ink);
+  }
+  .ao-line {
+    position: relative;
+    height: 0;
+    border-top: var(--dash-track);
+  }
+  .ao-fill {
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: var(--dash-strong);
+    clip-path: inset(0% 100% 0% 0%);
+  }
+</style>

@@ -16,7 +16,7 @@ export const RISE = { text: 16, block: 24, card: 28, count: 12, leave: 40 }; // 
 export const ZOOM_IN = 1.3; // scale a photo starts at before it settles to 1
 export const LAYER_ZOOM_IN = 1.12; // same, for a layer arriving in a step transition
 export const LEAVE = { duration: 0.9, ease: 'power2.in' }; // the hero's opening text going away
-export const SMOOTH_WHEEL = { duration: 2, wheelMultiplier: 0.85 }; // Lenis: how long one wheel notch glides, and how far
+export const SMOOTH_WHEEL = { duration: 1.8, wheelMultiplier: 0.5 }; // Lenis: how long one wheel notch glides, and how far (shorter and less far = more control)
 
 // ---- story stage: the timeline layout shared by the laptop and the phone versions -----------------------------------------
 export const PX_PER_SEC = 520; // higher = the whole sequence is spread over more scrolling (slower)
@@ -333,6 +333,67 @@ export const PRELOADER = {
   fade: 0.6, // s the preloader takes to melt away over the hero
   rounds: 1.5, // how many times the photos go round while counting
   frame: { width: 240, height: 300 }, // px, the small frame
+};
+
+// ---- awards intro (a pinned hero scrubbed by the scroll: the headline leaves, the words light up, the photo shrinks to a tile, the photos drift) ---
+// After the Codegrid "Waabi Scroll Animation". The pinned part is `length` screens long; the other numbers are places on it (0..1).
+export const AWARDS_INTRO = {
+  length: 3.5, // screens of scrolling the pinned part takes
+  overlap: 0.75, // screens of the pinned part during which the next section is already rising under it
+  headerEnd: 0.29, // the headline has left the screen by here
+  words: [0.29, 0.5], // the second line lights up word by word between these
+  copyHideAt: 0.64, // and goes out here (over `copyFade`)
+  copyFade: 0.04,
+  shrink: [0.71, 1], // the photo shrinks to its tile between these
+  tile: { wide: 150, narrow: 100 }, // px, the side of the tile
+  radius: 10, // px, the rounding the tile ends with
+  scrub: 1, // seconds the picture takes to catch up with the scroll
+  // the four columns of photos: where each starts and ends (px), so they drift at different speeds
+  columns: [
+    { x: 0, from: 1000, to: -500 },
+    { x: -225, from: 500, to: -250 },
+    { x: 225, from: 500, to: -250 },
+    { x: 0, from: 1000, to: -500 },
+  ],
+};
+
+// ---- award orbit (the awards on a ring that turns; the front one is shown big in the middle with its words under it) -----------
+// After the Codegrid "3D Orbit Slider". The sizes are for a screen 900px high and are scaled with the height of the real one.
+export const AWARD_ORBIT = {
+  radius: 400, // px, of the ring
+  panel: { width: 100, height: 125 }, // px, of a photo on the ring
+  preview: { width: 250, height: 325 }, // px, of the big one in the middle
+  perspective: 2000, // px
+  centre: 44, // % of the screen height at which the middle of the ring is (the words go under it)
+  maxTilt: 14, // degrees the whole scene leans towards the pointer
+  tiltSmoothing: 0.05,
+  smoothing: 0.06, // how much of the way to the target the ring covers each frame (lower = softer, heavier)
+  wheelSensitivity: 0.005, // photos per unit of wheel (100 = half a photo, which already counts as one: a notch is a photo)
+  touchSensitivity: 0.0075, // photos per px of a swipe
+  maxWheelDelta: 200, // a single wheel event counts for no more than this
+  snapDelay: 250, // ms without input after which the ring settles on a photo
+  swapThreshold: 0.5, // how far past a photo (0..1) the ring has to be turned to go on to the next one, not back
+  textFade: 2.2, // how fast the words of a photo fade as the ring turns away from it (higher = faster)
+  exit: 0.6, // screens of scrolling left after the last award (and before the first) before the page moves on
+  intro: {
+    // the photos come in one behind the other along a ribbon that sweeps through the screen (after the trionn.com "Design in motion"),
+    // big and tilted, and as they reach the end of it they draw together into the ring and shrink to its size
+    duration: 3.8, // s, the whole of it
+    spread: 0.05, // share of that time between one photo's start and the next one's
+    ease: 'power2.inOut', // of a photo along the ribbon
+    startAt: 'top 40%', // when the section is this far up the screen the photos come in
+    ribbon: {
+      x: 1000, // px: the ribbon runs from this far right of the middle to this far left
+      y: 380, // px: from this far below the middle to this far above it
+      bow: 170, // px: how far the ribbon swings out of that straight line
+      z: 520, // px: how far it comes towards you in the middle of its run
+      zBase: -200, // px: where it is at its ends (negative = far)
+      tilt: 35, // degrees the photos are turned along the ribbon
+      roll: 14, // degrees they lean
+      lift: 1.5, // how much bigger than on the ring they are on the ribbon (1.5 = 2.5 times)
+    },
+    gather: [0.6, 1], // the part of a photo's run in which it leaves the ribbon and closes into the ring
+  },
 };
 
 // ---- FAQ chat (each question and answer is a bubble: a dot with typing dots that opens into the message) --------------

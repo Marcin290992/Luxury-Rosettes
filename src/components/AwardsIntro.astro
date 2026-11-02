@@ -1,0 +1,264 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import hero from '../assets/img/hero_img.webp';
+
+/**
+ * The opening of the awards page (after the Codegrid "Waabi Scroll Animation", see scripts/awards-intro.ts): a photo fills the screen
+ * with a headline on it; scrolling sends the headline away, lights up a second line word by word, then shrinks the photo to a small
+ * tile while four columns of small photos drift up around a line of text, and a quiet closing line follows.
+ * Without the script (or with reduced motion) it is the photo with its two lines, a grid of the small photos and the closing line.
+ */
+interface Props {
+  headline: string;
+  line: string;
+  collection: string;
+  closing: string;
+}
+const { headline, line, collection, closing } = Astro.props;
+
+// Sixteen small photos, four to a column. Sample ones for now (the cats and the story photos, some of them twice): to be replaced
+// with the photos of the awards.
+const found = import.meta.glob<{ default: ImageMetadata }>('../assets/img/{cats,story}/*.webp', { eager: true });
+const pool = Object.values(found).map((m) => m.default);
+const tiles = Array.from({ length: 16 }, (_, i) => pool[(i * 5) % pool.length]);
+const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
+---
+
+<div class="wi">
+  <section class="wi-hero" id="awards-intro">
+    <div class="wi-pin">
+      <div class="wi-img">
+        <Image src={hero} alt="" widths={[900, 1600, 2400]} sizes="100vw" loading="eager" />
+        <span class="wi-shade" aria-hidden="true"></span>
+      </div>
+      <div class="wi-header"><h1>{headline}</h1></div>
+      <div class="wi-copy"><h3>{line}</h3></div>
+    </div>
+  </section>
+
+  <section class="wi-about">
+    <div class="wi-cols" aria-hidden="true">
+      {
+        columns.map((column) => (
+          <div class="wi-col">
+            {column.map((img) => (
+              <div class="wi-tile">
+                <Image src={img} alt="" widths={[200, 400]} sizes="125px" loading="lazy" />
+              </div>
+            ))}
+          </div>
+        ))
+      }
+    </div>
+    <div class="wi-about-text"><h3>{collection}</h3></div>
+  </section>
+
+  <section class="wi-outro">
+    <h3>{closing}</h3>
+  </section>
+</div>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initAwardsIntro } from '../scripts/awards-intro';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('.wi');
+    return root ? initAwardsIntro(root) : undefined;
+  });
+</script>
+
+<style>
+  .wi {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .wi h1,
+  .wi h3 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    line-height: 1.02;
+    margin: 0;
+  }
+  .wi h1 {
+    font-size: clamp(2.6rem, 6vw, 5.5rem);
+  }
+  .wi h3 {
+    font-size: clamp(1.8rem, 3.2vw, 3rem);
+  }
+
+  /* ---- without the script: the photo with its lines, a grid of the small photos, the closing line ---- */
+  .wi-pin {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    padding: clamp(5.5rem, 14vh, 9rem) 1.5rem 3rem;
+    color: #fff;
+    overflow: hidden;
+  }
+  .wi-img {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .wi-img :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .wi-shade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1) 55%, rgba(0, 0, 0, 0.35));
+  }
+  .wi-header,
+  .wi-copy {
+    position: relative;
+    max-width: 52rem;
+  }
+  .wi-about {
+    padding: clamp(4rem, 12vh, 8rem) 1.5rem;
+    text-align: center;
+  }
+  .wi-cols {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    max-width: 40rem;
+    margin: 0 auto 3rem;
+  }
+  .wi-col {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+  }
+  .wi-tile {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .wi-tile :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .wi-about-text h3,
+  .wi-outro h3 {
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+  .wi-outro {
+    padding: clamp(5rem, 14vh, 9rem) 1.5rem;
+    text-align: center;
+    background: #ebe7dc; /* a shade darker than the page, as in the original */
+  }
+
+  /* ---- with the script: the photo, its lines and the tile are pinned in a tall track ---- */
+  .wi-hero[data-live] {
+    height: calc((1 + var(--wi-length)) * 100svh);
+  }
+  .wi-hero[data-live] .wi-pin {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    display: block;
+  }
+  .wi-hero[data-live] .wi-img {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    will-change: width, height;
+  }
+  .wi-hero[data-live] .wi-header,
+  .wi-hero[data-live] .wi-copy {
+    position: absolute;
+    inset: 0;
+    max-width: none;
+    padding: clamp(2rem, 4vw, 4rem);
+    display: flex;
+    align-items: flex-end;
+    will-change: transform, opacity;
+  }
+  .wi-hero[data-live] .wi-header h1 {
+    width: min(75%, 56rem);
+  }
+  .wi-hero[data-live] .wi-copy h3 {
+    width: min(50%, 36rem);
+  }
+  .wi-hero[data-live] .wi-copy :global(.wi-word) {
+    opacity: 0;
+  }
+
+  /* the next section rises under the last part of the pin (the tile is still on the screen), over the shrinking photo */
+  .wi-hero[data-live] + .wi-about {
+    position: relative;
+    z-index: 1;
+    height: 100svh;
+    margin-top: calc(var(--wi-overlap) * -100svh);
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .wi-hero[data-live] + .wi-about .wi-cols {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    max-width: none;
+    margin: 0;
+    padding: 4rem;
+  }
+  .wi-hero[data-live] + .wi-about .wi-col {
+    position: relative;
+    height: 125%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    will-change: transform;
+  }
+  .wi-hero[data-live] + .wi-about .wi-tile {
+    width: 125px;
+    height: 125px;
+    aspect-ratio: auto;
+  }
+  .wi-hero[data-live] + .wi-about .wi-about-text {
+    position: relative;
+    width: min(40%, 34rem);
+  }
+
+  @media (max-width: 1000px) {
+    .wi-hero[data-live] .wi-header h1,
+    .wi-hero[data-live] .wi-copy h3 {
+      width: 100%;
+    }
+    .wi-hero[data-live] + .wi-about .wi-cols {
+      padding: 2rem;
+    }
+    .wi-hero[data-live] + .wi-about .wi-tile {
+      width: 75px;
+      height: 75px;
+      opacity: 0.25;
+      filter: saturate(0);
+    }
+    .wi-hero[data-live] + .wi-about .wi-about-text {
+      width: 100%;
+      padding: 2rem;
+    }
+  }
+</style>

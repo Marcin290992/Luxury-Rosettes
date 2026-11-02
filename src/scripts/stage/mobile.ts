@@ -1,6 +1,5 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { initLenis } from '../lenis';
 import { bigShapes, smallShapes } from './shapes';
 import { splitWords } from './text';
 import { stickIn, unstick } from './sticky';
@@ -22,7 +21,6 @@ gsap.registerPlugin(ScrollTrigger);
 export function initMobile() {
   const small = gsap.matchMedia();
   small.add(MEDIA.phone, () => {
-    initLenis();
     const hero = document.getElementById('hero')!;
     const heroImg = hero.querySelector<HTMLElement>('.hero-img')!;
     const fade = hero.querySelector<HTMLElement>('.hero-fade')!;

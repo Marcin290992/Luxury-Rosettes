@@ -40,6 +40,17 @@ const {
   </body>
 </html>
 
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initLenis, destroyLenis } from '../scripts/lenis';
+
+  // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap
+  mount(() => {
+    initLenis();
+    return destroyLenis;
+  });
+</script>
+
 <style is:global>
   :root {
     --font-heading: 'Cormorant Garamond', serif;

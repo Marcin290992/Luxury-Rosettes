@@ -1,6 +1,5 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { initLenis } from '../lenis';
 import { bigShapes, smallShapes } from './shapes';
 import { splitWords, wordDelays } from './text';
 import { readEye, originOf } from './eye';
@@ -16,8 +15,6 @@ gsap.registerPlugin(ScrollTrigger);
 export function initDesktop() {
   const mm = gsap.matchMedia();
   mm.add(MEDIA.laptop, () => {
-    initLenis(); // smooth wheel only — it never changes where the page is
-
     const stage = document.getElementById('stage')!;
     const story = document.getElementById('story')!;
     let ctx: gsap.Context | undefined;

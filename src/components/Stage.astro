@@ -20,7 +20,6 @@ import Story from './Story.astro';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { initDesktop } from '../scripts/stage/desktop';
   import { initMobile } from '../scripts/stage/mobile';
-  import { destroyLenis } from '../scripts/lenis';
   import { mount } from '../scripts/lifecycle';
 
   gsap.registerPlugin(ScrollTrigger);
@@ -34,7 +33,6 @@ import Story from './Story.astro';
     return () => {
       stopDesktop();
       stopMobile();
-      destroyLenis();
     };
   });
 </script>

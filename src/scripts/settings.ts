@@ -396,6 +396,17 @@ export const AWARD_ORBIT = {
   },
 };
 
+// ---- awards list (the awards as a spotlight: the counter goes down, the photos go up, the names roll, the words of the front one change) ---
+// After the Codegrid "PrototypeStudio Scroll Animation". The pinned part is `length` screens long.
+export const AWARDS_LIST = {
+  length: 5, // screens of scrolling the whole list takes
+  dim: 0.35, // opacity of a photo that is not the one at the middle of the screen
+  detailFade: 2.2, // how fast the words of an award fade as the list moves on from it (higher = faster)
+  detailShift: 24, // px the words of an award travel while they come in and go out
+  scrub: 1, // seconds the picture takes to catch up with the scroll
+  enterAt: 'top 70%', // when the section is this far up the screen everything arrives
+};
+
 // ---- FAQ chat (each question and answer is a bubble: a dot with typing dots that opens into the message) --------------
 export const FAQ_CHAT = {
   dot: 56, // px: the size of the bubble while it is still a dot

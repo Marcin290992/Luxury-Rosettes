@@ -1,17 +1,27 @@
 ---
+import type { ImageMetadata } from 'astro';
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
 import AwardsIntro from '../components/AwardsIntro.astro';
+import AwardsList from '../components/AwardsList.astro';
 
-// Sample page. All the titles, years and shows below are placeholders to be replaced with the real ones.
-const titles = [
-  { year: '2024', show: 'Placeholder International Show', cat: 'Draco', title: 'Best in Show' },
-  { year: '2024', show: 'Placeholder Cat Club Show', cat: 'Kita', title: 'Best Female Bengal' },
-  { year: '2023', show: 'Placeholder International Show', cat: 'Draco', title: 'Grand Champion' },
-  { year: '2023', show: 'Placeholder Spring Show', cat: 'Candy', title: 'Best Kitten' },
-  { year: '2022', show: 'Placeholder National Show', cat: 'Kita', title: 'Best of Breed' },
-  { year: '2022', show: 'Placeholder Autumn Show', cat: 'Charlie', title: 'Champion' },
-];
+// Sample page. The photos, titles, shows, years and words of the awards are placeholders, to be replaced with the real ones.
+const found = import.meta.glob<{ default: ImageMetadata }>('../assets/img/{cats,story}/*.webp', { eager: true });
+const pool = Object.values(found).map((m) => m.default);
+const words =
+  'Placeholder text. A few calm sentences about this award: the show it was won at, the cat that won it and what it meant for the line.';
+const awards = [
+  ['Best in Show', 'Placeholder International Show · 2024'],
+  ['Grand Champion', 'Placeholder Cat Club · 2024'],
+  ['Best of Breed', 'Placeholder National Show · 2023'],
+  ['Best Female', 'Placeholder Autumn Show · 2023'],
+  ['Best Male', 'Placeholder Spring Show · 2023'],
+  ['Best Kitten', 'Placeholder Winter Show · 2022'],
+  ['Premier Champion', 'Placeholder National Show · 2022'],
+  ['Supreme Adult', 'Placeholder Cat Club · 2022'],
+  ['Best Opposite Sex', 'Placeholder Spring Show · 2021'],
+  ["Judge's Choice", 'Placeholder Show Record · 2021'],
+].map(([title, meta], i) => ({ img: pool[(i * 3 + 1) % pool.length], alt: title, title, meta, text: words }));
 ---
 
 <Layout title="Awards — Luxury Rosettes">
@@ -22,90 +32,5 @@ const titles = [
     collection="Rosettes, ribbons and shields gathered into a drifting collection of proud moments."
     closing="Dozens of titles, and one family behind them."
   />
-
-  <section class="list">
-    <p class="eyebrow">Show record</p>
-    <h2>Every title, year by year</h2>
-    <ul class="rows">
-      {
-        titles.map((t) => (
-          <li class="row">
-            <span class="year">{t.year}</span>
-            <span class="what"><strong>{t.title}</strong> · {t.cat}</span>
-            <span class="show">{t.show}</span>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
+  <AwardsList items={awards} />
 </Layout>
-
-<style>
-  .eyebrow {
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    margin: 0 0 1rem;
-  }
-  h2 {
-    font-family: var(--font-heading);
-    font-weight: 400;
-    line-height: 1.02;
-    margin: 0;
-  }
-
-  /* ---- the show record ---- */
-  .list {
-    position: relative;
-    z-index: 1;
-    background: var(--paper);
-    color: var(--ink);
-    padding: clamp(5rem, 14vh, 9rem) 1.5rem;
-  }
-  .list > * {
-    max-width: 56rem;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .list h2 {
-    font-size: clamp(2.2rem, 5vw, 3.8rem);
-    margin-bottom: clamp(2rem, 5vh, 3.5rem);
-  }
-  .rows {
-    list-style: none;
-    padding: 0;
-  }
-  .row {
-    display: grid;
-    grid-template-columns: 5rem 1fr 1fr;
-    gap: 1rem;
-    padding: 1.25rem 0;
-    border-top: 1px solid rgba(26, 26, 26, 0.18);
-    font-size: 0.95rem;
-  }
-  .row:last-child {
-    border-bottom: 1px solid rgba(26, 26, 26, 0.18);
-  }
-  .year {
-    font-family: var(--font-heading);
-    font-size: 1.4rem;
-    color: var(--gold-deep);
-  }
-  .what strong {
-    font-family: var(--font-heading);
-    font-weight: 400;
-    font-size: 1.3rem;
-  }
-  .show {
-    opacity: 0.6;
-  }
-  @media (max-width: 700px) {
-    .row {
-      grid-template-columns: 4rem 1fr;
-    }
-    .show {
-      grid-column: 2;
-    }
-  }
-</style>

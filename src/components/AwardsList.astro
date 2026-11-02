@@ -1,0 +1,225 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { AWARDS_LIST as S } from '../scripts/settings';
+
+/**
+ * The list of the awards, one at a time (after the Codegrid "PrototypeStudio Scroll Animation", see scripts/awards-list.ts): a pinned
+ * screen where a counter goes down the left side, a column of photos goes up through the middle, the names of the awards roll up on the
+ * right and the words of the current award (where, when, the story) are shown in the middle of its photo.
+ * When it comes up, everything arrives the way things do on the rest of the site: the photos open from the bottom, the counter, the
+ * names and the words rise out of masks. Without the script, on a narrow screen, or with reduced motion, it is a grid of the photos and the awards written out one under the other.
+ */
+interface Props {
+  items: { img: ImageMetadata; alt: string; title: string; meta: string; text: string }[];
+}
+const { items } = Astro.props;
+const total = String(items.length).padStart(2, '0');
+---
+
+<section class="al" aria-label="The awards" style={`--al-length:${S.length}`}>
+  <div class="al-pin">
+    <p class="al-index" aria-hidden="true"><span class="al-mask"><span class="al-roll"><span class="al-num">01</span><span class="al-total">/{total}</span></span></span></p>
+
+    <div class="al-images">
+      {
+        items.map((item, i) => (
+          <figure class="al-img">
+            <Image src={item.img} alt={item.alt} widths={[600, 1000, 1400]} sizes="(min-width: 1000px) 46vw, 90vw" loading={i < 3 ? 'eager' : 'lazy'} draggable="false" />
+          </figure>
+        ))
+      }
+    </div>
+
+    <ol class="al-names" aria-hidden="true">
+      {items.map((item) => <li><span class="al-name">{item.title}</span></li>)}
+    </ol>
+
+    <div class="al-details">
+      {
+        items.map((item) => (
+          <article class="al-detail">
+            <p class="al-meta">{item.meta}</p>
+            <h3>{item.title}</h3>
+            <p class="al-text">{item.text}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initAwardsList } from '../scripts/awards-list';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('.al');
+    return root ? initAwardsList(root) : undefined;
+  });
+</script>
+
+<style>
+  .al {
+    position: relative;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  /* ---- without the script: the photos in a grid, the awards written out under them ---- */
+  .al-pin {
+    padding: clamp(4rem, 12vh, 8rem) 1.5rem;
+  }
+  .al-index,
+  .al-names {
+    display: none;
+  }
+  .al-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: 0.75rem;
+    max-width: 64rem;
+    margin: 0 auto 4rem;
+  }
+  .al-img {
+    margin: 0;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+  .al-img :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+  }
+  .al-details {
+    display: grid;
+    gap: 2.5rem;
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+  .al-meta {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 0 0 0.8rem;
+  }
+  .al-detail h3 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(1.8rem, 2.4vw, 2.8rem);
+    line-height: 1.05;
+    margin: 0 0 0.9rem;
+  }
+  .al-text {
+    font-size: clamp(0.95rem, 1.05vw, 1.1rem);
+    line-height: 1.7;
+    margin: 0;
+    opacity: 0.75;
+  }
+
+  /* ---- with the script: one pinned screen in a tall track ---- */
+  .al[data-live] {
+    height: calc((1 + var(--al-length)) * 100svh);
+  }
+  .al[data-live] .al-pin {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    padding: 0;
+    overflow: hidden;
+  }
+  .al[data-live] .al-index {
+    display: block;
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    z-index: 2;
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: clamp(3.5rem, 6.2vw, 8.5rem);
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+    will-change: transform;
+  }
+  .al[data-live] .al-total {
+    opacity: 0.35;
+  }
+  /* the counter and the names rise out of masks when the section comes up */
+  .al[data-live] .al-mask {
+    display: block;
+    overflow: hidden;
+    padding-bottom: 0.08em;
+  }
+  .al[data-live] .al-roll {
+    display: block;
+  }
+  .al[data-live] .al-names li {
+    overflow: hidden;
+    padding-bottom: 0.08em;
+  }
+  .al[data-live] .al-name {
+    display: block;
+  }
+  .al[data-live] .al-images {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    z-index: 1;
+    width: 46%; /* the original has 35%; on the cream page that looks small */
+    max-width: none;
+    margin: 0;
+    padding: 50svh 0; /* the first photo starts at the middle of the screen and the last one ends there */
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    will-change: transform;
+  }
+  .al[data-live] .al-img {
+    flex: none;
+    width: 100%;
+  }
+  .al[data-live] .al-names {
+    display: flex;
+    position: absolute;
+    right: 2rem;
+    bottom: 2rem;
+    z-index: 2;
+    flex-direction: column;
+    align-items: flex-end;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .al[data-live] .al-names li {
+    font-family: var(--font-heading);
+    font-size: clamp(1.2rem, 1.75vw, 1.8rem);
+    line-height: 1.25;
+    color: rgba(26, 26, 26, 0.3);
+    transition: color 0.3s ease;
+    will-change: transform;
+  }
+  .al[data-live] .al-names li.is-current {
+    color: var(--gold-deep);
+  }
+  /* the words of the current award: on the left, level with the middle of its photo (the middle line of the screen), well clear of it */
+  .al[data-live] .al-details {
+    position: absolute;
+    left: 2rem;
+    top: 50%;
+    z-index: 2;
+    width: min(22rem, calc(27vw - 4rem));
+    max-width: none;
+    margin: 0;
+    gap: 0;
+    translate: 0 -50%;
+  }
+  .al[data-live] .al-detail {
+    grid-area: 1 / 1;
+    will-change: transform, opacity;
+  }
+</style>

@@ -1,0 +1,92 @@
+---
+import { Image } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import NavPill from '../components/NavPill.astro';
+import draco from '../assets/img/cats/draco.webp';
+import kita from '../assets/img/cats/kita.webp';
+import candy from '../assets/img/cats/candy.webp';
+import charlie from '../assets/img/cats/charlie.webp';
+import chester from '../assets/img/cats/chester.webp';
+import cosmo from '../assets/img/cats/cosmo.webp';
+
+// Sample page for trying out page transitions: the same cats as on the home page, placeholder copy
+const cats = [
+  { name: 'Draco', line: 'Stud', image: draco },
+  { name: 'Kita', line: 'Queen', image: kita },
+  { name: 'Candy', line: 'Queen', image: candy },
+  { name: 'Charlie', line: 'Stud', image: charlie },
+  { name: 'Chester', line: 'Stud', image: chester },
+  { name: 'Cosmo', line: 'Kitten', image: cosmo },
+];
+---
+
+<Layout title="Our Cats — Luxury Rosettes">
+  <NavPill />
+  <main class="page">
+    <header class="head">
+      <p class="eyebrow">The family</p>
+      <h1 data-line-reveal>Our cats</h1>
+      <p class="lead">Placeholder text. A few calm sentences about the parents and the kittens you are about to meet.</p>
+    </header>
+    <ul class="grid">
+      {
+        cats.map((c) => (
+          <li class="card">
+            <div class="photo"><Image src={c.image} alt={c.name} widths={[500, 800]} sizes="(min-width:1024px) 30vw, 90vw" /></div>
+            <h2>{c.name}</h2>
+            <p>{c.line}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="next"><a href="/available-kittens">See available kittens →</a></p>
+  </main>
+</Layout>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initLineReveal } from '../scripts/line-reveal';
+  import { LINE_REVEAL } from '../scripts/settings';
+
+  // the heading rises once the page has arrived (the page transition takes ~1.5s)
+  mount(() => initLineReveal(Array.from(document.querySelectorAll<HTMLElement>('[data-line-reveal]')), LINE_REVEAL, 1.05));
+</script>
+
+<style>
+  .page {
+    min-height: 100svh;
+    padding: clamp(7rem, 16vh, 10rem) 1.5rem 5rem;
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+  .head { margin-bottom: 3.5rem; }
+  .eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    line-height: 1;
+    margin: 0 0 1.25rem;
+  }
+  .lead { max-width: 34rem; line-height: 1.7; margin: 0; opacity: 0.75; }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    gap: 2rem;
+  }
+  .photo { aspect-ratio: 4 / 5; overflow: hidden; border-radius: 10px; background: var(--placeholder); }
+  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  h2 { font-family: var(--font-heading); font-weight: 400; font-size: 1.6rem; margin: 1rem 0 0.2rem; }
+  .card p { margin: 0; font-size: 0.85rem; opacity: 0.6; }
+  .next { margin: 4rem 0 0; }
+  .next a { color: var(--gold-deep); text-decoration: none; letter-spacing: 0.08em; }
+</style>

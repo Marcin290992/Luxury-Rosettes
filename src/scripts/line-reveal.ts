@@ -9,7 +9,7 @@ import { LINE_REVEAL } from './settings';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
-export function initLineReveal(elements: HTMLElement[], o = LINE_REVEAL) {
+export function initLineReveal(elements: HTMLElement[], o = LINE_REVEAL, delay = 0) {
   // with reduced motion the text is left alone
   const mm = gsap.matchMedia();
   mm.add('(prefers-reduced-motion: no-preference)', () => {
@@ -23,6 +23,7 @@ export function initLineReveal(elements: HTMLElement[], o = LINE_REVEAL) {
             yPercent: 110,
             duration: o.duration,
             stagger: o.stagger,
+            delay, // e.g. the length of a page transition, so the text arrives after the page
             ease: o.ease,
             scrollTrigger: { trigger: el, start: o.start, toggleActions: 'play none none reverse' },
           }),

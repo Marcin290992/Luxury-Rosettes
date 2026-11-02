@@ -1,4 +1,6 @@
 ---
+import { ClientRouter } from 'astro:transitions';
+
 const {
   title = 'Luxury Rosettes',
   description = 'Luxury Rosettes — TICA registered Bengal cat breeder in the UK. Champion bloodlines, health-tested kittens raised with love.',
@@ -20,6 +22,7 @@ const {
     />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <ClientRouter />
   </head>
   <body>
     <slot />
@@ -73,5 +76,107 @@ const {
     font-family: var(--font-body);
     background: var(--paper);
     color: var(--ink);
+  }
+</style>
+
+<style is:global>
+  /* The scrollbar is part of the page picture the transition moves, so it showed up as a grey strip at the right edge of the
+     shrinking page. The page scrolls the same, there is just no bar (the smooth scroll and the nav make it unnecessary). */
+  html {
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ---- page transition (after codegrid's View Transition demo) ----
+     The old page shrinks, turns and slips away to the lower left; the new one opens from the lower right corner at the same
+     reduced size and grows to the full screen.
+     The nav pill keeps its own layer and does not move. */
+  ::view-transition {
+    background: #0d0b09;
+  }
+  #main-nav {
+    view-transition-name: navbar;
+  }
+  ::view-transition-group(navbar) {
+    animation: none;
+    z-index: 100;
+  }
+  ::view-transition-old(navbar),
+  ::view-transition-new(navbar) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  /* Astro marks the direction of the navigation on <html>: forward goes left, back is the same swing the other way round. */
+  :root {
+    --vt-dir: 1;
+  }
+  :root[data-astro-transition='back'] {
+    --vt-dir: -1;
+  }
+
+  /* The two pages swap places like cards: the old one shrinks and swings out to the lower left (tilting, as in codegrid's demo), the new
+     one swings in from the lower right, mirrored, into the same place at the same small size, rests there for a moment, and only then grows to the full screen. */
+  ::view-transition-old(root) {
+    animation: 1500ms linear both page-out;
+  }
+  ::view-transition-new(root) {
+    animation: 1500ms linear both page-in;
+  }
+  @keyframes page-out {
+    0% {
+      transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
+      clip-path: inset(0% round 0px);
+      animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    25% {
+      transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
+      clip-path: inset(0% round 40px);
+      animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
+    }
+    40% {
+      transform: translateX(calc(var(--vt-dir) * -45%)) translateY(8%) rotate(calc(var(--vt-dir) * -14deg)) scale(0.6);
+      clip-path: inset(0% round 40px);
+      animation-timing-function: linear;
+    }
+    55%,
+    100% {
+      transform: translateX(calc(var(--vt-dir) * -115%)) translateY(40%) rotate(calc(var(--vt-dir) * -30deg)) scale(0.6);
+      clip-path: inset(0% round 40px);
+    }
+  }
+  @keyframes page-in {
+    0%,
+    25% {
+      transform: translateX(calc(var(--vt-dir) * 115%)) translateY(40%) rotate(calc(var(--vt-dir) * 30deg)) scale(0.6);
+      clip-path: inset(0% round 40px);
+      animation-timing-function: linear;
+    }
+    40% {
+      transform: translateX(calc(var(--vt-dir) * 45%)) translateY(8%) rotate(calc(var(--vt-dir) * 14deg)) scale(0.6);
+      clip-path: inset(0% round 40px);
+      animation-timing-function: cubic-bezier(0, 0, 0.35, 1);
+    }
+    55% {
+      transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
+      clip-path: inset(0% round 40px);
+    }
+    66% {
+      transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
+      clip-path: inset(0% round 40px);
+      animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+    }
+    100% {
+      transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
+      clip-path: inset(0% round 0px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation: none;
+    }
   }
 </style>

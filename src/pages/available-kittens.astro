@@ -1,0 +1,90 @@
+---
+import { Image } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import NavPill from '../components/NavPill.astro';
+import candy from '../assets/img/cats/candy.webp';
+import charlie from '../assets/img/cats/charlie.webp';
+import chester from '../assets/img/cats/chester.webp';
+import cosmo from '../assets/img/cats/cosmo.webp';
+
+// Sample page for trying out page transitions: placeholder kittens and copy
+const kittens = [
+  { name: 'Candy', line: 'Female, brown rosetted', image: candy },
+  { name: 'Charlie', line: 'Male, snow', image: charlie },
+  { name: 'Chester', line: 'Male, brown rosetted', image: chester },
+  { name: 'Cosmo', line: 'Male, silver', image: cosmo },
+];
+---
+
+<Layout title="Available Kittens — Luxury Rosettes">
+  <NavPill />
+  <main class="page">
+    <header class="head">
+      <p class="eyebrow">Ready to meet you</p>
+      <h1 data-line-reveal>Available kittens</h1>
+      <p class="lead">Placeholder text. Every kitten is TICA registered, health-tested and raised at home.</p>
+    </header>
+    <ul class="list">
+      {
+        kittens.map((k) => (
+          <li class="row">
+            <div class="photo"><Image src={k.image} alt={k.name} widths={[600, 1000]} sizes="(min-width:1024px) 40vw, 90vw" /></div>
+            <div class="text">
+              <h2>{k.name}</h2>
+              <p>{k.line}</p>
+              <a href="#">Reserve {k.name} →</a>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="next"><a href="/our-cats">← Meet the parents</a></p>
+  </main>
+</Layout>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initLineReveal } from '../scripts/line-reveal';
+  import { LINE_REVEAL } from '../scripts/settings';
+
+  // the heading rises once the page has arrived (the page transition takes ~1.5s)
+  mount(() => initLineReveal(Array.from(document.querySelectorAll<HTMLElement>('[data-line-reveal]')), LINE_REVEAL, 1.05));
+</script>
+
+<style>
+  .page {
+    min-height: 100svh;
+    padding: clamp(7rem, 16vh, 10rem) 1.5rem 5rem;
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+  .head { margin-bottom: 3.5rem; }
+  .eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    line-height: 1;
+    margin: 0 0 1.25rem;
+  }
+  .lead { max-width: 34rem; line-height: 1.7; margin: 0; opacity: 0.75; }
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3rem; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; }
+  .row:nth-child(even) .photo { order: 2; }
+  .photo { aspect-ratio: 4 / 3; overflow: hidden; border-radius: 10px; background: var(--placeholder); }
+  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  h2 { font-family: var(--font-heading); font-weight: 400; font-size: clamp(1.8rem, 3vw, 2.6rem); margin: 0 0 0.4rem; }
+  .text p { margin: 0 0 1.25rem; opacity: 0.6; }
+  .text a, .next a { color: var(--gold-deep); text-decoration: none; letter-spacing: 0.08em; }
+  .next { margin: 4rem 0 0; }
+  @media (max-width: 700px) {
+    .row { grid-template-columns: 1fr; }
+    .row:nth-child(even) .photo { order: 0; }
+  }
+</style>

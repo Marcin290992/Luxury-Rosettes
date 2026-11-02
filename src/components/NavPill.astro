@@ -73,6 +73,7 @@ const isCurrent = (href: string) =>
 </nav>
 
 <script>
+  import { navigate } from 'astro:transitions/client';
   import { mount } from '../scripts/lifecycle';
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
@@ -114,8 +115,19 @@ const isCurrent = (href: string) =>
         btn.focus();
       }
     };
+    // A link in the menu: the menu folds away first (its own animation, ~0.6s), and only then the page transition starts.
+    let leaving = 0;
     const onPanelClick = (e: MouseEvent) => {
-      if ((e.target as Element).closest('a')) setOpen(false); // a click on an icon inside a link counts as the link
+      const link = (e.target as Element).closest('a'); // a click on an icon inside a link counts as the link
+      if (!link) return;
+      const url = new URL(link.href, location.href);
+      const another = url.origin === location.origin && !(url.pathname === location.pathname && url.search === location.search) && !link.target && !link.hasAttribute('download');
+      const plain = !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+      setOpen(false);
+      if (!another || !plain || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      e.preventDefault();
+      window.clearTimeout(leaving);
+      leaving = window.setTimeout(() => navigate(url.href), 650);
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {
@@ -139,6 +151,7 @@ const isCurrent = (href: string) =>
       document.removeEventListener('click', onOutsideClick);
       document.removeEventListener('keydown', onKeydown);
       panel.removeEventListener('click', onPanelClick);
+      window.clearTimeout(leaving);
       nav.removeEventListener('click', onNavClick);
       window.removeEventListener('scroll', onScroll);
     };

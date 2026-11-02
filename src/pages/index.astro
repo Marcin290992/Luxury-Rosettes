@@ -161,34 +161,38 @@ import expandImg from '../assets/img/expand.webp';
 <script>
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { mount } from '../scripts/lifecycle';
 
   gsap.registerPlugin(ScrollTrigger);
 
   // Content slides up and fades in as it scrolls into view
-  const mm = gsap.matchMedia();
-  mm.add('(prefers-reduced-motion: no-preference)', () => {
-    gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((el) => {
-      gsap.from(el, {
-        y: 48,
-        opacity: 0,
-        duration: 1,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none reverse' },
+  mount(() => {
+    const mm = gsap.matchMedia();
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((el) => {
+        gsap.from(el, {
+          y: 48,
+          opacity: 0,
+          duration: 1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none reverse' },
+        });
+      });
+      // dashed rules draw themselves in from the left
+      gsap.utils.toArray<HTMLElement>('[data-dash]').forEach((el) => {
+        gsap.fromTo(
+          el,
+          { clipPath: 'inset(0% 100% 0% 0%)' },
+          {
+            clipPath: 'inset(0% 0% 0% 0%)',
+            duration: 1.4,
+            ease: 'power3.inOut',
+            scrollTrigger: { trigger: el, start: 'top 92%', toggleActions: 'play none none reverse' },
+          },
+        );
       });
     });
-    // dashed rules draw themselves in from the left
-    gsap.utils.toArray<HTMLElement>('[data-dash]').forEach((el) => {
-      gsap.fromTo(
-        el,
-        { clipPath: 'inset(0% 100% 0% 0%)' },
-        {
-          clipPath: 'inset(0% 0% 0% 0%)',
-          duration: 1.4,
-          ease: 'power3.inOut',
-          scrollTrigger: { trigger: el, start: 'top 92%', toggleActions: 'play none none reverse' },
-        },
-      );
-    });
+    return () => mm.revert();
   });
 </script>
 

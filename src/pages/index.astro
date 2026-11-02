@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
 import Preloader from '../components/Preloader.astro';
+import LetterButton from '../components/LetterButton.astro';
 import CursorTrail from '../components/CursorTrail.astro';
 import Stage from '../components/Stage.astro';
 import ScrollExpand from '../components/ScrollExpand.astro';
@@ -54,20 +55,8 @@ import expandImg from '../assets/img/expand.webp';
       </Fragment>
       <p class="kit-text">Every kitten grows up in our home among people, health-tested and TICA registered, until it is ready to meet you.</p>
       <p class="kit-actions">
-        {
-          [
-            { label: 'View available kittens', href: '/available-kittens', solid: true },
-            { label: 'Meet the parents', href: '#cats', solid: false },
-          ].map(({ label, href, solid }) => (
-            <a class:list={['kit-cta', { 'kit-cta--solid': solid }]} href={href} aria-label={label}>
-              <span class="kit-cta-label" aria-hidden="true">
-                <span class="kit-cta-word">
-                  {[...label].map((ch, n) => <span class="kit-cta-char" style={`--n:${n}`} data-ch={ch}>{ch}</span>)}
-                </span>
-              </span>
-            </a>
-          ))
-        }
+        <LetterButton label="View available kittens" href="/available-kittens" solid />
+        <LetterButton label="Meet the parents" href="#cats" />
       </p>
     </TileReveal>
     <Testimonials />
@@ -117,46 +106,6 @@ import expandImg from '../assets/img/expand.webp';
     flex-wrap: wrap;
     justify-content: center;
     gap: 1rem;
-  }
-  #kittens .kit-cta {
-    display: inline-block;
-    font-family: var(--font-body);
-    font-size: 0.78rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #fff;
-    text-decoration: none;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: 999px;
-    padding: 1rem 1.75rem;
-    transition: border-color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-  }
-  #kittens .kit-cta--solid {
-    background: #fff;
-    color: var(--ink);
-  }
-  /* same hover as the finale buttons */
-  #kittens .kit-cta-label { display: block; overflow: hidden; line-height: 1.5; }
-  #kittens .kit-cta-word { display: block; white-space: pre; }
-  #kittens .kit-cta-char {
-    display: inline-block;
-    position: relative;
-    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-    transition-delay: calc(var(--n) * 0.025s);
-  }
-  #kittens .kit-cta-char::after {
-    content: attr(data-ch);
-    position: absolute;
-    top: 100%;
-    left: 0;
-    color: var(--gold);
-  }
-  #kittens .kit-cta--solid .kit-cta-char::after { color: var(--gold-deep); }
-  @media (hover: hover) {
-    #kittens .kit-cta:hover { border-color: var(--gold); }
-    #kittens .kit-cta--solid:hover { border-color: #fff; }
-    #kittens .kit-cta:hover .kit-cta-char,
-    #kittens .kit-cta:focus-visible .kit-cta-char { transform: translateY(-100%); }
   }
 </style>
 

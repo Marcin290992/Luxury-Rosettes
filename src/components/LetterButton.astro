@@ -1,0 +1,89 @@
+---
+/**
+ * The pill button used for calls to action on dark photos: a link (with `href`) or a button (without; `contact` makes it open
+ * the contact form). On hover the letters slide up one after another and a gold copy slides in from below.
+ * `solid` is the filled one. The colours come from `--fg` (text and outline, white by default) and `--inv` (text on the
+ * filled one, ink by default), so a parent can recolour it, as the corridor finale does while it fades to dark.
+ */
+interface Props {
+  label: string;
+  href?: string;
+  solid?: boolean;
+  contact?: boolean;
+}
+const { label, href, solid = false, contact = false } = Astro.props;
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag
+  class:list={['cta', { 'cta--solid': solid }]}
+  href={href}
+  type={href ? undefined : 'button'}
+  data-contact-trigger={contact ? '' : undefined}
+  aria-label={label}
+>
+  <span class="cta-label" aria-hidden="true">
+    <span class="cta-word">
+      {[...label].map((ch, n) => <span class="cta-char" style={`--n:${n}`} data-ch={ch}>{ch}</span>)}
+    </span>
+  </span>
+</Tag>
+
+<style>
+  .cta {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-block;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fg, #fff);
+    border: 1px solid color-mix(in srgb, var(--fg, #fff) 60%, transparent);
+    border-radius: 999px;
+    padding: 1rem 1.75rem;
+    transition: border-color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .cta--solid {
+    background: var(--fg, #fff);
+    color: var(--inv, var(--ink));
+  }
+  .cta-label {
+    display: block;
+    overflow: hidden;
+    line-height: 1.5;
+  }
+  .cta-word {
+    display: block;
+    white-space: pre;
+  }
+  .cta-char {
+    display: inline-block;
+    position: relative;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    transition-delay: calc(var(--n) * 0.025s);
+  }
+  .cta-char::after {
+    content: attr(data-ch);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    color: var(--gold);
+  }
+  .cta--solid .cta-char::after {
+    color: var(--gold-deep); /* gold would vanish on the light button */
+  }
+  @media (hover: hover) {
+    .cta:hover {
+      border-color: var(--gold);
+    }
+    .cta--solid:hover {
+      border-color: var(--fg, #fff);
+    }
+    .cta:hover .cta-char,
+    .cta:focus-visible .cta-char {
+      transform: translateY(-100%);
+    }
+  }
+</style>

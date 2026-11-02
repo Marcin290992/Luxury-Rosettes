@@ -22,6 +22,17 @@ const {
     />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <!-- A refresh starts the page over: no restored scroll position (the pinned sections and the intro are built to start from the top) -->
+    <script is:inline>
+      try {
+        const nav = performance.getEntriesByType('navigation')[0];
+        if (nav && nav.type === 'reload') {
+          history.scrollRestoration = 'manual';
+          if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+          scrollTo(0, 0);
+        }
+      } catch (e) {}
+    </script>
     <ClientRouter />
   </head>
   <body>

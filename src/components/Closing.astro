@@ -1,28 +1,13 @@
 ---
+import LetterButton from './LetterButton.astro';
 ---
 
 <section class="end" id="enquire">
   <p class="eyebrow" data-reveal>Your Bengal awaits</p>
   <h2 data-reveal>Ready to meet<br />your kitten?</h2>
   <div class="ctas" data-reveal>
-    {
-      [
-        { label: 'View available kittens', solid: true },
-        { label: 'Get in touch', solid: false },
-      ].map(({ label, solid }) => {
-        const chars = [...label].map((ch, n) => <span class="cta-char" style={`--n:${n}`} data-ch={ch}>{ch}</span>);
-        const cls = ['cta', solid && 'cta--solid'];
-        return solid ? (
-          <a class:list={cls} href="/available-kittens" aria-label={label}>
-            <span class="cta-label" aria-hidden="true"><span class="cta-word">{chars}</span></span>
-          </a>
-        ) : (
-          <button type="button" class:list={cls} data-contact-trigger aria-label={label}>
-            <span class="cta-label" aria-hidden="true"><span class="cta-word">{chars}</span></span>
-          </button>
-        );
-      })
-    }
+    <LetterButton label="View available kittens" href="/available-kittens" solid />
+    <LetterButton label="Get in touch" contact />
   </div>
 </section>
 
@@ -58,47 +43,5 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 1rem;
-  }
-  .cta {
-    all: unset;
-    box-sizing: border-box;
-    display: inline-block;
-    cursor: pointer;
-    font-family: var(--font-body);
-    font-size: 0.78rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: 999px;
-    padding: 1rem 1.75rem;
-    transition: border-color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-  }
-  .cta--solid {
-    background: #fff;
-    color: var(--ink);
-  }
-  /* same hover as the finale buttons: the letters slide up one after another, a gold copy slides in from below */
-  .cta-label { display: block; overflow: hidden; line-height: 1.5; }
-  .cta-word { display: block; white-space: pre; }
-  .cta-char {
-    display: inline-block;
-    position: relative;
-    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-    transition-delay: calc(var(--n) * 0.025s);
-  }
-  .cta-char::after {
-    content: attr(data-ch);
-    position: absolute;
-    top: 100%;
-    left: 0;
-    color: var(--gold);
-  }
-  .cta--solid .cta-char::after { color: var(--gold-deep); }
-  @media (hover: hover) {
-    .cta:hover { border-color: var(--gold); }
-    .cta--solid:hover { border-color: #fff; }
-    .cta:hover .cta-char,
-    .cta:focus-visible .cta-char { transform: translateY(-100%); }
   }
 </style>

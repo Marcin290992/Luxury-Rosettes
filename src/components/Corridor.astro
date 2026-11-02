@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import LetterButton from './LetterButton.astro';
 import about from '../assets/img/story/about.webp';
 import parent from '../assets/img/story/champion-parent.webp';
 import standards from '../assets/img/story/our-standards.webp';
@@ -62,20 +63,8 @@ const items = [
           <h2>Meet your Bengal</h2>
           <p class="cor-finale-text">Placeholder text. A calm sentence or two about the next litter and how to reserve a kitten.</p>
           <div class="cor-ctas">
-            {
-              [
-                { label: 'View available kittens', solid: true },
-                { label: 'Join the waiting list', solid: false },
-              ].map(({ label, solid }) => (
-                <a class:list={['cor-cta', { 'cor-cta--solid': solid }]} href="#" aria-label={label}>
-                  <span class="cor-cta-label" aria-hidden="true">
-                    <span class="cor-cta-word">
-                      {[...label].map((ch, n) => <span class="cor-cta-char" style={`--n:${n}`} data-ch={ch}>{ch}</span>)}
-                    </span>
-                  </span>
-                </a>
-              ))
-            }
+            <LetterButton label="View available kittens" href="#" solid />
+            <LetterButton label="Join the waiting list" href="#" />
           </div>
         </div>
       </div>
@@ -380,46 +369,6 @@ const items = [
     flex-wrap: wrap;
     justify-content: center;
     gap: 1rem;
-  }
-  .cor-cta {
-    display: inline-block;
-    font-family: var(--font-body);
-    font-size: 0.78rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--fg);
-    text-decoration: none;
-    border: 1px solid color-mix(in srgb, var(--fg) 60%, transparent);
-    border-radius: 999px;
-    padding: 1rem 1.75rem;
-    transition: border-color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-  }
-  .cor-cta--solid {
-    background: var(--fg);
-    color: var(--inv);
-  }
-  /* same hover as the nav: the letters slide up one after another, a gold copy slides in from below */
-  .cor-cta-label { display: block; overflow: hidden; line-height: 1.5; }
-  .cor-cta-word { display: block; white-space: pre; }
-  .cor-cta-char {
-    display: inline-block;
-    position: relative;
-    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-    transition-delay: calc(var(--n) * 0.025s);
-  }
-  .cor-cta-char::after {
-    content: attr(data-ch);
-    position: absolute;
-    top: 100%;
-    left: 0;
-    color: var(--gold);
-  }
-  .cor-cta--solid .cor-cta-char::after { color: var(--gold-deep); } /* gold would vanish on the light button */
-  @media (hover: hover) {
-    .cor-cta:hover { border-color: var(--gold); }
-    .cor-cta--solid:hover { border-color: var(--fg); }
-    .cor-cta:hover .cor-cta-char,
-    .cor-cta:focus-visible .cor-cta-char { transform: translateY(-100%); }
   }
   .cor-finale-copy .cor-eyebrow {
     color: var(--fg);

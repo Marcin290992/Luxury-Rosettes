@@ -18,7 +18,7 @@ const lines = (text: string) => text.split(/(?<=[.!?])\s+/);
 <section class="faq" id="faq">
   <div class="faq-head">
     <p class="eyebrow" data-reveal>Before you decide</p>
-    <h2 data-reveal>Questions, <em>answered</em></h2>
+    <h2 data-reveal>Questions, answered</h2>
   </div>
   <div class="faq-list">
     {
@@ -89,34 +89,20 @@ const lines = (text: string) => text.split(/(?<=[.!?])\s+/);
   .faq-head {
     margin-bottom: clamp(2.5rem, 6vh, 4rem);
   }
+  /* the same type as the "Meet your Bengal" finale */
   .eyebrow {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
     font-family: var(--font-body);
-    font-size: 0.72rem;
-    letter-spacing: 0.28em;
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--gold-deep);
-    margin: 0 0 1.25rem;
-  }
-  .eyebrow::before {
-    content: '';
-    width: 2.5rem;
-    border-top: 1px solid var(--gold-deep);
+    margin: 0 0 1rem;
   }
   h2 {
     font-family: var(--font-heading);
-    font-weight: 300;
-    font-size: clamp(2.6rem, 6vw, 4.6rem);
-    line-height: 1;
-    letter-spacing: -0.01em;
-    margin: 0;
-  }
-  h2 em {
-    font-style: italic;
     font-weight: 400;
-    color: var(--gold-deep);
+    font-size: clamp(2.4rem, 8vw, 3.5rem);
+    line-height: 1.02;
+    margin: 0;
   }
 
   /* the conversation: questions from the left, answers from the right */

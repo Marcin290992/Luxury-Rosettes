@@ -48,12 +48,24 @@ import expandImg from '../assets/img/expand.webp';
     >
       <Fragment slot="headline">
         <p class="kit-eyebrow">The cattery</p>
-        <h2 class="kit-title">Born at home, <em>raised</em> with love</h2>
+        <h2 class="kit-title">Born at home, raised with love</h2>
       </Fragment>
       <p class="kit-text">Every kitten grows up in our home among people, health-tested and TICA registered, until it is ready to meet you.</p>
       <p class="kit-actions">
-        <a class="kit-pill" href="/available-kittens">View available kittens</a>
-        <a class="kit-link" href="#cats">Meet the parents</a>
+        {
+          [
+            { label: 'View available kittens', href: '/available-kittens', solid: true },
+            { label: 'Meet the parents', href: '#cats', solid: false },
+          ].map(({ label, href, solid }) => (
+            <a class:list={['kit-cta', { 'kit-cta--solid': solid }]} href={href} aria-label={label}>
+              <span class="kit-cta-label" aria-hidden="true">
+                <span class="kit-cta-word">
+                  {[...label].map((ch, n) => <span class="kit-cta-char" style={`--n:${n}`} data-ch={ch}>{ch}</span>)}
+                </span>
+              </span>
+            </a>
+          ))
+        }
       </p>
     </TileReveal>
     <Testimonials />
@@ -67,94 +79,82 @@ import expandImg from '../assets/img/expand.webp';
 </Layout>
 
 <style is:global>
-  /* the headline and text sit at the bottom of the stage, below where the photos fly in */
+  /* same type as the "Meet your Bengal" finale: eyebrow, heading, text and the two pill buttons */
   #kittens .tr-content {
-    justify-content: flex-end;
-    padding-bottom: clamp(3rem, 10vh, 6rem);
+    justify-content: center;
   }
   #kittens .kit-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 0 0 1.25rem;
+    margin: 0 0 1rem;
     font-family: var(--font-body);
-    font-size: 0.72rem;
-    letter-spacing: 0.28em;
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--gold);
-  }
-  #kittens .kit-eyebrow::before,
-  #kittens .kit-eyebrow::after {
-    content: '';
-    width: 2.5rem;
-    border-top: 1px solid var(--gold);
+    color: #fff;
   }
   #kittens .kit-title {
-    margin: 0;
+    margin: 0 0 1rem;
     font-family: var(--font-heading);
-    font-weight: 300;
-    font-size: clamp(2.8rem, 7vw, 5.6rem);
-    line-height: 1;
-    letter-spacing: -0.01em;
-  }
-  #kittens .kit-title em {
-    font-style: italic;
     font-weight: 400;
-    color: var(--gold);
+    font-size: clamp(2.4rem, 8vw, 3.5rem);
+    line-height: 1.02;
   }
   #kittens .tr-reveal {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.75rem;
   }
   #kittens .kit-text {
-    max-width: 30rem;
-    margin: 0;
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    line-height: 1.8;
-    opacity: 0.75;
+    max-width: 34rem;
+    margin: 0 0 2rem;
+    font-size: 1.1rem;
+    line-height: 1.5;
   }
   #kittens .kit-actions {
     margin: 0;
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
     justify-content: center;
-    gap: 1.75rem;
+    gap: 1rem;
   }
-  #kittens .kit-pill {
+  #kittens .kit-cta {
+    display: inline-block;
     font-family: var(--font-body);
     font-size: 0.78rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--ink-warm);
-    background: var(--gold);
+    color: #fff;
     text-decoration: none;
-    border: 1px solid var(--gold);
+    border: 1px solid rgba(255, 255, 255, 0.6);
     border-radius: 999px;
     padding: 1rem 1.75rem;
-    transition: background 0.4s, color 0.4s;
+    transition: border-color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
   }
-  #kittens .kit-pill:hover {
-    background: transparent;
+  #kittens .kit-cta--solid {
+    background: #fff;
+    color: var(--ink);
+  }
+  /* same hover as the finale buttons */
+  #kittens .kit-cta-label { display: block; overflow: hidden; line-height: 1.5; }
+  #kittens .kit-cta-word { display: block; white-space: pre; }
+  #kittens .kit-cta-char {
+    display: inline-block;
+    position: relative;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    transition-delay: calc(var(--n) * 0.025s);
+  }
+  #kittens .kit-cta-char::after {
+    content: attr(data-ch);
+    position: absolute;
+    top: 100%;
+    left: 0;
     color: var(--gold);
   }
-  #kittens .kit-link {
-    font-family: var(--font-body);
-    font-size: 0.78rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--cream);
-    text-decoration: none;
-    border-bottom: 1px solid rgba(239, 233, 220, 0.4);
-    padding-bottom: 0.4rem;
-    transition: color 0.4s, border-color 0.4s;
-  }
-  #kittens .kit-link:hover {
-    color: var(--gold);
-    border-color: var(--gold);
+  #kittens .kit-cta--solid .kit-cta-char::after { color: var(--gold-deep); }
+  @media (hover: hover) {
+    #kittens .kit-cta:hover { border-color: var(--gold); }
+    #kittens .kit-cta--solid:hover { border-color: #fff; }
+    #kittens .kit-cta:hover .kit-cta-char,
+    #kittens .kit-cta:focus-visible .kit-cta-char { transform: translateY(-100%); }
   }
 </style>
 

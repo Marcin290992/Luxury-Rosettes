@@ -46,8 +46,10 @@ export function initTileReveal(root: HTMLElement, o: TileRevealOptions) {
   const flyEnd = longest > 0 ? 1 + (longest - 1) * o.stagger : 0;
   const zoomStart = Math.max(0, flyEnd - o.overlap);
   const splitStart = zoomStart + 0.5;
-  const contentStart = zoomStart + 1 - 0.32;
-  const total = Math.max(zoomStart + 1, contentStart + 0.32, 0.001);
+  // the headline comes in once the tiles have mostly parted, the text and buttons follow it
+  const headStart = zoomStart + 0.8;
+  const contentStart = headStart + 0.3;
+  const total = Math.max(zoomStart + 1, contentStart + 0.3, 0.001);
   const rows = Math.ceil(count / cols);
   const plan = tiles.map((_, i) => {
     const c = i % cols;
@@ -76,7 +78,8 @@ export function initTileReveal(root: HTMLElement, o: TileRevealOptions) {
     const flyDistance = (stageH + gridH) / 2;
     const z = inOut(clamp(u - zoomStart, 0, 1), 3);
     const s = inOut(clamp((u - splitStart) / 0.5, 0, 1), 1);
-    const show = inOut(clamp((u - contentStart) / 0.32, 0, 1), 2);
+    const showHead = inOut(clamp((u - headStart) / 0.3, 0, 1), 2);
+    const show = inOut(clamp((u - contentStart) / 0.3, 0, 1), 2);
     const scale = Math.max(o.zoom, 1);
     grid.style.transform = `scale(${1 + (scale - 1) * z})`;
 
@@ -100,9 +103,9 @@ export function initTileReveal(root: HTMLElement, o: TileRevealOptions) {
     });
 
     if (headline) {
-      // the headline waits with the text: while the photos fly it would only be covered by them
-      headline.style.opacity = show.toFixed(3);
-      headline.style.transform = `translate3d(0, ${(((revealH + o.contentGap) / 2) * (1 - show)).toFixed(2)}px, 0)`;
+      // the headline waits until the photos have parted; it stays in its place (the group is centred) and only rises a little
+      headline.style.opacity = showHead.toFixed(3);
+      headline.style.transform = `translate3d(0, ${((1 - showHead) * 16).toFixed(2)}px, 0)`;
     }
     if (reveal) {
       reveal.style.opacity = show.toFixed(3);

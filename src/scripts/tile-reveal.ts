@@ -71,7 +71,6 @@ export function initTileReveal(root: HTMLElement, o: TileRevealOptions) {
   let stageH = 0;
   let gridW = 0;
   let gridH = 0;
-  let revealH = 0;
 
   const paint = (progress: number) => {
     const u = progress * total;
@@ -126,7 +125,6 @@ export function initTileReveal(root: HTMLElement, o: TileRevealOptions) {
     stageH = box.height;
     gridW = grid.offsetWidth;
     gridH = grid.offsetHeight;
-    revealH = reveal?.offsetHeight ?? 0;
     paint(state.shown);
   };
 

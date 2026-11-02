@@ -31,7 +31,7 @@ const steps = [
       <div class="stack-aside">
         <header class="process-head">
           <p class="eyebrow">Before you decide</p>
-          <h2>From first message<br />to your kitten at home</h2>
+          <h2 data-line-reveal>From first message<br />to your kitten at home</h2>
         </header>
         <ol class="stack-nav" aria-hidden="true">
           {steps.map((s) => <li>{s.title}</li>)}
@@ -64,12 +64,18 @@ const steps = [
 <script>
   import { mount } from '../scripts/lifecycle';
   import { initScrollStack } from '../scripts/scroll-stack';
+  import { initLineReveal } from '../scripts/line-reveal';
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
   import { SCROLL_STACK } from '../scripts/settings';
 
   mount(() => {
     const root = document.querySelector<HTMLElement>('#process .stack')!;
     const motion = window.matchMedia('(prefers-reduced-motion: no-preference)');
     let destroy: (() => void) | undefined;
+    const lines = initLineReveal(Array.from(root.querySelectorAll<HTMLElement>('[data-line-reveal]')));
 
     // the stack runs whenever motion is allowed (and follows the setting if it changes while the page is open)
     const sync = () => {
@@ -78,7 +84,27 @@ const steps = [
       delete root.dataset.live;
       if (motion.matches) {
         root.dataset.live = '';
-        destroy = initScrollStack(root, SCROLL_STACK);
+        const stack = initScrollStack(root, SCROLL_STACK);
+        // the entrance, on time and not on scroll: the cards unfold from the top edge down. The stack sets a clip-path on
+        // every card; this one is on the frame around them, so the two do not meet.
+        const frame = root.querySelector<HTMLElement>('.stack-frame')!;
+        const unfold = gsap.fromTo(
+          frame,
+          { clipPath: 'inset(0% 0% 100% 0%)' },
+          {
+            clipPath: 'inset(0% 0% 0% 0%)',
+            duration: 1.3,
+            ease: 'power3.inOut',
+            clearProps: 'clipPath',
+            scrollTrigger: { trigger: root, start: 'top 55%', toggleActions: 'play none none reverse' },
+          },
+        );
+        destroy = () => {
+          unfold.scrollTrigger?.kill();
+          unfold.kill();
+          frame.style.clipPath = '';
+          stack();
+        };
       }
     };
     motion.addEventListener('change', sync);
@@ -86,6 +112,7 @@ const steps = [
 
     return () => {
       motion.removeEventListener('change', sync);
+      lines();
       destroy?.();
       delete root.dataset.live;
     };

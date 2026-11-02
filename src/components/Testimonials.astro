@@ -17,7 +17,7 @@ const reviews = [featured, ...others];
   <div class="tm-head">
     <div>
       <p class="eyebrow" data-reveal>Families</p>
-      <h2 data-reveal>In their words</h2>
+      <h2 data-line-reveal>In their words</h2>
     </div>
     <div class="tm-nav" data-reveal>
       <span class="tm-count" aria-live="polite"><b>01</b> / {String(reviews.length).padStart(2, '0')}</span>
@@ -41,6 +41,7 @@ const reviews = [featured, ...others];
 
 <script>
   import { mount } from '../scripts/lifecycle';
+  import { initLineReveal } from '../scripts/line-reveal';
 
   // The reviews sit in one row. The active one is centred and full size; the others stand beside it, smaller and dimmer,
   // and every step slides the whole row so the next one becomes the main one.
@@ -52,6 +53,7 @@ const reviews = [featured, ...others];
     const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('.tm-btn'));
     const count = root.querySelector<HTMLElement>('.tm-count b')!;
     let index = 0;
+    const lines = initLineReveal(Array.from(root.querySelectorAll<HTMLElement>('[data-line-reveal]')));
 
     const place = () => {
       const slide = slides[index];
@@ -100,6 +102,7 @@ const reviews = [featured, ...others];
       view.removeEventListener('pointerdown', onDown);
       view.removeEventListener('pointerup', onUp);
       resize.disconnect();
+      lines();
       track.style.transform = '';
     };
   });

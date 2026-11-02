@@ -316,6 +316,14 @@ export const TILE_REVEAL = {
   contentGap: 28, // px between the headline and the text under it
 };
 
+// ---- line reveal (headings and paragraphs: each line rises out of a mask as it scrolls into view) -------------------------
+export const LINE_REVEAL = {
+  start: 'top 88%', // the line starts when the text is this far up the screen
+  duration: 1.1, // s
+  stagger: 0.09, // s between lines
+  ease: 'power3.out',
+};
+
 // ---- FAQ chat (each question and answer is a bubble: a dot with typing dots that opens into the message) --------------
 export const FAQ_CHAT = {
   dot: 56, // px: the size of the bubble while it is still a dot

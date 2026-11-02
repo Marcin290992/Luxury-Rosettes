@@ -163,6 +163,18 @@ const spots = [
       gsap.set(halfL, { x: () => -W() * 0.007, y: () => H() * 0.06 });
       gsap.set(halfR, { x: () => W() * 0.007, y: () => -H() * 0.06 });
 
+      // The entrance, on time and not on scroll: when the photo arrives the left tile unrolls from the left edge to the right,
+      // then the right tile unrolls from the right edge to the left, like a curtain in two parts. After that the scroll takes over.
+      const open = gsap.timeline({
+        scrollTrigger: { trigger: img, start: 'top 85%', toggleActions: 'play none none reverse' },
+        onComplete: () => {
+          gsap.set([halfL, halfR], { clearProps: 'clipPath' });
+        },
+      });
+      open
+        .fromTo(halfL, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'power3.inOut', immediateRender: true })
+        .fromTo(halfR, { clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'power3.inOut', immediateRender: true }, '>-0.25');
+
       // A sticky stage inside a tall track: the scroll position scrubs the timeline (no GSAP pin: on touch screens it
       // would switch the stage to position:fixed on the main thread and jitter).
       const tl = gsap.timeline({

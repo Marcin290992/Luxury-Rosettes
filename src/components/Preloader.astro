@@ -1,0 +1,238 @@
+---
+import { Image } from 'astro:assets';
+import kita from '../assets/img/cats/kita.webp';
+import candy from '../assets/img/cats/candy.webp';
+import draco from '../assets/img/cats/draco.webp';
+import cosmo from '../assets/img/cats/cosmo.webp';
+import charlie from '../assets/img/cats/charlie.webp';
+import chester from '../assets/img/cats/chester.webp';
+import hero from '../assets/img/hero_img.webp';
+import logo from '../assets/logo/logo-cat.svg';
+import { PRELOADER as P } from '../scripts/settings';
+
+// the photos that flash by in the frame; the last one is the hero's own, so the frame opens onto the page it hands over to
+const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
+---
+
+<!--
+  Intro for every real load of the home page. The inline script runs before anything is painted and only marks <html> when the
+  intro should play (a real page load of the home page, a refresh too, motion allowed; not a click through from another page). Otherwise none of this
+  is shown. The hero waits for the `preloader-done` event (see Hero.astro).
+-->
+<script is:inline>
+  try {
+    if (
+      document.readyState === 'loading' &&
+      location.pathname === '/' &&
+      !matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      document.documentElement.classList.add('preloading', 'preloaded');
+    }
+  } catch (e) {}
+</script>
+
+<div class="preloader" aria-hidden="true" style={`--pl-w:${P.frame.width}px;--pl-h:${P.frame.height}px`}>
+  <div class="pl-head">
+    <p class="pl-word">{P.words[0]}</p>
+    <div class="pl-brand">
+      <img class="pl-logo" src={logo.src} alt="" width="40" height="70" />
+      <p class="pl-title">Luxury Rosettes</p>
+      <p class="pl-sub">Bengal Cattery</p>
+    </div>
+  </div>
+  <div class="pl-frame">
+    {
+      photos.map((img, i) =>
+        i === photos.length - 1 ? (
+          // the hero's own photo, at the same sizes as the hero, so it is the file the page already has
+          <Image src={img} alt="" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" class:list={['pl-photo', 'pl-hero', { 'is-on': false }]} />
+        ) : (
+          <Image src={img} alt="" width={600} loading="eager" class:list={['pl-photo', { 'is-on': i === 0 }]} />
+        ),
+      )
+    }
+  </div>
+  <div class="pl-foot">
+    <p class="pl-count">000</p>
+  </div>
+</div>
+
+<script>
+  import gsap from 'gsap';
+  import { CustomEase } from 'gsap/CustomEase';
+  import { mount } from '../scripts/lifecycle';
+  import { PRELOADER as P } from '../scripts/settings';
+
+  gsap.registerPlugin(CustomEase);
+  CustomEase.create('hop', '0.8, 0, 0.1, 1');
+
+  mount(() => {
+    const root = document.documentElement;
+    const el = document.querySelector<HTMLElement>('.preloader');
+    if (!el || !root.classList.contains('preloading')) return;
+
+    const word = el.querySelector<HTMLElement>('.pl-word')!;
+    const count = el.querySelector<HTMLElement>('.pl-count')!;
+    const frame = el.querySelector<HTMLElement>('.pl-frame')!;
+    const photos = Array.from(el.querySelectorAll<HTMLElement>('.pl-photo'));
+    const texts = [word, count, el.querySelector<HTMLElement>('.pl-brand')!];
+
+    const progress = { n: 0 };
+    let shownWord = 0;
+    let shownPhoto = 0;
+    const draw = () => {
+      count.textContent = String(Math.round(progress.n)).padStart(3, '0');
+      const w = Math.min(P.words.length - 1, Math.floor((progress.n / 100) * P.words.length));
+      if (w !== shownWord) {
+        shownWord = w;
+        word.textContent = P.words[w];
+      }
+      // the photos go round `rounds` times and the count ends on the last one (the hero's)
+      const last = photos.length - 1;
+      const step = Math.floor((progress.n / 100) * photos.length * P.rounds) % photos.length;
+      const idx = progress.n >= 100 ? last : step === last ? 0 : step;
+      if (idx !== shownPhoto) {
+        shownPhoto = idx;
+        photos.forEach((ph, i) => ph.classList.toggle('is-on', i === idx));
+      }
+    };
+
+    // the event may come before or after the hero is ready to listen: the class tells it which
+    const handOver = () => {
+      root.classList.add('intro-handed');
+      document.dispatchEvent(new CustomEvent('preloader-done'));
+    };
+    const finish = () => {
+      root.classList.remove('preloading');
+      el.remove();
+    };
+
+    const tl = gsap.timeline({ delay: 0.2 });
+    tl.to(progress, { n: 100, duration: P.count, ease: 'power1.inOut', onUpdate: draw });
+    tl.to(texts, { opacity: 0, duration: 0.3 }, `+=${P.holdBefore}`);
+    // the frame grows from where it is to the whole screen
+    tl.add(() => {
+      // the last photo is the page's background: cropped exactly like the hero's, so nothing moves when the preloader goes
+      const heroPhoto = document.querySelector<HTMLElement>('.hero-img');
+      const last = photos[photos.length - 1];
+      if (heroPhoto?.style.objectPosition) last.style.objectPosition = heroPhoto.style.objectPosition;
+      const r = frame.getBoundingClientRect();
+      gsap.set(frame, { position: 'fixed', top: r.top, left: r.left, width: r.width, height: r.height, margin: 0, translate: 'none' });
+      gsap.to(frame, { top: 0, left: 0, width: innerWidth, height: innerHeight, duration: P.open, ease: 'hop' });
+    });
+    // the hero starts its own opening while the preloader melts away over it
+    tl.add(handOver, `+=${P.open}`);
+    tl.to(el, { opacity: 0, duration: P.fade, ease: 'power1.out', onComplete: finish });
+
+    return () => {
+      tl.kill();
+      if (root.classList.contains('preloading')) {
+        root.classList.remove('preloading');
+        handOver();
+      }
+      el.remove();
+    };
+  });
+</script>
+
+<style is:global>
+  html.preloading,
+  html.preloading body {
+    overflow: hidden;
+  }
+  /* the preloader is its own curtain: the hero's black one is not needed after it */
+  html.preloaded .hero-curtain {
+    display: none;
+  }
+  /* until the intro runs (or when it is not going to run) the preloader does not exist */
+  .preloader {
+    display: none;
+  }
+  html.preloading .preloader {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-heading);
+  }
+  .pl-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+  /* the same lockup as in the open menu: the cat, the name in gold, the line under it */
+  .pl-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .pl-logo {
+    width: clamp(1.6rem, 3vw, 2.4rem);
+    height: auto;
+    margin-bottom: 0.6rem;
+  }
+  .pl-title {
+    margin: 0;
+    font-family: var(--font-logo, 'Cinzel Decorative', serif);
+    font-size: clamp(0.95rem, 2vw, 1.4rem);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    white-space: nowrap;
+    color: #ba8e47; /* gold from the logo */
+  }
+  .pl-sub {
+    margin: 0.5rem 0 0;
+    font-family: var(--font-heading, 'Cormorant Garamond', serif);
+    font-size: clamp(0.6rem, 1.2vw, 0.8rem);
+    font-weight: 400;
+    letter-spacing: 0.75em;
+    padding-left: 0.75em; /* balances the trailing letter-spacing so it centres */
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .pl-word {
+    margin: 0;
+    font-size: clamp(2.6rem, 8vw, 7rem);
+    line-height: 1;
+  }
+  .pl-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--pl-w);
+    height: var(--pl-h);
+    overflow: hidden;
+    translate: -50% -50%;
+    background: var(--placeholder);
+  }
+  .pl-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+  }
+  .pl-photo.is-on {
+    opacity: 1;
+  }
+  .pl-foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .pl-count {
+    margin: 0;
+    font-size: clamp(2.6rem, 8vw, 7rem);
+    line-height: 0.9;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+</style>

@@ -120,7 +120,8 @@ import hero from '../assets/img/hero_img.webp';
       gsap.set(chars, { yPercent: WORD_HIDDEN });
       gsap.set(title, { opacity: 1 });
       gsap.set(rail, { y: HERO.railRise });
-      gsap.set(media, { scale: HERO.mediaZoom });
+      // after the intro the photo is already on screen (the preloader's last frame): no second zoom on top of it
+      gsap.set(media, { scale: document.documentElement.classList.contains('preloading') ? 1 : HERO.mediaZoom });
       if (nav) gsap.set(nav, { autoAlpha: 0 });
     }
 
@@ -132,6 +133,12 @@ import hero from '../assets/img/hero_img.webp';
     ]).then(() => {
       if (cancelled) return;
       fit();
+      // the intro (Preloader.astro) is on top of the page: the opening waits until it hands over
+      if (document.documentElement.classList.contains('preloading') && !document.documentElement.classList.contains('intro-handed')) {
+        return new Promise<void>((resolve) => document.addEventListener('preloader-done', () => resolve(), { once: true }));
+      }
+    }).then(() => {
+      if (cancelled) return;
       // everything is measured and laid out: lift the curtain and show the nav (until now the page stays black)
       hero.dataset.ready = '';
       document.documentElement.classList.add('intro-ready');

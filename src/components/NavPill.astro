@@ -75,6 +75,7 @@ const isCurrent = (href: string) =>
 <script>
   import { navigate } from 'astro:transitions/client';
   import { mount } from '../scripts/lifecycle';
+  import { getLenis } from '../scripts/lenis';
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
   mount(() => {
@@ -82,6 +83,7 @@ const isCurrent = (href: string) =>
     const btn = nav.querySelector<HTMLElement>('#menu-btn')!;
     const word = nav.querySelector<HTMLElement>('#menu-text .nav-word')!;
     const panel = nav.querySelector<HTMLElement>('#nav-panel')!;
+    const logo = nav.querySelector<HTMLElement>('.nav-logo')!;
 
     // one span per letter, like the server-rendered label, so the hover effect works on both words
     // (cloned, so the letters keep Astro's scoped-style attribute)
@@ -115,19 +117,31 @@ const isCurrent = (href: string) =>
         btn.focus();
       }
     };
-    // A link in the menu: the menu folds away first (its own animation, ~0.6s), and only then the page transition starts.
+    // A link in the menu or the logo: the menu folds away first (its own animation, ~0.6s), and only then the page transition
+    // starts. A link to the page you are already on does no transition at all: it just scrolls back to the top.
     let leaving = 0;
-    const onPanelClick = (e: MouseEvent) => {
+    const onLinkClick = (e: MouseEvent) => {
       const link = (e.target as Element).closest('a'); // a click on an icon inside a link counts as the link
       if (!link) return;
       const url = new URL(link.href, location.href);
-      const another = url.origin === location.origin && !(url.pathname === location.pathname && url.search === location.search) && !link.target && !link.hasAttribute('download');
+      const sameOrigin = url.origin === location.origin && !link.target && !link.hasAttribute('download');
+      const samePage = url.pathname === location.pathname && url.search === location.search;
       const plain = !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+      const wasOpen = nav.classList.contains('expanded');
       setOpen(false);
-      if (!another || !plain || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      if (!sameOrigin || !plain) return;
+      if (samePage) {
+        if (url.hash) return; // an anchor on this page: the browser scrolls to it
+        e.preventDefault();
+        const lenis = getLenis();
+        if (lenis) lenis.scrollTo(0);
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       e.preventDefault();
       window.clearTimeout(leaving);
-      leaving = window.setTimeout(() => navigate(url.href), 650);
+      leaving = window.setTimeout(() => navigate(url.href), wasOpen ? 650 : 0);
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {
@@ -141,7 +155,8 @@ const isCurrent = (href: string) =>
     btn.addEventListener('click', onToggle);
     document.addEventListener('click', onOutsideClick);
     document.addEventListener('keydown', onKeydown);
-    panel.addEventListener('click', onPanelClick);
+    panel.addEventListener('click', onLinkClick);
+    logo.addEventListener('click', onLinkClick);
     nav.addEventListener('click', onNavClick);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -150,7 +165,8 @@ const isCurrent = (href: string) =>
       btn.removeEventListener('click', onToggle);
       document.removeEventListener('click', onOutsideClick);
       document.removeEventListener('keydown', onKeydown);
-      panel.removeEventListener('click', onPanelClick);
+      panel.removeEventListener('click', onLinkClick);
+      logo.removeEventListener('click', onLinkClick);
       window.clearTimeout(leaving);
       nav.removeEventListener('click', onNavClick);
       window.removeEventListener('scroll', onScroll);

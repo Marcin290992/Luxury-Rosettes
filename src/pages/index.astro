@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
+import Preloader from '../components/Preloader.astro';
 import CursorTrail from '../components/CursorTrail.astro';
 import Stage from '../components/Stage.astro';
 import ScrollExpand from '../components/ScrollExpand.astro';
@@ -23,6 +24,7 @@ import expandImg from '../assets/img/expand.webp';
 ---
 
 <Layout>
+  <Preloader />
   <NavPill />
   <CursorTrail />
   <Stage />

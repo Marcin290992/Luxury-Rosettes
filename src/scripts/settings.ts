@@ -324,6 +324,17 @@ export const LINE_REVEAL = {
   ease: 'power3.out',
 };
 
+// ---- preloader (every real load of the home page: a counter, a frame of cycling photos that opens to the hero) --------
+export const PRELOADER = {
+  words: ['Bengal', 'Rosettes', 'Champion', 'Family', 'Home'], // the line that changes while it counts
+  count: 2.2, // s the counter and the photos take
+  holdBefore: 0.25, // s between the end of the count and the frame opening
+  open: 1.1, // s the frame takes to grow to the full screen
+  fade: 0.6, // s the preloader takes to melt away over the hero
+  rounds: 1.5, // how many times the photos go round while counting
+  frame: { width: 240, height: 300 }, // px, the small frame
+};
+
 // ---- FAQ chat (each question and answer is a bubble: a dot with typing dots that opens into the message) --------------
 export const FAQ_CHAT = {
   dot: 56, // px: the size of the bubble while it is still a dot

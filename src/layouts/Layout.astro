@@ -81,6 +81,33 @@ const {
     document.documentElement.style.setProperty('--vt-shift', `${(k * bar).toFixed(1)}px`);
   });
 
+  // Test switches for the jump at the start of a page transition on a phone (they stay for the visit; ?vtoff=0 / ?novtbg=0 clear them):
+  //   ?vtoff=1   the card swing is off on this device: the page just changes (tells whether the jump is in the card animation at all)
+  //   ?novtbg=1  the page has no dark colour of its own behind its content (the way it was before the "pale gap" fix)
+  const TESTS: Record<string, string> = { vtoff: 'vt-test-off', novtbg: 'no-vt-bg' };
+  const applyTests = () => {
+    try {
+      const params = new URLSearchParams(location.search);
+      for (const [key, cls] of Object.entries(TESTS)) {
+        const q = params.get(key);
+        if (q === '1') sessionStorage.setItem('lr-' + key, '1');
+        if (q === '0') sessionStorage.removeItem('lr-' + key);
+        document.documentElement.classList.toggle(cls, sessionStorage.getItem('lr-' + key) === '1');
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+  applyTests();
+  document.addEventListener('astro:after-swap', () => {
+    // the router rewrites <html>'s classes on a swap
+    try {
+      for (const [key, cls] of Object.entries(TESTS)) document.documentElement.classList.toggle(cls, sessionStorage.getItem('lr-' + key) === '1');
+    } catch {
+      /* ignore */
+    }
+  });
+
   // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap
   mount(() => {
     initLenis();
@@ -316,6 +343,14 @@ const {
         transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
       }
     }
+  }
+  /* test switches (see the script): ?vtoff=1 and ?novtbg=1 */
+  html.vt-test-off::view-transition-old(root),
+  html.vt-test-off::view-transition-new(root) {
+    animation: none;
+  }
+  html.no-vt-bg {
+    background: none;
   }
   @media (prefers-reduced-motion: reduce) {
     ::view-transition-old(root),

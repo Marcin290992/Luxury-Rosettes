@@ -50,7 +50,11 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
   </div>
   {/* the hero's own photo, at the same sizes as the hero, so it is the file the page already has. It is the real wallpaper: the size of the screen
       from the start, hidden; the small frame shows a window onto it (a clip-path) at the end of the count, and that window opens. It is never scaled. */}
-  <Image src={photos[photos.length - 1]} alt="" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" class="pl-photo pl-hero" />
+  <div class="pl-wall">
+    <Image src={photos[photos.length - 1]} alt="" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" class="pl-photo pl-hero" />
+    {/* the same dark tint the hero has over its photo; it grows in as the window opens, so at the hand-over the two are identical */}
+    <div class="pl-shade"></div>
+  </div>
   <div class="pl-foot">
     <p class="pl-count">000</p>
   </div>
@@ -84,10 +88,12 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
 
     const progress = { n: 0 };
     const wallpaper = photos[photos.length - 1];
+    const wall = el.querySelector<HTMLElement>('.pl-wall')!; // the window is cut out of this (photo and tint together)
+    const shade = el.querySelector<HTMLElement>('.pl-shade')!;
     // the four sides of the window (px from each edge); animated as numbers, because the browser shortens the written clip-path and a tween of that string goes wrong
     const win = { t: 0, r: 0, b: 0, l: 0 };
     const applyWindow = () => {
-      wallpaper.style.clipPath = `inset(${win.t.toFixed(2)}px ${win.r.toFixed(2)}px ${win.b.toFixed(2)}px ${win.l.toFixed(2)}px)`;
+      wall.style.clipPath = `inset(${win.t.toFixed(2)}px ${win.r.toFixed(2)}px ${win.b.toFixed(2)}px ${win.l.toFixed(2)}px)`;
     };
     // the window of the small frame, cut out of the full-screen wallpaper (cropped exactly like the hero's, so nothing moves when the preloader goes)
     const placeWindow = () => {
@@ -140,6 +146,7 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     // the window opens onto the wallpaper (the photo does not scale: only more of it is shown)
     tl.add(() => {
       gsap.to(win, { t: 0, r: 0, b: 0, l: 0, duration: P.open, ease: 'hop', onUpdate: applyWindow });
+      gsap.to(shade, { opacity: 1, duration: P.open, ease: 'hop' });
     });
     // the hero starts its own opening while the preloader melts away over it
     tl.add(handOver, `+=${P.open}`);
@@ -276,8 +283,20 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     opacity: 1;
   }
   /* the wallpaper: over the small frame, the size of the screen; only the window of the frame is shown until it opens */
-  .pl-hero {
+  .pl-wall {
+    position: absolute;
+    inset: 0;
     z-index: 1;
+    pointer-events: none;
+  }
+  .pl-shade {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    /* copied from the hero's tint (.hero::after in Hero.astro) */
+    background:
+      linear-gradient(to bottom, rgba(8, 7, 6, 0.55) 0%, rgba(8, 7, 6, 0.2) 35%, rgba(8, 7, 6, 0.65) 100%),
+      rgba(8, 7, 6, 0.3);
   }
   .pl-head,
   .pl-foot {

@@ -60,6 +60,27 @@ const {
 
   initDebug(); // only does anything when the page is opened with ?debug=1
 
+  // A test switch for the jump at the start of a page transition on a phone: ?vtshift=1 moves the snapshot of the page down by the
+  // height of the browser's address bar (bar = the largest window minus the window as it is now), -1 moves it up, 0 (or none) leaves it.
+  // It stays for the visit; ?vtshift=off clears it.
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none;';
+  document.addEventListener('astro:before-preparation', () => {
+    let k = 0;
+    try {
+      const q = new URLSearchParams(location.search).get('vtshift');
+      if (q === 'off') sessionStorage.removeItem('lrvtshift');
+      else if (q !== null) sessionStorage.setItem('lrvtshift', q);
+      k = parseFloat(sessionStorage.getItem('lrvtshift') || '0') || 0;
+    } catch {
+      /* ignore */
+    }
+    document.body.append(probe);
+    const bar = Math.max(0, probe.offsetHeight - innerHeight);
+    probe.remove();
+    document.documentElement.style.setProperty('--vt-shift', `${(k * bar).toFixed(1)}px`);
+  });
+
   // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap
   mount(() => {
     initLenis();
@@ -143,6 +164,7 @@ const {
     animation: none;
     height: 100vh;
     height: 100dvh;
+    translate: 0 var(--vt-shift, 0px); /* test switch, see ?vtshift in the script above */
   }
   ::view-transition-old(root),
   ::view-transition-new(root) {

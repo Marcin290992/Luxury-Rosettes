@@ -105,6 +105,8 @@ const isCurrent = (href: string) =>
       btn.setAttribute('aria-expanded', String(open));
       setLabel(open ? 'Close' : 'Menu');
       panel.toggleAttribute('inert', !open);
+      // the scenes that follow the scroll hold still while the menu is open (see `nav-menu` in awards-spiral.ts)
+      document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open, leaving: false } }));
     };
 
     // While the menu is open the pages it links to are fetched in the background (the click then only swaps them in: on a phone the
@@ -154,6 +156,7 @@ const isCurrent = (href: string) =>
       }
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       e.preventDefault();
+      document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open: false, leaving: true } })); // stays held until the page is gone
       window.clearTimeout(leaving);
       // the menu's fold takes ~0.6s and must be finished before the transition starts: the nav pill is its own layer in the transition and
       // freezes exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition)

@@ -377,8 +377,21 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     range.observe(root);
     ScrollTrigger.refresh(); // the track has just grown, so the triggers after it need their places again
 
+    // While the menu is open, and from the tap on a link until the page is gone, the scene holds still. On a phone the browser
+    // may shift the scroll position by the height of its address bar when the menu or the transition starts; the ribbon follows the
+    // scroll (the rest of the scene is pinned), so it was the one thing that visibly moved.
+    let hold = false;
+    let release = 0;
+    const onMenu = (e: Event) => {
+      const { open, leaving } = (e as CustomEvent<{ open: boolean; leaving: boolean }>).detail;
+      window.clearTimeout(release);
+      hold = open || leaving;
+      if (leaving) release = window.setTimeout(() => (hold = false), 5000); // the navigation never happened
+    };
+    document.addEventListener('nav-menu', onMenu);
+
     const draw = () => {
-      if (!near) return;
+      if (!near || hold) return;
       const dt = Math.min(gsap.ticker.deltaRatio(60) / 60, 0.05);
       const k = 1 - Math.pow(0.001, dt);
       shown += (target - shown) * k;
@@ -500,6 +513,8 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
 
     return () => {
       document.removeEventListener('astro:before-preparation', freeze);
+      document.removeEventListener('nav-menu', onMenu);
+      window.clearTimeout(release);
       window.clearTimeout(unfreeze);
       thaw();
       gsap.ticker.remove(draw);

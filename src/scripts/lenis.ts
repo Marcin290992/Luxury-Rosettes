@@ -30,7 +30,10 @@ export function initLenis() {
   // (it made the scenes jump, e.g. at the start of a page transition)
   ScrollTrigger.config({ ignoreMobileResize: true });
 
-  lenis = new Lenis({ ...SMOOTH_WHEEL, ...SMOOTH_TOUCH, smoothWheel: true, autoRaf: false });
+  // Android: the finger scrolls natively. Chrome there hides the address bar only for native scrolling; with Lenis driving the touch
+  // scroll the bar never went away. (iOS and the rest keep the heavier, Lenis-driven touch scroll.)
+  const android = /Android/i.test(navigator.userAgent);
+  lenis = new Lenis({ ...SMOOTH_WHEEL, ...(android ? { syncTouch: false } : SMOOTH_TOUCH), smoothWheel: true, autoRaf: false });
   lenis.on('scroll', ScrollTrigger.update);
   tick = (time) => lenis?.raf(time * 1000);
   gsap.ticker.add(tick);

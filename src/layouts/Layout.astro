@@ -55,7 +55,7 @@ const {
 
 <script>
   import { mount } from '../scripts/lifecycle';
-  import { getLenis, initLenis, destroyLenis } from '../scripts/lenis';
+  import { initLenis, destroyLenis } from '../scripts/lenis';
   import { initDebug } from '../scripts/debug-log';
 
   initDebug(); // only does anything when the page is opened with ?debug=1
@@ -65,11 +65,7 @@ const {
   // It stays for the visit; ?vtshift=off clears it.
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none;';
-  let outgoingScrollY = 0;
-  let viewportChromeGap = 0;
-  let transitionFinished: Promise<unknown> | undefined;
   document.addEventListener('astro:before-preparation', () => {
-    outgoingScrollY = window.scrollY;
     let k = 0;
     try {
       const q = new URLSearchParams(location.search).get('vtshift');
@@ -81,29 +77,8 @@ const {
     }
     document.body.append(probe);
     const bar = Math.max(0, probe.offsetHeight - innerHeight);
-    viewportChromeGap = bar;
     probe.remove();
     document.documentElement.style.setProperty('--vt-shift', `${(k * bar).toFixed(1)}px`);
-  });
-  document.addEventListener('astro:before-swap', (event) => {
-    const transition = (event as Event & { viewTransition?: { finished: Promise<unknown> } }).viewTransition;
-    transitionFinished = transition?.finished;
-  });
-  document.addEventListener('astro:after-swap', () => {
-    const finished = transitionFinished;
-    if (outgoingScrollY <= 0 || viewportChromeGap < 24 || !finished) return;
-
-    // Astro scrolls the incoming document to the top before this event. Restore the outgoing
-    // position before its first captured frame, so Android's browser controls stay settled.
-    window.scrollTo({ left: 0, top: outgoingScrollY, behavior: 'instant' });
-    const scrollToTop = () => {
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const lenis = getLenis();
-      if (!reduceMotion && lenis) lenis.scrollTo(0, { duration: 0.45 });
-      else window.scrollTo({ left: 0, top: 0, behavior: reduceMotion ? 'instant' : 'smooth' });
-    };
-    void finished.then(scrollToTop, scrollToTop);
-    transitionFinished = undefined;
   });
 
   // Test switches for the jump at the start of a page transition on a phone (they stay for the visit; ?vtoff=0 / ?novtbg=0 clear them):

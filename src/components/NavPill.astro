@@ -237,6 +237,14 @@ const isCurrent = (href: string) =>
     border-radius: 28px;
   }
 
+  @media (pointer: coarse), (max-width: 1024px) {
+    .nav-pill.expanded {
+      --glass: rgba(24, 20, 16, 0.96);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
   .nav-header {
     display: grid;
     grid-template-columns: 1fr auto 1fr;

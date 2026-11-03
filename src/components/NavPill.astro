@@ -117,10 +117,13 @@ const isCurrent = (href: string) =>
         if (u.origin === location.origin && u.pathname !== location.pathname) prefetch(u.pathname + u.search, { ignoreSlowConnection: true });
       });
     };
+    let warmTimer = 0;
     const onToggle = () => {
       const open = !nav.classList.contains('expanded');
       setOpen(open);
-      if (open) warm();
+      // the pages are fetched once the menu has finished opening (~1s), not while it animates: the downloads competed with the animation on a phone
+      window.clearTimeout(warmTimer);
+      if (open) warmTimer = window.setTimeout(warm, 1100);
     };
     // Close on outside click, Escape, or after choosing a link
     const onOutsideClick = (e: MouseEvent) => {
@@ -187,6 +190,7 @@ const isCurrent = (href: string) =>
       panel.removeEventListener('click', onLinkClick);
       logo.removeEventListener('click', onLinkClick);
       window.clearTimeout(leaving);
+      window.clearTimeout(warmTimer);
       nav.removeEventListener('click', onNavClick);
       window.removeEventListener('scroll', onScroll);
     };
@@ -235,14 +239,6 @@ const isCurrent = (href: string) =>
 
   .nav-pill.expanded {
     border-radius: 28px;
-  }
-
-  @media (pointer: coarse), (max-width: 1024px) {
-    .nav-pill.expanded {
-      --glass: rgba(24, 20, 16, 0.96);
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
   }
 
   .nav-header {

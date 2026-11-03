@@ -32,6 +32,7 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
 </script>
 
 <div class="preloader" aria-hidden="true" style={`--pl-w:${P.frame.width}px;--pl-h:${P.frame.height}px`}>
+  <div class="pl-veil"></div>
   <div class="pl-head">
     <p class="pl-word">{P.words[0]}</p>
     <div class="pl-brand">
@@ -42,16 +43,14 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
   </div>
   <div class="pl-frame">
     {
-      photos.map((img, i) =>
-        i === photos.length - 1 ? (
-          // the hero's own photo, at the same sizes as the hero, so it is the file the page already has
-          <Image src={img} alt="" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" class:list={['pl-photo', 'pl-hero', { 'is-on': false }]} />
-        ) : (
-          <Image src={img} alt="" width={600} loading="eager" class:list={['pl-photo', { 'is-on': i === 0 }]} />
-        ),
-      )
+      photos.slice(0, -1).map((img, i) => (
+        <Image src={img} alt="" width={600} loading="eager" class:list={['pl-photo', { 'is-on': i === 0 }]} />
+      ))
     }
   </div>
+  {/* the hero's own photo, at the same sizes as the hero, so it is the file the page already has. It is the real wallpaper: the size of the screen
+      from the start, hidden; the small frame shows a window onto it (a clip-path) at the end of the count, and that window opens. It is never scaled. */}
+  <Image src={photos[photos.length - 1]} alt="" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" class="pl-photo pl-hero" />
   <div class="pl-foot">
     <p class="pl-count">000</p>
   </div>
@@ -76,8 +75,31 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     const frame = el.querySelector<HTMLElement>('.pl-frame')!;
     const photos = Array.from(el.querySelectorAll<HTMLElement>('.pl-photo'));
     const texts = [word, count, el.querySelector<HTMLElement>('.pl-brand')!];
+    const veil = el.querySelector<HTMLElement>('.pl-veil')!;
+    const parts = [el.querySelector<HTMLElement>('.pl-head')!, frame, el.querySelector<HTMLElement>('.pl-foot')!];
+    let dead = false;
+
+    // it starts dark and empty: nothing pops in while the fonts and the first photos are still loading
+    gsap.set(parts, { opacity: 0, y: 18 });
 
     const progress = { n: 0 };
+    const wallpaper = photos[photos.length - 1];
+    // the four sides of the window (px from each edge); animated as numbers, because the browser shortens the written clip-path and a tween of that string goes wrong
+    const win = { t: 0, r: 0, b: 0, l: 0 };
+    const applyWindow = () => {
+      wallpaper.style.clipPath = `inset(${win.t.toFixed(2)}px ${win.r.toFixed(2)}px ${win.b.toFixed(2)}px ${win.l.toFixed(2)}px)`;
+    };
+    // the window of the small frame, cut out of the full-screen wallpaper (cropped exactly like the hero's, so nothing moves when the preloader goes)
+    const placeWindow = () => {
+      const heroPhoto = document.querySelector<HTMLElement>('.hero-img');
+      if (heroPhoto?.style.objectPosition) wallpaper.style.objectPosition = heroPhoto.style.objectPosition;
+      const r = frame.getBoundingClientRect();
+      win.t = r.top;
+      win.r = innerWidth - r.right;
+      win.b = innerHeight - r.bottom;
+      win.l = r.left;
+      applyWindow();
+    };
     let shownWord = 0;
     let shownPhoto = 0;
     const draw = () => {
@@ -93,6 +115,7 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
       const idx = progress.n >= 100 ? last : step === last ? 0 : step;
       if (idx !== shownPhoto) {
         shownPhoto = idx;
+        if (idx === last) placeWindow();
         photos.forEach((ph, i) => ph.classList.toggle('is-on', i === idx));
       }
     };
@@ -107,24 +130,33 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
       el.remove();
     };
 
-    const tl = gsap.timeline({ delay: 0.2 });
-    tl.to(progress, { n: 100, duration: P.count, ease: 'power1.inOut', onUpdate: draw });
+    const tl = gsap.timeline({ paused: true });
+    // 1. the dark clears and the words and the frame come in, one after another
+    tl.to(veil, { opacity: 0, duration: P.fadeIn, ease: 'power2.inOut' }, 0);
+    tl.to(parts, { opacity: 1, y: 0, duration: P.fadeIn, ease: 'power2.out', stagger: 0.14 }, 0.25);
+    // 2. then the count starts
+    tl.to(progress, { n: 100, duration: P.count, ease: 'power1.inOut', onUpdate: draw }, `>-0.2`);
     tl.to(texts, { opacity: 0, duration: 0.3 }, `+=${P.holdBefore}`);
-    // the frame grows from where it is to the whole screen
+    // the window opens onto the wallpaper (the photo does not scale: only more of it is shown)
     tl.add(() => {
-      // the last photo is the page's background: cropped exactly like the hero's, so nothing moves when the preloader goes
-      const heroPhoto = document.querySelector<HTMLElement>('.hero-img');
-      const last = photos[photos.length - 1];
-      if (heroPhoto?.style.objectPosition) last.style.objectPosition = heroPhoto.style.objectPosition;
-      const r = frame.getBoundingClientRect();
-      gsap.set(frame, { position: 'fixed', top: r.top, left: r.left, width: r.width, height: r.height, margin: 0, translate: 'none' });
-      gsap.to(frame, { top: 0, left: 0, width: innerWidth, height: innerHeight, duration: P.open, ease: 'hop' });
+      gsap.to(win, { t: 0, r: 0, b: 0, l: 0, duration: P.open, ease: 'hop', onUpdate: applyWindow });
     });
     // the hero starts its own opening while the preloader melts away over it
     tl.add(handOver, `+=${P.open}`);
     tl.to(el, { opacity: 0, duration: P.fade, ease: 'power1.out', onComplete: finish });
 
+    const first = photos[0] as HTMLImageElement;
+    const logo = el.querySelector<HTMLImageElement>('.pl-logo');
+    const decoded = (img: HTMLImageElement | null) => (img && img.decode ? img.decode().catch(() => {}) : Promise.resolve());
+    Promise.race([
+      Promise.all([document.fonts.ready, decoded(first), decoded(logo)]),
+      new Promise((resolve) => setTimeout(resolve, P.waitMax * 1000)),
+    ]).then(() => {
+      if (!dead) tl.play();
+    });
+
     return () => {
+      dead = true;
       tl.kill();
       if (root.classList.contains('preloading')) {
         root.classList.remove('preloading');
@@ -147,6 +179,14 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
   /* until the intro runs (or when it is not going to run) the preloader does not exist */
   .preloader {
     display: none;
+  }
+  /* it starts as a dark screen and clears by itself (see the script), so that it does not pop in */
+  .pl-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    background: var(--ink-warm, #1a1410);
+    pointer-events: none;
   }
   html.preloading .preloader {
     position: fixed;
@@ -223,6 +263,15 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
   }
   .pl-photo.is-on {
     opacity: 1;
+  }
+  /* the wallpaper: over the small frame, the size of the screen; only the window of the frame is shown until it opens */
+  .pl-hero {
+    z-index: 1;
+  }
+  .pl-head,
+  .pl-foot {
+    position: relative;
+    z-index: 2;
   }
   .pl-foot {
     display: flex;

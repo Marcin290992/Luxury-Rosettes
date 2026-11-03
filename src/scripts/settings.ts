@@ -327,6 +327,8 @@ export const LINE_REVEAL = {
 // ---- preloader (every real load of the home page: a counter, a frame of cycling photos that opens to the hero) --------
 export const PRELOADER = {
   words: ['Bengal', 'Rosettes', 'Champion', 'Family', 'Home'], // the line that changes while it counts
+  waitMax: 2.5, // s the longest it waits (dark) for the fonts and the first photos before it shows itself anyway
+  fadeIn: 1.2, // s the dark takes to clear and the words and the frame take to come in, before the count starts
   count: 2.2, // s the counter and the photos take
   holdBefore: 0.25, // s between the end of the count and the frame opening
   open: 1.1, // s the frame takes to grow to the full screen

@@ -15,6 +15,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import * as THREE from 'three';
 import { AWARDS_SPIRAL } from './settings';
+import { dbg, debugOn } from './debug-log';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -390,6 +391,36 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     };
     document.addEventListener('nav-menu', onMenu);
 
+    // ---- ?debug=1: what the scene and the window measure while the menu is open and the page leaves (see debug-log.ts) ----
+    let watching = 0;
+    let lastSig = '';
+    const probe = () => {
+      if (!debugOn() || !(hold || performance.now() < watching)) return;
+      const sig = [
+        `scene ${scene3.clientHeight}`,
+        `canvasBox ${Math.round(canvas.getBoundingClientRect().height)}`,
+        `buf ${canvas.height}`,
+        `inner ${innerHeight}`,
+        `vv ${Math.round(window.visualViewport?.height ?? 0)}`,
+        `scrollY ${Math.round(scrollY)}`,
+        `top ${Math.round(scene3.getBoundingClientRect().top)}`,
+        `target ${target.toFixed(3)}`,
+        `shown ${shown.toFixed(3)}`,
+      ].join(' | ');
+      if (sig !== lastSig) {
+        lastSig = sig;
+        dbg(sig);
+      }
+    };
+    const onLeaveStart = () => {
+      watching = performance.now() + 4000;
+      dbg('--- before-preparation');
+    };
+    const onMenuLog = (e: Event) => dbg(`--- nav-menu ${JSON.stringify((e as CustomEvent).detail)}`);
+    document.addEventListener('astro:before-preparation', onLeaveStart);
+    document.addEventListener('nav-menu', onMenuLog);
+    gsap.ticker.add(probe);
+
     const draw = () => {
       if (!near || hold) return;
       const dt = Math.min(gsap.ticker.deltaRatio(60) / 60, 0.05);
@@ -514,6 +545,9 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     return () => {
       document.removeEventListener('astro:before-preparation', freeze);
       document.removeEventListener('nav-menu', onMenu);
+      document.removeEventListener('nav-menu', onMenuLog);
+      document.removeEventListener('astro:before-preparation', onLeaveStart);
+      gsap.ticker.remove(probe);
       window.clearTimeout(release);
       window.clearTimeout(unfreeze);
       thaw();

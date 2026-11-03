@@ -56,6 +56,9 @@ const {
 <script>
   import { mount } from '../scripts/lifecycle';
   import { initLenis, destroyLenis } from '../scripts/lenis';
+  import { initDebug } from '../scripts/debug-log';
+
+  initDebug(); // only does anything when the page is opened with ?debug=1
 
   // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap
   mount(() => {

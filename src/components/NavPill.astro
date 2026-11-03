@@ -155,9 +155,9 @@ const isCurrent = (href: string) =>
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       e.preventDefault();
       window.clearTimeout(leaving);
-      // on a phone the menu's fold is shorter, so the page starts leaving sooner
-      const fold = matchMedia('(pointer: coarse)').matches ? 420 : 650;
-      leaving = window.setTimeout(() => navigate(url.href), wasOpen ? fold : 0);
+      // the menu's fold takes ~0.6s and must be finished before the transition starts: the nav pill is its own layer in the transition and
+      // freezes exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition)
+      leaving = window.setTimeout(() => navigate(url.href), wasOpen ? 650 : 0);
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {

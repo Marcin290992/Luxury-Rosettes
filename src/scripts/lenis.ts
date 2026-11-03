@@ -1,7 +1,7 @@
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SMOOTH_WHEEL } from './settings';
+import { SMOOTH_WHEEL, SMOOTH_TOUCH } from './settings';
 
 let lenis: Lenis | undefined;
 let tick: ((time: number) => void) | undefined;
@@ -16,7 +16,7 @@ export function initLenis() {
 
   gsap.registerPlugin(ScrollTrigger);
 
-  lenis = new Lenis({ ...SMOOTH_WHEEL, smoothWheel: true, syncTouch: false, autoRaf: false });
+  lenis = new Lenis({ ...SMOOTH_WHEEL, ...SMOOTH_TOUCH, smoothWheel: true, autoRaf: false });
   lenis.on('scroll', ScrollTrigger.update);
   tick = (time) => lenis?.raf(time * 1000);
   gsap.ticker.add(tick);

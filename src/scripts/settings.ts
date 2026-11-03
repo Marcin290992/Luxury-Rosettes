@@ -16,7 +16,9 @@ export const RISE = { text: 16, block: 24, card: 28, count: 12, leave: 40 }; // 
 export const ZOOM_IN = 1.3; // scale a photo starts at before it settles to 1
 export const LAYER_ZOOM_IN = 1.12; // same, for a layer arriving in a step transition
 export const LEAVE = { duration: 0.9, ease: 'power2.in' }; // the hero's opening text going away
-export const SMOOTH_WHEEL = { duration: 1.8, wheelMultiplier: 0.5 }; // Lenis: how long one wheel notch glides, and how far (shorter and less far = more control)
+export const SMOOTH_WHEEL = { duration: 2.4, wheelMultiplier: 0.4 }; // Lenis: how long one wheel notch glides, and how far (shorter and less far = more control; longer = a heavier page)
+// the same weight for a finger (phones, tablets): Lenis follows the finger with this much lag. Lower = heavier (its default is 0.075); touchMultiplier < 1 = the page moves less than the finger
+export const SMOOTH_TOUCH = { syncTouch: true, syncTouchLerp: 0.05, touchMultiplier: 0.8 };
 
 // ---- story stage: the timeline layout shared by the laptop and the phone versions -----------------------------------------
 export const PX_PER_SEC = 520; // higher = the whole sequence is spread over more scrolling (slower)

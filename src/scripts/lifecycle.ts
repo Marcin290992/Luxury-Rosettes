@@ -4,10 +4,14 @@
 
 type Destroy = () => void;
 
-export function mount(init: () => Destroy | void) {
+// `only`: a selector of the element the setup is for; on a page without it the setup is skipped (a swap to another page, e.g. the awards,
+// used to run every component of the home page there and throw)
+export function mount(init: () => Destroy | void, only?: string) {
   let destroy: Destroy | void;
   const run = () => {
     destroy?.();
+    destroy = undefined;
+    if (only && !document.querySelector(only)) return;
     destroy = init();
   };
   const stop = () => {

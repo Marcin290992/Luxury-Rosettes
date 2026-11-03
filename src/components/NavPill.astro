@@ -163,7 +163,17 @@ const isCurrent = (href: string) =>
       window.clearTimeout(leaving);
       // the menu's fold takes ~0.6s and must be finished before the transition starts: the nav pill is its own layer in the transition and
       // freezes exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition)
-      leaving = window.setTimeout(() => navigate(url.href), wasOpen ? 650 : 0);
+      // Phones and tablets: the page goes back to the top first (while the menu folds), and the transition starts from there. The browser
+      // lays out the transition's picture for the window with the address bar hidden; on a page that is scrolled the bar changes at that
+      // moment and the page jumped. At the top the bar is already in its place, and there is no jump.
+      const touch = window.matchMedia('(pointer: coarse), (max-width: 1024px)').matches;
+      const scrolled = touch && window.scrollY > 2;
+      if (scrolled) {
+        const lenis = getLenis();
+        if (lenis) lenis.scrollTo(0, { duration: 0.55, easing: (x: number) => 1 - Math.pow(1 - x, 3) });
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      leaving = window.setTimeout(() => navigate(url.href), Math.max(wasOpen ? 650 : 0, scrolled ? 600 : 0));
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {

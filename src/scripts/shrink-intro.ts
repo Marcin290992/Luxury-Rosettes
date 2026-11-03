@@ -1,44 +1,44 @@
-// Awards intro: one pinned screen scrubbed by the scroll. The headline slides up and away, the line under it lights up word by word and
+// Shrink intro: one pinned screen scrubbed by the scroll. The headline slides up and away, the line under it lights up word by word and
 // goes out, and the photo that filled the screen shrinks to a small rounded tile. The next section rises under it while it does: four
 // columns of small photos that drift up at different speeds around a line of text.
 //
 // Adapted from the Codegrid "Waabi Scroll Animation" to Vanilla TS for this site (see docs/SCRIPTING.md, section 3):
-//  - initAwardsIntro(root) is `init` and returns destroy(); everything is looked up inside `root` (the whole intro block),
+//  - initShrinkIntro(root) is `init` and returns destroy(); everything is looked up inside `root` (the whole intro block),
 //  - the pin is CSS sticky inside a tall track (as in the other chapters), not a GSAP pin with a margin trick, and the next section
 //    rises under it by a negative margin in the CSS,
 //  - the scroll position is smoothed once (a proxy that ScrollTrigger scrubs) and everything is drawn from that one number, so the
 //    headline, the words and the photo always agree; the words are set once, not by a `gsap.set` per word per scroll event,
-//  - the numbers are in settings.ts (AWARDS_INTRO).
+//  - the numbers are in settings.ts (SHRINK_INTRO).
 //
-// Expected markup (see AwardsIntro.astro): root > .wi-hero (the track) > .wi-pin > .wi-img, .wi-header, .wi-copy h3; .wi-about > .wi-col x4.
+// Expected markup (see ShrinkIntro.astro): root > .si-hero (the track) > .si-pin > .si-img, .si-header, .si-copy h3; .si-about > .si-col x4.
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
-import { AWARDS_INTRO } from './settings';
+import { SHRINK_INTRO } from './settings';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const between = (p: number, from: number, to: number) => clamp01((p - from) / (to - from));
 
-export function initAwardsIntro(root: HTMLElement, o = AWARDS_INTRO) {
+export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
   const mm = gsap.matchMedia();
   let words: SplitText | undefined;
 
   mm.add('(prefers-reduced-motion: no-preference)', () => {
-    const track = root.querySelector<HTMLElement>('.wi-hero')!;
-    const pin = root.querySelector<HTMLElement>('.wi-pin')!;
-    const img = root.querySelector<HTMLElement>('.wi-img')!;
-    const header = root.querySelector<HTMLElement>('.wi-header')!;
-    const copy = root.querySelector<HTMLElement>('.wi-copy h3')!;
-    const about = root.querySelector<HTMLElement>('.wi-about')!;
-    const columns = Array.from(root.querySelectorAll<HTMLElement>('.wi-col'));
+    const track = root.querySelector<HTMLElement>('.si-hero')!;
+    const pin = root.querySelector<HTMLElement>('.si-pin')!;
+    const img = root.querySelector<HTMLElement>('.si-img')!;
+    const header = root.querySelector<HTMLElement>('.si-header')!;
+    const copy = root.querySelector<HTMLElement>('.si-copy h3')!;
+    const about = root.querySelector<HTMLElement>('.si-about')!;
+    const columns = Array.from(root.querySelectorAll<HTMLElement>('.si-col'));
 
     track.dataset.live = '';
-    root.style.setProperty('--wi-length', String(o.length));
-    root.style.setProperty('--wi-overlap', String(o.overlap));
-    words = SplitText.create(copy, { type: 'words', wordsClass: 'wi-word' });
+    root.style.setProperty('--si-length', String(o.length));
+    root.style.setProperty('--si-overlap', String(o.overlap));
+    words = SplitText.create(copy, { type: 'words', wordsClass: 'si-word' });
 
     // everything is drawn from one number, the scroll position of the pinned part (0..1)
     const draw = (p: number) => {
@@ -83,8 +83,8 @@ export function initAwardsIntro(root: HTMLElement, o = AWARDS_INTRO) {
 
     return () => {
       delete track.dataset.live;
-      root.style.removeProperty('--wi-length');
-      root.style.removeProperty('--wi-overlap');
+      root.style.removeProperty('--si-length');
+      root.style.removeProperty('--si-overlap');
     };
 
     function narrowX(x: number) {

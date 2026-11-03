@@ -5,6 +5,7 @@ import candy from '../assets/img/cats/candy.webp';
 import draco from '../assets/img/cats/draco.webp';
 import chester from '../assets/img/cats/chester.webp';
 import cosmo from '../assets/img/cats/cosmo.webp';
+import { spots } from '../scripts/spots';
 
 // Photos already on the site, for now: swap them for the real ones (one per trait). `side` is the side of the page the photo is
 // on, `speed` how far it drifts against the page while it passes, `tilt` how far the spot is turned (degrees).
@@ -15,34 +16,6 @@ const scenes = [
   { img: cosmo, name: 'Cosmo', alt: 'Cosmo, one of our Bengals', side: 'left', speed: 1.2, tilt: 3, title: 'Devoted companions', text: 'Bengals form lasting bonds: loyal, affectionate and uniquely present.' },
 ];
 
-// The photos are cut to the spots of a Bengal's coat: soft, uneven, no two alike. Each spot is a ring of points around the
-// middle of a unit square (a radius per point, so the edge wanders), joined into one smooth closed curve (Catmull-Rom turned
-// into cubic Béziers). Used twice: as the clip of the photo and as the thin ring drawn around it, like the outline of a rosette.
-const spotPath = (radii: number[], stretch: [number, number], turn: number) => {
-  const n = radii.length;
-  const pts = radii.map((r, i) => {
-    const a = (i / n) * Math.PI * 2 + turn;
-    return [0.5 + Math.cos(a) * r * stretch[0], 0.5 + Math.sin(a) * r * stretch[1]];
-  });
-  const f = (v: number) => v.toFixed(4);
-  let d = `M ${f(pts[0][0])} ${f(pts[0][1])}`;
-  for (let i = 0; i < n; i++) {
-    const p0 = pts[(i - 1 + n) % n];
-    const p1 = pts[i];
-    const p2 = pts[(i + 1) % n];
-    const p3 = pts[(i + 2) % n];
-    d += ` C ${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
-  }
-  return `${d} Z`;
-};
-const lobes = (n: number, base: number, amount: number, count: number, phase: number) =>
-  Array.from({ length: n }, (_, i) => base + amount * Math.cos(count * ((i / n) * Math.PI * 2) + phase));
-const spots = [
-  spotPath([0.46, 0.43, 0.47, 0.44, 0.46, 0.42, 0.47, 0.45, 0.43, 0.46], [1, 1], 0.2), // a rounded, slightly lumpy spot
-  spotPath([0.48, 0.4, 0.38, 0.44, 0.48, 0.47, 0.4, 0.37, 0.43, 0.47], [0.86, 1], 1.1), // a tall, tapering one
-  spotPath([0.46, 0.47, 0.44, 0.3, 0.25, 0.33, 0.44, 0.47, 0.46, 0.45], [1, 0.96], 0.5), // a kidney: dented on one side
-  spotPath(lobes(12, 0.4, 0.07, 3, 0.5), [1, 1], 0), // three soft lobes, like a rosette
-];
 ---
 
 <!--
@@ -162,18 +135,6 @@ const spots = [
       // start: the left tile lower, the right one higher, and a small gap between them
       gsap.set(halfL, { x: () => -W() * 0.007, y: () => H() * 0.06 });
       gsap.set(halfR, { x: () => W() * 0.007, y: () => -H() * 0.06 });
-
-      // The entrance, on time and not on scroll: when the photo arrives the left tile unrolls from the left edge to the right,
-      // then the right tile unrolls from the right edge to the left, like a curtain in two parts. After that the scroll takes over.
-      const open = gsap.timeline({
-        scrollTrigger: { trigger: img, start: 'top 85%', toggleActions: 'play none none reverse' },
-        onComplete: () => {
-          gsap.set([halfL, halfR], { clearProps: 'clipPath' });
-        },
-      });
-      open
-        .fromTo(halfL, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'power3.inOut', immediateRender: true })
-        .fromTo(halfR, { clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'power3.inOut', immediateRender: true }, '>-0.25');
 
       // A sticky stage inside a tall track: the scroll position scrubs the timeline (no GSAP pin: on touch screens it
       // would switch the stage to position:fixed on the main thread and jitter).

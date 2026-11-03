@@ -1,0 +1,78 @@
+---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * PARKED (not used by any page): copy it with awards-split.ts back to src/components and src/scripts to use it.
+ * A split reveal between photos (see scripts/awards-split.ts): a tall track with a sticky screen; scrolling splits the photo
+ * down the middle and the next one is underneath. Without WebGL (or with reduced motion) it is just the first photo.
+ */
+interface Props {
+  photos: ImageMetadata[];
+}
+const { photos } = Astro.props;
+const urls = (await Promise.all(photos.map((p) => getImage({ src: p, width: 1920, format: 'webp' })))).map((i) => i.src);
+---
+
+<section class="as" data-photos={urls.join('|')}>
+  <div class="as-pin">
+    <img class="as-still" src={urls[0]} alt="" loading="lazy" />
+    <canvas class="as-canvas"></canvas>
+    <span class="as-count" aria-hidden="true">01 — {String(urls.length).padStart(2, '0')}</span>
+  </div>
+</section>
+
+<script>
+  import { mount } from '../../scripts/lifecycle';
+  import { initAwardsSplit } from './awards-split';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('.as');
+    return root ? initAwardsSplit(root) : undefined;
+  });
+</script>
+
+<style>
+  .as-pin {
+    position: relative;
+    height: 100svh;
+    overflow: hidden;
+    background: #111;
+  }
+  .as-still,
+  .as-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+  .as-canvas,
+  .as-count {
+    display: none;
+  }
+  .as[data-live] {
+    height: calc((1 + var(--as-length)) * 100svh);
+  }
+  .as[data-live] .as-pin {
+    position: sticky;
+    top: 0;
+  }
+  .as[data-live] .as-still {
+    display: none;
+  }
+  .as[data-live] .as-canvas {
+    display: block;
+  }
+  .as[data-live] .as-count {
+    display: block;
+    position: absolute;
+    left: 1.5rem;
+    bottom: 1.25rem;
+    color: #fff;
+    mix-blend-mode: difference;
+    font: 500 0.85rem/1 var(--font-body, system-ui);
+    letter-spacing: 0.04em;
+  }
+</style>

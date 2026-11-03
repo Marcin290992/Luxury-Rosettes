@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
+import ShrinkIntro from '../components/ShrinkIntro.astro';
 import draco from '../assets/img/cats/draco.webp';
 import kita from '../assets/img/cats/kita.webp';
 import candy from '../assets/img/cats/candy.webp';
@@ -22,10 +23,16 @@ const cats = [
 
 <Layout title="Our Cats — Luxury Rosettes">
   <NavPill />
+  <ShrinkIntro
+    headline="The family behind the line"
+    line="Placeholder text. Every cat here was chosen for its health, its temperament and its place in the line."
+    collection="Queens, studs and kittens, gathered into one calm family."
+    closing="Meet them one by one."
+  />
   <main class="page">
     <header class="head">
       <p class="eyebrow">The family</p>
-      <h1 data-line-reveal>Our cats</h1>
+      <h2 class="title" data-line-reveal>Our cats</h2>
       <p class="lead">Placeholder text. A few calm sentences about the parents and the kittens you are about to meet.</p>
     </header>
     <ul class="grid">
@@ -67,7 +74,7 @@ const cats = [
     opacity: 0.6;
     margin: 0 0 1rem;
   }
-  h1 {
+  .title {
     font-family: var(--font-heading);
     font-weight: 400;
     font-size: clamp(2.8rem, 7vw, 5.5rem);

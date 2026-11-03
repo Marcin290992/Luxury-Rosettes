@@ -1,0 +1,176 @@
+---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { AWARDS_SPIRAL } from '../scripts/settings';
+
+/**
+ * The opening of the awards page (after a three.js "photo vortex"): photos ride a spiral ribbon up the screen while two huge words
+ * slide in from the sides around a small line, then six of them fly into a grid, and stripes rise to cover the scene (the list of
+ * the awards comes after it). It is a tall track with a sticky screen, scrubbed by the scroll (see scripts/awards-spiral.ts).
+ * Without WebGL (or with reduced motion) it is the two words, the line and a plain grid of the photos.
+ */
+interface Props {
+  top: string;
+  bottom: string;
+  line: string;
+  photos: ImageMetadata[];
+}
+const { top, bottom, line, photos } = Astro.props;
+const urls = (await Promise.all(photos.map((p) => getImage({ src: p, width: 1200, format: 'webp' })))).map((i) => i.src);
+const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
+---
+
+<section class="sp" data-photos={urls.join('|')}>
+  <div class="sp-scene">
+    <div class="sp-words">
+      <h1 class="sp-big sp-top">{top}</h1>
+      <p class="sp-line">{line}</p>
+      <h2 class="sp-big sp-bottom">{bottom}</h2>
+    </div>
+    <div class="sp-plain" aria-hidden="true">
+      {grid.map((src) => <img src={src} alt="" loading="lazy" />)}
+    </div>
+    <canvas class="sp-canvas" aria-hidden="true"></canvas>
+    <div class="sp-stripes" aria-hidden="true">
+      {Array.from({ length: AWARDS_SPIRAL.stripes }, () => <div></div>)}
+    </div>
+  </div>
+</section>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initAwardsSpiral } from '../scripts/awards-spiral';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('.sp');
+    return root ? initAwardsSpiral(root) : undefined;
+  });
+</script>
+
+<style>
+  .sp {
+    position: relative;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  /* ---- without the script: the words, the line and a plain grid ---- */
+  .sp-scene {
+    position: relative;
+    padding: clamp(6rem, 16vh, 9rem) 1.5rem 4rem;
+    overflow: hidden;
+  }
+  .sp-words {
+    text-align: center;
+  }
+  .sp-big {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(3.2rem, 11vw, 11rem);
+    line-height: 0.85;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .sp-line {
+    max-width: 30rem;
+    margin: 1.25rem auto;
+    font-family: var(--font-heading);
+    font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+    line-height: 1.3;
+  }
+  .sp-plain {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 0.75rem;
+    max-width: 52rem;
+    margin: 3rem auto 0;
+  }
+  .sp-plain img {
+    width: 100%;
+    aspect-ratio: 1.43;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+  }
+  .sp-canvas,
+  .sp-stripes {
+    display: none;
+  }
+
+  /* ---- with the script: a sticky screen inside a tall track ---- */
+  .sp[data-live] {
+    height: calc((var(--sp-length) + 1) * 100svh);
+  }
+  .sp[data-live] .sp-scene {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    padding: 0;
+  }
+  .sp[data-live] .sp-plain {
+    display: none;
+  }
+  .sp[data-live] .sp-words {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .sp[data-live] .sp-big {
+    will-change: transform;
+    line-height: 0.8;
+  }
+  .sp[data-live] .sp-top {
+    align-self: flex-start;
+    transform: translateX(-100%);
+  }
+  .sp[data-live] .sp-bottom {
+    align-self: flex-end;
+    transform: translateX(100%);
+  }
+  .sp[data-live] .sp-line {
+    margin: 0.9rem auto;
+    text-align: center;
+  }
+  .sp[data-live] .sp-canvas {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .sp[data-live] .sp-stripes {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .sp[data-live] .sp-stripes div {
+    flex: 1;
+    margin-top: -1px;
+    background: var(--ink-warm);
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  /* the letters come out of a blur once the section has come up */
+  .sp[data-live] :global(.sp-lit) {
+    display: inline-block;
+    filter: blur(12px);
+    opacity: 0;
+    transition:
+      filter 0.8s ease,
+      opacity 0.8s ease;
+  }
+  .sp[data-live].is-in :global(.sp-lit) {
+    filter: blur(0);
+    opacity: 1;
+  }
+</style>

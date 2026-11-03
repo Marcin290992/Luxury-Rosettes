@@ -1,0 +1,101 @@
+---
+/**
+ * A transition that closes a section (the stripes at the end of the awards spiral, see AwardsSpiral). Wrap the section in it: the
+ * section is pinned on the screen for one more screen of scrolling and does not move, while a few stripes rise one after another
+ * from the bottom, driven by the scroll (like an accordion unfolding), and cover it. The section that follows should have the same
+ * colour as the stripes (cream), so it is what is left. Without the script (or with reduced motion) it is just the section.
+ */
+interface Props {
+  stripes?: number; // how many stripes
+  pin?: number; // screens of scrolling the section is held for (the stripes come in during the last part of it)
+  from?: number; // 0..1: where in that scrolling the stripes start (before it, only the section inside plays)
+}
+const { stripes = 5, pin = 0.6, from = 0 } = Astro.props;
+---
+
+<div class="sc" data-stripe-cover data-from={from} style={`--sc-pin:${pin}`}>
+  <div class="sc-pin">
+    <slot />
+    <div class="sc-stripes" aria-hidden="true">
+      {Array.from({ length: stripes }, () => <div class="sc-stripe"></div>)}
+    </div>
+  </div>
+</div>
+
+<script>
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import gsap from 'gsap';
+  import { mount } from '../scripts/lifecycle';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('[data-stripe-cover]');
+    if (!root) return;
+    const stripes = Array.from(root.querySelectorAll<HTMLElement>('.sc-stripe'));
+    const from = parseFloat(root.dataset.from ?? '0');
+    const mm = gsap.matchMedia();
+
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      root.dataset.live = '';
+      const n = stripes.length;
+      // the same timing as the stripes of the awards spiral: the one at the bottom starts first, the top one last, and the last one is full exactly at the end of the pin
+      const draw = (p: number) =>
+        stripes.forEach((s, i) => {
+          const start = (0.3 * (n - 1 - i)) / Math.max(n - 1, 1);
+          s.style.transform = `scaleY(${clamp01(((p - from) / (1 - from) - start) / 0.7)})`;
+        });
+      draw(0);
+      const trigger = ScrollTrigger.create({
+        trigger: root,
+        start: 'top top',
+        end: 'bottom bottom',
+        invalidateOnRefresh: true,
+        onUpdate: (self) => draw(self.progress),
+        onRefresh: (self) => draw(self.progress),
+      });
+      ScrollTrigger.refresh();
+      return () => {
+        trigger.kill();
+        stripes.forEach((s) => s.removeAttribute('style'));
+        delete root.dataset.live;
+      };
+    });
+
+    return () => mm.revert();
+  });
+</script>
+
+<style>
+  .sc-stripes {
+    display: none;
+  }
+  /* a track with a sticky screen in it: the section stands still for `pin` screens of scrolling (the section after it is pulled up by
+     one screen, see index.astro, so that it starts exactly when the pin ends) */
+  .sc[data-live] {
+    height: calc((1 + var(--sc-pin, 0.6)) * 100svh);
+  }
+  .sc[data-live] .sc-pin {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+  .sc[data-live] .sc-stripes {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .sc-stripe {
+    flex: 1;
+    margin-top: -1px;
+    background: var(--cream, #efe9dc);
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+</style>

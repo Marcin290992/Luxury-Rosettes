@@ -11,6 +11,8 @@ import Corridor from '../components/Corridor.astro';
 import WhyBengals from '../components/WhyBengals.astro';
 import Process from '../components/Process.astro';
 import TileReveal from '../components/TileReveal.astro';
+import RootsReveal from '../components/RootsReveal.astro';
+import StripeCover from '../components/StripeCover.astro';
 import kita from '../assets/img/cats/kita.webp';
 import draco from '../assets/img/cats/draco.webp';
 import candy from '../assets/img/cats/candy.webp';
@@ -38,6 +40,9 @@ import expandImg from '../assets/img/expand.webp';
   <main class="content">
     <WhyBengals />
     <Process />
+    <StripeCover pin={1.5} from={0.75}>
+      <RootsReveal images={[kita, draco, candy]} />
+    </StripeCover>
     <TileReveal
       id="kittens"
       images={[
@@ -74,13 +79,22 @@ import expandImg from '../assets/img/expand.webp';
   #kittens .tr-content {
     justify-content: center;
   }
+  /* the kittens start the moment the stripes have covered the section: this section is pulled up over the second screen of the stripe
+     transition, so that its pin begins exactly when the stripes end. Its background is clear over that overlap (the stripes show
+     through) and cream from there on. */
+  [data-stripe-cover][data-live] ~ #kittens[data-live] {
+    position: relative;
+    z-index: 7;
+    margin-top: -100svh;
+    background: linear-gradient(to bottom, transparent 100svh, var(--cream) 100svh);
+  }
   #kittens .kit-eyebrow {
     margin: 0 0 1rem;
     font-family: var(--font-body);
     font-size: 0.75rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--gold-deep);
   }
   #kittens .kit-title {
     margin: 0 0 1rem;
@@ -101,6 +115,8 @@ import expandImg from '../assets/img/expand.webp';
     line-height: 1.5;
   }
   #kittens .kit-actions {
+    --fg: var(--ink-warm);
+    --inv: var(--cream);
     margin: 0;
     display: flex;
     flex-wrap: wrap;

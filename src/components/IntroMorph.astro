@@ -1,0 +1,298 @@
+---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * A long pinned story of three screens (900vh on a laptop, 600vh on a phone), scrubbed by the scroll. On every screen: a small
+ * kicker top left, one huge word across the top (behind the photos), a large line of text bottom left with a button, and three
+ * overlapping photos on the right in frames that change their shape, size and place from screen to screen (an arch becomes a card,
+ * a card becomes a circle) while each swaps to its second photo. A progress line with a counter (01 / 02 / 03) runs bottom right.
+ * Without the script (or with reduced motion) the three screens follow each other, without the framed photos.
+ * Needs GSAP's MorphSVGPlugin (free since GSAP 3.13) and SplitText. A demo of it is at /demo/intro-morph.
+ */
+type Cta = { label: string; href: string };
+type Slide = { kicker: string; word: string; text: string; cta: Cta };
+interface Props {
+  images: ImageMetadata[]; // six: the three frames, each as a pair (first photo -> second photo): [1a, 1b, 2a, 2b, 3a, 3b]
+  pattern?: ImageMetadata; // the background, e.g. a photo of a rosetted coat (optional)
+  slides?: [Slide, Slide, Slide];
+}
+const defaults: [Slide, Slide, Slide] = [
+  {
+    kicker: 'Luxury Rosettes Cattery',
+    word: 'Rosettes',
+    text: 'Every Bengal is raised in our home: handled daily, health-tested and ready to share yours.',
+    cta: { label: 'Our story', href: '/our-cats' },
+  },
+  {
+    kicker: 'The bloodline',
+    word: 'Champions',
+    text: 'Champion bloodlines, a gentle temperament and rosettes that catch the light.',
+    cta: { label: 'Available kittens', href: '/available-kittens' },
+  },
+  {
+    kicker: 'The next litter',
+    word: 'Kittens',
+    text: 'Reserve a kitten from our next litter and follow its first weeks through photos and visits.',
+    cta: { label: 'Reserve a kitten', href: '/available-kittens' },
+  },
+];
+const { images, pattern, slides = defaults } = Astro.props;
+
+const pics = await Promise.all(images.map((src) => getImage({ src, width: 1400, format: 'webp' })));
+const bg = pattern ? await getImage({ src: pattern, width: 1920, format: 'webp' }) : null;
+
+// the three frames: the size of their drawing, the outline they start with and the one they end with (the morph goes between)
+const FRAMES = [
+  {
+    box: [600, 800],
+    start: 'M0 410 Q0 385 22 372 L478 30 Q600 -40 600 90 L600 800 L0 800 Z',
+    end: 'M0 800 V300 A300 300 0 0 1 600 300 V800 Z',
+  },
+  {
+    box: [720, 540],
+    start: 'M0 24 Q0 0 24 0 L600 0 Q720 0 718 120 L700 330 Q690 470 540 530 L40 250 Q0 228 0 200 Z',
+    end: 'M60 0 H660 Q720 0 720 60 V480 Q720 540 660 540 H60 Q0 540 0 480 V60 Q0 0 60 0 Z',
+  },
+  {
+    box: [520, 520],
+    start: 'M70 0 H450 Q520 0 520 70 V450 Q520 520 450 520 H70 Q0 520 0 450 V70 Q0 0 70 0 Z',
+    end: 'M260 0 A260 260 0 1 1 259.99 0 Z',
+  },
+];
+---
+
+<section class="im" data-intro-morph data-ends={JSON.stringify(FRAMES.map((f) => f.end))}>
+  <div class="im-scroller">
+    <div class="im-stage">
+      {bg && <img class="im-pattern" src={bg.src} alt="" aria-hidden="true" />}
+      <div class="im-parallax">
+        <div class="im-words" aria-hidden="true">
+          {slides.map((sl) => <p class="im-word">{sl.word}</p>)}
+        </div>
+        <div class="im-morphs" aria-hidden="true">
+          {
+            FRAMES.map((f, i) => (
+              <div class={`im-frame im-frame${i + 1}`}>
+                <svg viewBox={`0 0 ${f.box[0]} ${f.box[1]}`} preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <clipPath id={`imClip${i + 1}`} clipPathUnits="userSpaceOnUse">
+                      <path d={f.start} />
+                    </clipPath>
+                  </defs>
+                  <image class={`im-img${i + 1}a`} href={pics[i * 2].src} width={f.box[0]} height={f.box[1]} preserveAspectRatio="xMidYMid slice" clip-path={`url(#imClip${i + 1})`} />
+                  <image class={`im-img${i + 1}b`} href={pics[i * 2 + 1].src} width={f.box[0]} height={f.box[1]} preserveAspectRatio="xMidYMid slice" clip-path={`url(#imClip${i + 1})`} opacity="0" />
+                </svg>
+              </div>
+            ))
+          }
+        </div>
+        {
+          slides.map((sl, i) => (
+            <div class={`im-screen im-s${i + 1}`}>
+              <p class="im-kicker">{sl.kicker}</p>
+              <div class="im-col">
+                <p class="im-text">{sl.text}</p>
+                <div class="im-btn-wrap">
+                  <a class="im-btn" href={sl.cta.href}>
+                    {sl.cta.label} <span aria-hidden="true">→</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="im-progress" aria-hidden="true">
+        <span class="im-line"><span class="im-fill"></span></span>
+        <span class="im-nums"><span class="im-n1">01</span><span class="im-n2">02</span><span class="im-n3">03</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .im { position: relative; color: var(--cream, #efe9dc); }
+  .im[data-active] .im-scroller { height: 900vh; }
+  .im-stage { position: relative; overflow: clip;
+              background: radial-gradient(at bottom right, #3b2a18, var(--ink-warm, #1a1410) 70%); }
+  .im[data-active] .im-stage { position: sticky; top: 0; height: 100svh; }
+  .im-pattern { position: absolute; top: 0; right: -10%; width: 100vw; height: 100svh; object-fit: cover;
+                opacity: .4; mix-blend-mode: multiply; scale: 1.2; transform-origin: top right; pointer-events: none; }
+  .im-parallax, .im-morphs, .im-words { position: absolute; inset: 0; }
+  .im-words { z-index: 0; pointer-events: none; }
+  .im-word { position: absolute; left: 2.5vw; top: 17%; margin: 0; white-space: nowrap; text-transform: uppercase;
+             font-family: var(--font-heading, serif); font-weight: 400; font-size: clamp(4.5rem, 15.5vw, 17rem); line-height: .8;
+             letter-spacing: -.01em; color: color-mix(in srgb, var(--gold, #d4af37) 55%, var(--cream, #efe9dc)); }
+  .im-frame { position: absolute; }
+  .im-frame svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  /* the three photos overlap: the portrait in front, the tilted one behind it, the card behind both */
+  .im-frame1 { left: 33.5%; top: 16%; width: 31.5%; height: 84%; z-index: 3; }
+  .im-frame2 { left: 50%; top: 3.5%; width: 39%; height: 61.5%; z-index: 2; }
+  .im-frame3 { left: 64.5%; top: 38%; width: 27.5%; height: 59%; z-index: 1; }
+  .im-screen { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .im-kicker { position: absolute; left: 12.5%; top: 13%; margin: 0; font-family: var(--font-body, sans-serif); font-size: 12.48px;
+               letter-spacing: .2em; text-transform: uppercase; color: var(--gold, #d4af37); }
+  .im-col { position: absolute; left: 12.5%; bottom: 7%; width: 42%; display: grid; gap: 2rem; justify-items: start; }
+  .im-text { margin: 0; font-family: var(--font-heading, serif); font-weight: 300; font-size: clamp(1.8rem, 3.5vw, 3.6rem); line-height: 1.02; }
+  .im-btn { display: inline-flex; align-items: center; gap: 1.5rem; height: 3.5rem; padding: 0 1.5rem;
+            border: 1px solid var(--gold, #d4af37); border-radius: 999px; color: inherit; text-decoration: none;
+            font-family: var(--font-body, sans-serif); font-size: 12.48px; letter-spacing: .18em; text-transform: uppercase;
+            transition: background .3s; }
+  .im-btn:hover { background: rgba(212, 175, 55, .15); }
+  .im-progress { position: absolute; right: clamp(1.5rem, 5vw, 5rem); bottom: 2.5rem; z-index: 5; display: flex; align-items: center; gap: 1.25rem; }
+  .im-line { position: relative; width: 12rem; height: 1px; background: rgba(239, 233, 220, .25); }
+  .im-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--gold, #d4af37); }
+  .im-nums { position: relative; width: 2ch; height: 1em; font: 12.48px/1 var(--font-body, sans-serif); }
+  .im-nums span { position: absolute; inset: 0; }
+
+  @media (max-width: 1023px) {
+    .im-word { left: 5vw; top: 12%; font-size: clamp(3.2rem, 17vw, 8rem); }
+    .im-frame1 { left: 30%; top: 40%; width: 62%; height: 60%; }
+    .im-frame2 { left: 40%; top: 22%; width: 55%; height: 32%; }
+    .im-frame3 { left: 3%; top: 52%; width: 34%; height: 28%; }
+    .im-kicker { left: 5vw; top: 8%; }
+    .im-col { left: 5vw; bottom: 5%; width: 90%; gap: 1.25rem; }
+    .im-text { font-size: clamp(1.4rem, 6vw, 2.2rem); }
+    .im-progress { right: 5vw; bottom: 1rem; }
+    .im-line { width: 6rem; }
+  }
+
+  /* without the animation (reduced motion): the screens one after another, no framed photos */
+  .im:not([data-active]) .im-parallax { position: relative; }
+  .im:not([data-active]) .im-screen { position: relative; inset: auto; padding: 4rem 1.5rem; pointer-events: auto; display: grid; gap: 1.5rem; }
+  .im:not([data-active]) .im-words { display: none; }
+  .im:not([data-active]) .im-kicker,
+  .im:not([data-active]) .im-col { position: static; width: auto; }
+  .im:not([data-active]) .im-morphs, .im:not([data-active]) .im-progress { display: none; }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { SplitText } from 'gsap/SplitText';
+  import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin';
+  import { mount } from '../scripts/lifecycle';
+
+  gsap.registerPlugin(ScrollTrigger, SplitText, MorphSVGPlugin);
+
+  // ---------- the numbers ----------
+  const MQ = {
+    laptop: '(min-width: 1024px) and (prefers-reduced-motion: no-preference)',
+    phone: '(max-width: 1023px) and (prefers-reduced-motion: no-preference)',
+  };
+  // where the three frames end up (their place and size on the last screen)
+  const END = {
+    laptop: [
+      { left: '40%', top: '20%', width: '26%', height: '80%' },
+      { left: '62%', top: '8%', width: '32%', height: '52%' },
+      { left: '70%', top: '50%', width: '22%', height: '46%' },
+    ],
+    phone: [
+      { left: '8%', top: '44%', width: '56%', height: '56%' },
+      { left: '50%', top: '24%', width: '46%', height: '30%' },
+      { left: '58%', top: '56%', width: '36%', height: '28%' },
+    ],
+  };
+  const shown = { opacity: 1, y: 0, filter: 'blur(0px)', ease: 'power1.inOut', pointerEvents: 'auto', overwrite: 'auto' as const };
+  const hidden = { opacity: 0, y: '2rem', filter: 'blur(4px)', pointerEvents: 'none' };
+  const at = (p: number) => `${p * 100}% top`; // a moment in the section: 0.33 = a third of its height
+
+  function build(root: HTMLElement, phone: boolean) {
+    const q = gsap.utils.selector(root);
+    const scroller = root.querySelector<HTMLElement>('.im-scroller')!;
+    const ends: string[] = JSON.parse(root.dataset.ends!);
+    root.dataset.active = '';
+    if (phone) scroller.style.height = '600vh';
+
+    // the text of each screen: its word, kicker, line of text and button
+    const screens = [1, 2, 3].map((n) => ({
+      word: new SplitText(q('.im-word')[n - 1], { type: 'chars' }),
+      kicker: new SplitText(q(`.im-s${n} .im-kicker`), { type: 'chars' }),
+      text: new SplitText(q(`.im-s${n} .im-text`), { type: 'words' }),
+      button: q(`.im-s${n} .im-btn-wrap`),
+    }));
+    gsap.set(screens.flatMap((s) => [s.word.chars, s.kicker.chars, s.text.words, s.button]).flat(), hidden);
+    gsap.set(q('.im-morphs'), { scale: 1.1, filter: 'blur(4px)', opacity: 0 });
+    gsap.set(q('.im-n1'), { y: 0, opacity: 1, filter: 'blur(0px)' });
+    gsap.set(q('.im-n2, .im-n3'), { y: '1rem', opacity: 0, filter: 'blur(4px)' });
+
+    const scrub = { trigger: scroller, start: 'top top', end: 'bottom bottom', scrub: true };
+    const end = phone ? END.phone : END.laptop;
+    const M0 = 0.15; // where the frames start to change
+    const MD = 0.33; // how long the change takes
+
+    // the photos: they appear, change their shape, size and place, swap to their second photo, and go
+    const photos = gsap.timeline({ scrollTrigger: scrub });
+    photos.to(q('.im-morphs'), { scale: 1, filter: 'blur(0px)', opacity: 1, ease: 'power1.inOut', duration: 0.1 }, 0);
+    [1, 2, 3].forEach((n) => {
+      photos
+        .to(q(`#imClip${n} path`), { morphSVG: ends[n - 1], ease: 'none', duration: MD }, M0)
+        .to(q(`.im-frame${n}`), { ...end[n - 1], ease: 'power1.inOut', duration: MD }, M0)
+        .to(q(`.im-img${n}a`), { opacity: 0, duration: MD }, M0)
+        .to(q(`.im-img${n}b`), { opacity: 1, duration: MD }, M0);
+    });
+    photos
+      .to(q('.im-morphs'), { scale: 1.1, filter: 'blur(4px)', opacity: 0, ease: 'power1.inOut', duration: 0.1 }, 0.68)
+      .to({}, { duration: 0.32 }, 0.68);
+
+    // the text: each screen comes in when its part of the section is reached
+    const slide = (s: (typeof screens)[number]) =>
+      gsap
+        .timeline({ paused: true })
+        .to(s.word.chars, { ...shown, duration: 0.8, stagger: 0.04 }, 0)
+        .to(s.kicker.chars, { ...shown, duration: 0.7, stagger: 0.03 }, 0.1)
+        .to(s.text.words, { ...shown, duration: 0.7, stagger: 0.05 }, 0.1)
+        .to(s.button, { ...shown, duration: 0.7 }, 0.2);
+    const between = (tl: gsap.core.Timeline, from: number, to: string) =>
+      ScrollTrigger.create({
+        trigger: scroller,
+        start: at(from),
+        end: to,
+        onEnter: () => tl.play(),
+        onLeave: () => tl.reverse(),
+        onEnterBack: () => tl.play(),
+        onLeaveBack: () => tl.reverse(),
+      });
+    between(slide(screens[0]), 0, at(0.22));
+    between(slide(screens[1]), 0.33, at(0.6));
+    between(slide(screens[2]), 0.75, 'bottom top');
+
+    // the progress line and the counter
+    const swap = { ease: 'power1.inOut', duration: 0.14 };
+    gsap
+      .timeline({ scrollTrigger: scrub })
+      .to(q('.im-fill'), { width: '100%', ease: 'none', duration: 1 }, 0)
+      .to(q('.im-n1'), { y: '-1rem', opacity: 0, filter: 'blur(4px)', ...swap }, 0.33)
+      .to(q('.im-n2'), { y: 0, opacity: 1, filter: 'blur(0px)', ...swap }, 0.33)
+      .to(q('.im-n2'), { y: '-1rem', opacity: 0, filter: 'blur(4px)', ...swap }, 0.75)
+      .to(q('.im-n3'), { y: 0, opacity: 1, filter: 'blur(0px)', ...swap }, 0.75);
+
+    // the swaying background, and a slight drift away at the end
+    gsap.to(q('.im-pattern'), { rotate: 5, repeat: -1, yoyo: true, duration: 4, ease: 'power1.inOut' });
+    gsap.to(q('.im-parallax'), {
+      y: '10rem',
+      ease: 'power1.inOut',
+      scrollTrigger: { trigger: scroller, start: () => `bottom-=${innerHeight} top`, end: 'bottom top', scrub: true },
+    });
+
+    let alive = true;
+    document.fonts.ready.then(() => alive && ScrollTrigger.refresh());
+
+    return () => {
+      alive = false;
+      screens.forEach((s) => [s.word, s.kicker, s.text].forEach((x) => x.revert()));
+      scroller.style.height = '';
+      delete root.dataset.active;
+    };
+  }
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('[data-intro-morph]');
+    if (!root) return;
+    const mm = gsap.matchMedia();
+    mm.add({ laptop: MQ.laptop, phone: MQ.phone }, (ctx) => build(root, !!ctx.conditions?.phone));
+    return () => mm.revert();
+  });
+</script>

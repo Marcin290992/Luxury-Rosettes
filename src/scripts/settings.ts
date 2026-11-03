@@ -311,7 +311,7 @@ export const TILE_REVEAL = {
   overlap: 0.6, // how much of the last flight the zoom overlaps
   zoom: 2.4, // how big the grid grows before the tiles part
   spread: 0.4, // minimum travel of a tile when it steps aside (share of its own size)
-  scrollLength: 3.5, // screens of scrolling the whole sequence takes
+  scrollLength: 2, // screens of scrolling the whole sequence takes
   smooth: 0.18, // seconds the picture takes to catch up with the scroll
   contentGap: 28, // px between the headline and the text under it
 };
@@ -335,9 +335,9 @@ export const PRELOADER = {
   frame: { width: 240, height: 300 }, // px, the small frame
 };
 
-// ---- awards intro (a pinned hero scrubbed by the scroll: the headline leaves, the words light up, the photo shrinks to a tile, the photos drift) ---
+// ---- shrink intro (a pinned hero scrubbed by the scroll: the headline leaves, the words light up, the photo shrinks to a tile, the photos drift) ---
 // After the Codegrid "Waabi Scroll Animation". The pinned part is `length` screens long; the other numbers are places on it (0..1).
-export const AWARDS_INTRO = {
+export const SHRINK_INTRO = {
   length: 3.5, // screens of scrolling the pinned part takes
   overlap: 0.75, // screens of the pinned part during which the next section is already rising under it
   headerEnd: 0.29, // the headline has left the screen by here
@@ -422,3 +422,12 @@ export const FAQ_CHAT = {
 
 // ---- nav pill ---------------------------------------------------------------------------------------------------------
 export const NAV_SCROLLED_AT = 40; // px of scrolling after which the glass gets stronger
+
+// ---- awards spiral (the intro of the awards page: photos ride a spiral ribbon, then fly into a grid, then stripes cover the screen) ----
+export const AWARDS_SPIRAL = {
+  spinScreens: 5, // screens of scrolling the spiral takes
+  exitScreens: 1.5, // screens the stripes take to cover the scene
+  hover: 1.12, // how much a photo grows under the mouse
+  grid: [0, 1, 4, 2, 7, 6], // which of the photos (counted from 0) land in the grid at the end
+  stripes: 5, // stripes that cover the scene at the end
+};

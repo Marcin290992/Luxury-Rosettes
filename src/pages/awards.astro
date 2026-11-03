@@ -2,7 +2,7 @@
 import type { ImageMetadata } from 'astro';
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
-import AwardsIntro from '../components/AwardsIntro.astro';
+import AwardsSpiral from '../components/AwardsSpiral.astro';
 import AwardsList from '../components/AwardsList.astro';
 
 // Sample page. The photos, titles, shows, years and words of the awards are placeholders, to be replaced with the real ones.
@@ -26,11 +26,11 @@ const awards = [
 
 <Layout title="Awards — Luxury Rosettes">
   <NavPill />
-  <AwardsIntro
-    headline="Champions by bloodline, and by right"
+  <AwardsSpiral
+    top="Champions"
+    bottom="by right"
     line="Every title earned in the show ring, kept as a quiet record of the line."
-    collection="Rosettes, ribbons and shields gathered into a drifting collection of proud moments."
-    closing="Dozens of titles, and one family behind them."
+    photos={Array.from({ length: 9 }, (_, i) => pool[(i * 4) % pool.length])}
   />
   <AwardsList items={awards} />
 </Layout>

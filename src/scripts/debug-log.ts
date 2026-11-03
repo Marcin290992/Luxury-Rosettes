@@ -43,6 +43,45 @@ export function dbg(msg: string) {
   paintDebug();
 }
 
+// On every page: from the start of a page transition for a few seconds, a line each time any of these changes:
+// the window's height (what the page can see), the visual viewport, the scroll position and where a fixed element (the nav pill) and the first screen sit.
+function watchTransition() {
+  let until = 0;
+  let last = '';
+  const sample = (tag = '') => {
+    const nav = document.getElementById('main-nav')?.getBoundingClientRect();
+    const first = document.querySelector('#hero, .sp-scene, main, body > *')?.getBoundingClientRect();
+    const vv = window.visualViewport;
+    const sig = [
+      `inner ${innerHeight}`,
+      `vv ${Math.round(vv?.height ?? 0)}/${Math.round(vv?.offsetTop ?? 0)}`,
+      `client ${document.documentElement.clientHeight}`,
+      `scrollY ${Math.round(scrollY)}`,
+      `nav ${nav ? Math.round(nav.top) : '-'}`,
+      `first ${first ? Math.round(first.top) + '/' + Math.round(first.height) : '-'}`,
+    ].join(' | ');
+    if (sig !== last) {
+      last = sig;
+      dbg(`${tag}${sig}`);
+    }
+  };
+  const tick = () => {
+    if (performance.now() > until) return;
+    sample();
+    requestAnimationFrame(tick);
+  };
+  const start = (why: string) => {
+    last = '';
+    until = performance.now() + 3500;
+    dbg(`--- ${why}`);
+    sample();
+    requestAnimationFrame(tick);
+  };
+  document.addEventListener('astro:before-preparation', () => start('before-preparation'));
+  document.addEventListener('astro:before-swap', () => dbg('--- before-swap'));
+  document.addEventListener('astro:after-swap', () => start('after-swap'));
+}
+
 export function initDebug() {
   try {
     const q = new URLSearchParams(location.search).get('debug');
@@ -59,6 +98,7 @@ export function initDebug() {
     // always at least this line, so it is clear that the log is on (and the bar is not just an empty strip)
     dbg(`DEBUG ON ${location.pathname} inner ${innerWidth}x${innerHeight} vv ${Math.round(window.visualViewport?.height ?? 0)} dpr ${devicePixelRatio}`);
   }
+  if (debugOn()) watchTransition();
   paintDebug();
   document.addEventListener('astro:after-swap', paintDebug);
 }

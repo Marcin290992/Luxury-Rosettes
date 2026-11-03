@@ -462,7 +462,46 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     };
     gsap.ticker.add(draw);
 
+    // When a page transition starts while the scene is on the screen, the live WebGL canvas is swapped for a still picture of its last
+    // frame. A WebGL canvas inside the transition's snapshot is composited on its own (on phones it came out with another height
+    // than the rest of the page); a plain image is part of the page like everything else. Only the picture is lost: the page is leaving.
+    let still: HTMLImageElement | undefined;
+    let unfreeze = 0;
+    const thaw = () => {
+      still?.remove();
+      still = undefined;
+      canvas.style.visibility = '';
+    };
+    const freeze = (e: Event) => {
+      if (!near || still) return;
+      try {
+        renderer.render(scene, camera); // in the same task, so the buffer still holds this frame
+        const img = new Image();
+        img.alt = '';
+        img.src = canvas.toDataURL('image/webp', 0.92);
+        img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;';
+        canvas.after(img);
+        canvas.style.visibility = 'hidden';
+        still = img;
+        // the transition waits (a few ms) until the picture is decoded, so it is in the snapshot
+        const nav = e as Event & { loader: () => Promise<void> };
+        const original = nav.loader;
+        nav.loader = async () => {
+          await img.decode().catch(() => {});
+          await original();
+        };
+        // if the navigation never happens (cancelled), the live canvas comes back
+        unfreeze = window.setTimeout(thaw, 5000);
+      } catch {
+        thaw();
+      }
+    };
+    document.addEventListener('astro:before-preparation', freeze);
+
     return () => {
+      document.removeEventListener('astro:before-preparation', freeze);
+      window.clearTimeout(unfreeze);
+      thaw();
       gsap.ticker.remove(draw);
       window.removeEventListener('resize', onResize);
       scene3.removeEventListener('pointermove', onMove);

@@ -55,6 +55,10 @@ export function initDebug() {
   } catch {
     /* ignore */
   }
+  if (debugOn()) {
+    // always at least this line, so it is clear that the log is on (and the bar is not just an empty strip)
+    dbg(`DEBUG ON ${location.pathname} inner ${innerWidth}x${innerHeight} vv ${Math.round(window.visualViewport?.height ?? 0)} dpr ${devicePixelRatio}`);
+  }
   paintDebug();
   document.addEventListener('astro:after-swap', paintDebug);
 }

@@ -420,6 +420,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     document.addEventListener('astro:before-preparation', onLeaveStart);
     document.addEventListener('nav-menu', onMenuLog);
     gsap.ticker.add(probe);
+    dbg(`spiral ready: scene ${scene3.clientHeight} canvas ${canvas.width}x${canvas.height}`);
 
     const draw = () => {
       if (!near || hold) return;

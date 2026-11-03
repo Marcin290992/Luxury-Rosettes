@@ -80,6 +80,19 @@ function watchTransition() {
   document.addEventListener('astro:before-preparation', () => start('before-preparation'));
   document.addEventListener('astro:before-swap', () => dbg('--- before-swap'));
   document.addEventListener('astro:after-swap', () => start('after-swap'));
+
+  // The transition's own layers: how big the snapshot is and where it sits, against the window (inner).
+  const layers = (n: number) => {
+    const el = document.documentElement;
+    const css = (pseudo: string) => {
+      const c = getComputedStyle(el, pseudo);
+      return `${c.width}x${c.height} top ${c.top} tr ${c.transform === 'none' ? '-' : c.transform.replace(/\s/g, '').slice(0, 40)}`;
+    };
+    dbg(`VT#${n} inner ${innerHeight} | vt ${css('::view-transition')} | group ${css('::view-transition-group(root)')} | old ${css('::view-transition-old(root)')}`);
+  };
+  document.addEventListener('astro:after-swap', () => {
+    [0, 120, 400].forEach((ms, i) => setTimeout(() => layers(i), ms));
+  });
 }
 
 export function initDebug() {

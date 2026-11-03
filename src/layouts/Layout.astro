@@ -33,6 +33,19 @@ const {
         }
       } catch (e) {}
     </script>
+    <!-- The intro of the home page (Preloader.astro) is marked here, in the head, so that it is known before the first paint: until the
+         preloader itself is built the screen is already dark and nothing of the page shows. (Not re-run on a click through: only on a real load.) -->
+    <script is:inline>
+      try {
+        if (
+          document.readyState === 'loading' &&
+          location.pathname === '/' &&
+          !matchMedia('(prefers-reduced-motion: reduce)').matches
+        ) {
+          document.documentElement.classList.add('preloading', 'preloaded');
+        }
+      } catch (e) {}
+    </script>
     <ClientRouter />
   </head>
   <body>
@@ -146,6 +159,13 @@ const {
      (the body keeps painting its own cream, so nothing on the page changes). */
   html.vt-running {
     background: #0d0b09;
+  }
+  /* the intro of the home page: dark from the very first paint (the preloader's own dark veil takes over once it exists) */
+  html.preloading {
+    background: #1a1410;
+  }
+  html.preloading body {
+    background: #1a1410;
   }
   #main-nav {
     view-transition-name: navbar;

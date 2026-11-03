@@ -15,21 +15,10 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
 ---
 
 <!--
-  Intro for every real load of the home page. The inline script runs before anything is painted and only marks <html> when the
-  intro should play (a real page load of the home page, a refresh too, motion allowed; not a click through from another page). Otherwise none of this
-  is shown. The hero waits for the `preloader-done` event (see Hero.astro).
+  Intro for every real load of the home page. A small inline script in the <head> (Layout.astro) runs before anything is painted and
+  only marks <html> when the intro should play (a real page load of the home page, a refresh too, motion allowed; not a click through
+  from another page). Otherwise none of this is shown. The hero waits for the `preloader-done` event (see Hero.astro).
 -->
-<script is:inline>
-  try {
-    if (
-      document.readyState === 'loading' &&
-      location.pathname === '/' &&
-      !matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      document.documentElement.classList.add('preloading', 'preloaded');
-    }
-  } catch (e) {}
-</script>
 
 <div class="preloader" aria-hidden="true" style={`--pl-w:${P.frame.width}px;--pl-h:${P.frame.height}px`}>
   <div class="pl-veil"></div>

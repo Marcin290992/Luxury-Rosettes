@@ -62,28 +62,6 @@ const {
     initLenis();
     return destroyLenis;
   });
-
-  // While a page transition runs, the area of the page picture that no page covers is dark, not the page's cream (see `html.vt-running`).
-  // This module runs once per visit, so these listeners are added once.
-  const root = document.documentElement;
-  let clearTimer = 0;
-  const clear = () => {
-    window.clearTimeout(clearTimer);
-    root.classList.remove('vt-running');
-  };
-  document.addEventListener('astro:before-preparation', () => {
-    window.clearTimeout(clearTimer);
-    root.classList.add('vt-running');
-    clearTimer = window.setTimeout(clear, 6000); // if the navigation never completes, the dark does not stay
-  });
-  document.addEventListener('astro:after-swap', () => {
-    // the new page stays live inside the animation, so the dark has to stay until the animation is over
-    window.clearTimeout(clearTimer);
-    root.classList.add('vt-running');
-    const running = (document as any).activeViewTransition as { finished: Promise<unknown> } | null | undefined;
-    if (running) running.finished.then(clear, clear);
-    else clearTimer = window.setTimeout(clear, 1700);
-  });
 </script>
 
 <style is:global>
@@ -154,18 +132,18 @@ const {
   ::view-transition {
     background: #0d0b09;
   }
-  /* On a phone the browser's address bar moves the page a little while it slides in or out, and the strip that shows is the page's
-     cream background: it ended up as a pale gap on the card. For the length of the transition the page itself is dark behind its content
-     (the body keeps painting its own cream, so nothing on the page changes). */
-  html.vt-running {
+  /* On a phone the browser's address bar moves the page a little while it slides in or out, and the strip that shows is whatever is
+     behind the page: it used to be the page's cream and ended up as a pale gap on the cards. So the page is dark behind its content, always
+     (set once, never switched at the start of a transition: the body keeps painting its own cream, so nothing on the page changes). */
+  html {
     background: #0d0b09;
   }
   /* the intro of the home page: dark from the very first paint (the preloader's own dark veil takes over once it exists) */
   html.preloading {
-    background: #1a1410;
+    background: #000;
   }
   html.preloading body {
-    background: #1a1410;
+    background: #000;
   }
   #main-nav {
     view-transition-name: navbar;

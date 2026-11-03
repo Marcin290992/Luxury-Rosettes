@@ -119,14 +119,12 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
 
   /* ---- with the script: a sticky screen inside a tall track ---- */
   .sp[data-live] {
-    height: calc((var(--sp-length) + 1) * 100vh);
-    height: calc((var(--sp-length) + 1) * 100lvh); /* lvh: constant when the mobile address bar slides in or out */
+    height: calc((var(--sp-length) + 1) * 100svh);
   }
   .sp[data-live] .sp-scene {
     position: sticky;
     top: 0;
-    height: 100vh;
-    height: 100lvh;
+    height: 100svh;
     padding: 0;
   }
   .sp[data-live] .sp-plain {

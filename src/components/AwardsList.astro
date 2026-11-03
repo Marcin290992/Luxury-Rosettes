@@ -124,14 +124,12 @@ const total = String(items.length).padStart(2, '0');
 
   /* ---- with the script: one pinned screen in a tall track ---- */
   .al[data-live] {
-    height: calc((1 + var(--al-length)) * 100vh);
-    height: calc((1 + var(--al-length)) * 100lvh); /* lvh: constant when the mobile address bar slides in or out */
+    height: calc((1 + var(--al-length)) * 100svh);
   }
   .al[data-live] .al-pin {
     position: sticky;
     top: 0;
-    height: 100vh;
-    height: 100lvh;
+    height: 100svh;
     padding: 0;
     overflow: hidden;
   }

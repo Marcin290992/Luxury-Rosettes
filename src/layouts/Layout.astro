@@ -195,6 +195,62 @@ const {
       clip-path: inset(0% round 0px);
     }
   }
+  /* Phones and tablets: the same swing, but cheaper. Animating clip-path (the rounded corners) cannot run on the GPU: every frame
+     the browser re-cuts a full-screen picture on the main thread, which is where the stutter came from. Transforms alone stay on the
+     GPU, so here the corners are not rounded; the animation is also a little shorter. */
+  @media (pointer: coarse), (max-width: 1024px) {
+    ::view-transition-old(root) {
+      animation-name: page-out-lite;
+      animation-duration: 1100ms;
+    }
+    ::view-transition-new(root) {
+      animation-name: page-in-lite;
+      animation-duration: 1100ms;
+    }
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      will-change: transform;
+    }
+    @keyframes page-out-lite {
+      0% {
+        transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
+        animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
+      }
+      25% {
+        transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
+        animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
+      }
+      40% {
+        transform: translateX(calc(var(--vt-dir) * -45%)) translateY(8%) rotate(calc(var(--vt-dir) * -14deg)) scale(0.6);
+        animation-timing-function: linear;
+      }
+      55%,
+      100% {
+        transform: translateX(calc(var(--vt-dir) * -115%)) translateY(40%) rotate(calc(var(--vt-dir) * -30deg)) scale(0.6);
+      }
+    }
+    @keyframes page-in-lite {
+      0%,
+      25% {
+        transform: translateX(calc(var(--vt-dir) * 115%)) translateY(40%) rotate(calc(var(--vt-dir) * 30deg)) scale(0.6);
+        animation-timing-function: linear;
+      }
+      40% {
+        transform: translateX(calc(var(--vt-dir) * 45%)) translateY(8%) rotate(calc(var(--vt-dir) * 14deg)) scale(0.6);
+        animation-timing-function: cubic-bezier(0, 0, 0.35, 1);
+      }
+      55%,
+      66% {
+        transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
+      }
+      66% {
+        animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+      }
+      100% {
+        transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
+      }
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     ::view-transition-old(root),
     ::view-transition-new(root) {

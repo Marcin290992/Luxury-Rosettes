@@ -75,6 +75,7 @@ const isCurrent = (href: string) =>
 
 <script>
   import { navigate } from 'astro:transitions/client';
+  import { prefetch } from 'astro:prefetch';
   import { mount } from '../scripts/lifecycle';
   import { getLenis } from '../scripts/lenis';
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
@@ -106,7 +107,19 @@ const isCurrent = (href: string) =>
       panel.toggleAttribute('inert', !open);
     };
 
-    const onToggle = () => setOpen(!nav.classList.contains('expanded'));
+    // While the menu is open the pages it links to are fetched in the background (the click then only swaps them in: on a phone the
+    // download used to start at the tap and the transition waited for it)
+    const warm = () => {
+      panel.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((a) => {
+        const u = new URL(a.href, location.href);
+        if (u.origin === location.origin && u.pathname !== location.pathname) prefetch(u.pathname + u.search, { ignoreSlowConnection: true });
+      });
+    };
+    const onToggle = () => {
+      const open = !nav.classList.contains('expanded');
+      setOpen(open);
+      if (open) warm();
+    };
     // Close on outside click, Escape, or after choosing a link
     const onOutsideClick = (e: MouseEvent) => {
       // the path, not the target: clicking the Menu button swaps its letters, so the target is already detached by now
@@ -142,7 +155,9 @@ const isCurrent = (href: string) =>
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       e.preventDefault();
       window.clearTimeout(leaving);
-      leaving = window.setTimeout(() => navigate(url.href), wasOpen ? 650 : 0);
+      // on a phone the menu's fold is shorter, so the page starts leaving sooner
+      const fold = matchMedia('(pointer: coarse)').matches ? 420 : 650;
+      leaving = window.setTimeout(() => navigate(url.href), wasOpen ? fold : 0);
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {

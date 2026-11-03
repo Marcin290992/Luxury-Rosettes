@@ -15,6 +15,9 @@ export function initLenis() {
   if (lenis || typeof window === 'undefined') return lenis;
 
   gsap.registerPlugin(ScrollTrigger);
+  // the mobile address bar sliding in or out changes only the window's height: that must not re-measure every pin and scrub
+  // (it made the scenes jump, e.g. at the start of a page transition)
+  ScrollTrigger.config({ ignoreMobileResize: true });
 
   lenis = new Lenis({ ...SMOOTH_WHEEL, ...SMOOTH_TOUCH, smoothWheel: true, autoRaf: false });
   lenis.on('scroll', ScrollTrigger.update);

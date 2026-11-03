@@ -335,7 +335,14 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     };
     buildGrid();
 
+    // Only a real change of the scene's size rebuilds it. On a phone or tablet the address bar sliding in or out (it does that when
+    // a page transition starts) fires a resize too, and rebuilding the grid then reset the photos' state: the ribbon and the grid jumped.
+    let sceneW = scene3.clientWidth;
+    let sceneH = scene3.clientHeight;
     const onResize = () => {
+      if (scene3.clientWidth === sceneW && scene3.clientHeight === sceneH) return;
+      sceneW = scene3.clientWidth;
+      sceneH = scene3.clientHeight;
       fit();
       buildGrid();
     };

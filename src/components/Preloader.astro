@@ -95,8 +95,8 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
       if (heroPhoto?.style.objectPosition) wallpaper.style.objectPosition = heroPhoto.style.objectPosition;
       const r = frame.getBoundingClientRect();
       win.t = r.top;
-      win.r = innerWidth - r.right;
-      win.b = innerHeight - r.bottom;
+      win.r = el.clientWidth - r.right;
+      win.b = el.clientHeight - r.bottom;
       win.l = r.left;
       applyWindow();
     };
@@ -190,12 +190,22 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
   }
   html.preloading .preloader {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* the same height as the hero (the largest viewport), so the wallpaper is cropped exactly like the hero's photo on phones and tablets too */
+    height: 100vh;
+    height: 100lvh;
+    --bar: calc(100vh - 100svh);
+    --bar: calc(100lvh - 100svh);
+    box-sizing: border-box;
     z-index: 3000;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    /* the part under the browser's address bar is not visible: the count stays above it */
     padding: clamp(1.5rem, 4vw, 2.5rem);
+    padding-bottom: calc(clamp(1.5rem, 4vw, 2.5rem) + var(--bar, 0px));
     background: var(--paper);
     color: var(--ink);
     font-family: var(--font-heading);
@@ -245,7 +255,8 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
   }
   .pl-frame {
     position: absolute;
-    top: 50%;
+    top: 50vh;
+    top: 50svh; /* the middle of what is visible */
     left: 50%;
     width: var(--pl-w);
     height: var(--pl-h);

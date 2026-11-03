@@ -1,7 +1,7 @@
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SMOOTH_WHEEL, SMOOTH_TOUCH } from './settings';
+import { SMOOTH_WHEEL } from './settings';
 
 let lenis: Lenis | undefined;
 let tick: ((time: number) => void) | undefined;
@@ -10,12 +10,19 @@ export function getLenis() {
   return lenis;
 }
 
-// Smooth scroll, driven by GSAP's ticker so ScrollTrigger pins/scrubs stay in sync
+// Smooth scroll, driven by GSAP's ticker so ScrollTrigger pins/scrubs stay in sync.
+// Only for a mouse or trackpad: on phones and tablets (a touch screen as the main input) the page scrolls natively, so the browser's own
+// scrolling, its address bar and its page transition all behave as they should.
 export function initLenis() {
   if (lenis || typeof window === 'undefined') return lenis;
 
+  gsap.registerPlugin(ScrollTrigger);
+  // the mobile address bar sliding in or out changes only the window's height: that must not re-measure every pin and scrub
+  ScrollTrigger.config({ ignoreMobileResize: true });
+
+  if (matchMedia('(pointer: coarse)').matches) return lenis;
+
   // A test switch: open any page with ?nolenis=1 and the smooth scroll stays off for the visit (?nolenis=0 turns it back on).
-  // It is for telling whether a jump at a page transition has to do with Lenis or not.
   try {
     const q = new URLSearchParams(location.search).get('nolenis');
     if (q === '1') sessionStorage.setItem('lrnolenis', '1');
@@ -25,15 +32,7 @@ export function initLenis() {
     /* ignore */
   }
 
-  gsap.registerPlugin(ScrollTrigger);
-  // the mobile address bar sliding in or out changes only the window's height: that must not re-measure every pin and scrub
-  // (it made the scenes jump, e.g. at the start of a page transition)
-  ScrollTrigger.config({ ignoreMobileResize: true });
-
-  // Android: the finger scrolls natively. Chrome there hides the address bar only for native scrolling; with Lenis driving the touch
-  // scroll the bar never went away. (iOS and the rest keep the heavier, Lenis-driven touch scroll.)
-  const android = /Android/i.test(navigator.userAgent);
-  lenis = new Lenis({ ...SMOOTH_WHEEL, ...(android ? { syncTouch: false } : SMOOTH_TOUCH), smoothWheel: true, autoRaf: false });
+  lenis = new Lenis({ ...SMOOTH_WHEEL, smoothWheel: true, autoRaf: false });
   lenis.on('scroll', ScrollTrigger.update);
   tick = (time) => lenis?.raf(time * 1000);
   gsap.ticker.add(tick);

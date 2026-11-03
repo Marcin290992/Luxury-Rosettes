@@ -14,6 +14,17 @@ export function getLenis() {
 export function initLenis() {
   if (lenis || typeof window === 'undefined') return lenis;
 
+  // A test switch: open any page with ?nolenis=1 and the smooth scroll stays off for the visit (?nolenis=0 turns it back on).
+  // It is for telling whether a jump at a page transition has to do with Lenis or not.
+  try {
+    const q = new URLSearchParams(location.search).get('nolenis');
+    if (q === '1') sessionStorage.setItem('lrnolenis', '1');
+    if (q === '0') sessionStorage.removeItem('lrnolenis');
+    if (sessionStorage.getItem('lrnolenis') === '1') return lenis;
+  } catch {
+    /* ignore */
+  }
+
   gsap.registerPlugin(ScrollTrigger);
   // the mobile address bar sliding in or out changes only the window's height: that must not re-measure every pin and scrub
   // (it made the scenes jump, e.g. at the start of a page transition)

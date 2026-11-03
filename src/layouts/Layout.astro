@@ -135,6 +135,21 @@ const {
   ::view-transition {
     background: #0d0b09;
   }
+  /* On a phone the snapshot of the page is the size of the LARGEST window (address bar hidden, e.g. 863px), while what is on the screen
+     is the window as it is now (bar shown, e.g. 783px). The card was taller than the screen and the page seemed to jump up when it started.
+     So the card is cut to the visible window (dvh): the top of the snapshot is the top of the page, and the part below the screen,
+     which nobody saw, is cropped, not squeezed. (On a desktop all the heights are equal and nothing changes.) */
+  ::view-transition-group(root) {
+    animation: none;
+    height: 100vh;
+    height: 100dvh;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
   /* On a phone the browser's address bar moves the page a little while it slides in or out, and the strip that shows is whatever is
      behind the page: it used to be the page's cream and ended up as a pale gap on the cards. So the page is dark behind its content, always
      (set once, never switched at the start of a transition: the body keeps painting its own cream, so nothing on the page changes). */

@@ -106,6 +106,11 @@ const small = [
 
 
 <style>
+  /* the words of the steps wait hidden over the hero (they come out of their masks later), so they must not be selectable meanwhile */
+  .story .texts {
+    -webkit-user-select: none;
+    user-select: none;
+  }
   .story {
     background: var(--paper);
     font-family: var(--font-heading);

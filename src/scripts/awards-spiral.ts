@@ -480,5 +480,12 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     };
   });
 
-  return () => mm.revert();
+  // the words are shown (or the plain fallback is) once the scene is built and the fonts are in, so that nothing flashes unstyled
+  const lift = () => document.documentElement.classList.remove('sp-pending');
+  Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 2500))]).then(lift);
+
+  return () => {
+    lift();
+    mm.revert();
+  };
 }

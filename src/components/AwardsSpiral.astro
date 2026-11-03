@@ -20,6 +20,18 @@ const urls = (await Promise.all(photos.map((p) => getImage({ src: p, width: 1200
 const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
 ---
 
+<!-- Until the script has built the scene (or has decided not to), the words and the plain grid are hidden: the page would otherwise show them unstyled
+     for a moment (in the fallback font, stacked) and then jump. The script lifts the class; the timeout is only a safety. -->
+<script is:inline>
+  try {
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.documentElement.classList.add('sp-pending');
+      setTimeout(function () {
+        document.documentElement.classList.remove('sp-pending');
+      }, 5000);
+    }
+  } catch (e) {}
+</script>
 <section class="sp" data-photos={urls.join('|')}>
   <div class="sp-scene">
     <div class="sp-words">
@@ -46,6 +58,13 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
     return root ? initAwardsSpiral(root) : undefined;
   });
 </script>
+
+<style is:global>
+  html.sp-pending .sp-words,
+  html.sp-pending .sp-plain {
+    visibility: hidden;
+  }
+</style>
 
 <style>
   .sp {

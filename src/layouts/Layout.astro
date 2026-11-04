@@ -432,10 +432,11 @@ const {
       clip-path: inset(0% round 0px);
     }
   }
-  /* Phones and tablets: the same swing, but cheaper. Animating clip-path (the rounded corners) cannot run on the GPU: every frame
-     the browser re-cuts a full-screen picture on the main thread, which is where the stutter came from. Transforms alone stay on the
-     GPU, so here the corners are not rounded; the animation is also a little shorter. */
-  @media (pointer: coarse), (max-width: 1024px) {
+  /* Every device: the same swing, but cheaper. Animating clip-path (the rounded corners) cannot run on the GPU: every frame
+     the browser re-cuts a full-screen picture on the main thread, which is where the stutter came from (first seen on phones, then
+     on a desktop too). Transforms alone stay on the GPU, so the corners are not rounded; phones get a shorter animation (below,
+     laptops keep 1500ms). The page-out / page-in keyframes above (with clip-path) are no longer used. */
+  @media all {
     ::view-transition-old(root) {
       animation-name: page-out-lite;
       animation-duration: 1100ms;
@@ -484,6 +485,13 @@ const {
       100% {
         transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
       }
+    }
+  }
+  /* a laptop / desktop keeps the original, slower tempo of the swing (1500ms), now also transform-only */
+  @media (pointer: fine) and (min-width: 1025px) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 1500ms;
     }
   }
   /* ---- the own card transition on touch devices (scripts/touch-transition.ts) ---- */

@@ -54,6 +54,8 @@ const {
         if (matchMedia('(pointer: coarse)').matches) {
           if (/[?&]vt=native/.test(location.search)) sessionStorage.setItem('lr-vtnative', '1');
           if (/[?&]vt=own/.test(location.search)) sessionStorage.removeItem('lr-vtnative');
+          if (/[?&]vt=calm/.test(location.search)) sessionStorage.setItem('lr-vtcalm', '1');
+          if (/[?&]vt=(cards|own)/.test(location.search)) sessionStorage.removeItem('lr-vtcalm');
           if (sessionStorage.getItem('lr-vtnative') !== '1') document.startViewTransition = undefined;
         }
       } catch (e) {}
@@ -536,6 +538,22 @@ const {
     touch-action: none;
     pointer-events: auto;
     backface-visibility: hidden;
+  }
+  /* the calm variant (?vt=calm): a dark veil with the logo over the live page, under the nav pill */
+  .pt-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: grid;
+    place-items: center;
+    background: #0d0b09;
+    touch-action: none;
+    pointer-events: auto;
+  }
+  .pt-veil img {
+    width: 56px;
+    height: auto;
+    opacity: 0.95;
   }
   /* while the cards play, the live page (already the new one) is out of sight; only the nav pill stays */
   html.pt-run > body {

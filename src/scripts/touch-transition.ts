@@ -117,14 +117,43 @@ function pageSettled(): Promise<void> {
   });
 }
 
+const SOFT = 'cubic-bezier(0.65, 0, 0.35, 1)';
+
+/** The calm variant (?vt=calm, ?vt=cards switches back): no copies of the page, only a dark veil with the logo that fades over the live page. */
+const calmOn = () => {
+  try {
+    return sessionStorage.getItem('lr-vtcalm') === '1';
+  } catch {
+    return false;
+  }
+};
+
+function makeVeil(): HTMLElement {
+  const veil = document.createElement('div');
+  veil.className = 'pt-veil';
+  veil.setAttribute('aria-hidden', 'true');
+  const src = document.querySelector<HTMLImageElement>('#main-nav .nav-logo img')?.currentSrc;
+  if (src) {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = '';
+    veil.append(img);
+  }
+  veil.style.opacity = '0';
+  root().append(veil);
+  return veil;
+}
+
 export function setupTouchTransition() {
   let dir = 1;
+  let veil: HTMLElement | null = null;
   let cardOld: HTMLElement | null = null;
   let running = false;
 
   const clean = () => {
     restoreNow(); // the live page under the cards is where the new card shows it
-    document.querySelectorAll('.pt-card').forEach((c) => c.remove());
+    document.querySelectorAll('.pt-card, .pt-veil').forEach((c) => c.remove());
+    veil = null;
     root().classList.remove('pt-run');
     cardOld = null;
     running = false;
@@ -133,10 +162,31 @@ export function setupTouchTransition() {
   document.addEventListener('astro:before-preparation', (e) => {
     clean();
     dir = (e as Event & { direction?: string }).direction === 'back' ? -1 : 1;
+    if (!calmOn() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // calm: the veil comes down over the live page while the next page is fetched, and the router waits for it (its loader is awaited)
+    try {
+      const v = makeVeil();
+      veil = v;
+      running = true;
+      const fade = v.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 420, easing: SOFT, fill: 'forwards' });
+      const mark = v.querySelector('img')?.animate([{ opacity: 0, transform: 'scale(0.92)' }, { opacity: 0.95, transform: 'scale(1)' }], {
+        duration: 520,
+        delay: 140,
+        easing: SOFT,
+        fill: 'both',
+      });
+      const ev = e as Event & { loader: () => Promise<void> };
+      const original = ev.loader;
+      ev.loader = async () => {
+        await Promise.all([original(), fade.finished, mark?.finished]);
+      };
+    } catch {
+      clean();
+    }
   });
 
   document.addEventListener('astro:after-preparation', () => {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (calmOn() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     try {
       cardOld = makeCard(true);
       running = true;
@@ -146,6 +196,24 @@ export function setupTouchTransition() {
   });
 
   document.addEventListener('astro:after-swap', () => {
+    if (calmOn() && running && veil) {
+      // calm: the new page is built under the veil, put where it belongs, and when it has settled the veil lifts - the page is the live one
+      const v = veil;
+      const safety = window.setTimeout(clean, 5000);
+      Promise.all([pageSettled(), new Promise((r) => window.setTimeout(r, 260))]).then(() => {
+        restoreNow();
+        settleScrubs();
+        const lift = v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 760, easing: SOFT, fill: 'forwards' });
+        lift.finished.then(
+          () => {
+            window.clearTimeout(safety);
+            clean();
+          },
+          () => clean(),
+        );
+      });
+      return;
+    }
     if (!running || !cardOld) return;
     const oldCard = cardOld;
     // the router rewrites <html>'s attributes on a swap: the class that hides the live page is set again here

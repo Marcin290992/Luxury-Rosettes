@@ -227,7 +227,8 @@ const {
   vtKeep();
 
   mount(() => {
-    if (lenisOff()) return;
+    // Lenis is switched off on touch devices for now (native scroll there); to bring it back, remove the pointer check
+    if (lenisOff() || matchMedia('(pointer: coarse)').matches) return;
     initLenis();
     return destroyLenis;
   });

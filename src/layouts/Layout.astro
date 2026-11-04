@@ -46,6 +46,16 @@ const {
         }
       } catch (e) {}
     </script>
+    <!-- Phones and tablets: no native View Transition (its snapshot is the size of the largest window, which made the page jump on Android).
+         Without document.startViewTransition Astro runs its own "animate" fallback on the live page - see the data-astro-transition-fallback CSS below.
+         ?vt=native keeps the native one for comparing. -->
+    <script is:inline>
+      try {
+        if (matchMedia('(pointer: coarse)').matches && !/[?&]vt=native/.test(location.search)) {
+          document.startViewTransition = undefined;
+        }
+      } catch (e) {}
+    </script>
     <ClientRouter />
   </head>
   <body>
@@ -347,6 +357,43 @@ const {
       100% {
         transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
       }
+    }
+  }
+  /* Touch devices run Astro's fallback (see the head script): the live page leaves, the page is swapped, the new one arrives.
+     Same swing as the native one, transform only. */
+  html[data-astro-transition-fallback] {
+    overflow-x: clip;
+  }
+  html[data-astro-transition-fallback='old'] body {
+    animation: 600ms linear both fb-out;
+  }
+  html[data-astro-transition-fallback='new'] body {
+    animation: 800ms linear both fb-in;
+  }
+  @keyframes fb-out {
+    0% {
+      transform: none;
+      animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
+    }
+    45% {
+      transform: scale(0.6);
+      animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
+    }
+    100% {
+      transform: translateX(calc(var(--vt-dir) * -115%)) translateY(40%) rotate(calc(var(--vt-dir) * -30deg)) scale(0.6);
+    }
+  }
+  @keyframes fb-in {
+    0% {
+      transform: translateX(calc(var(--vt-dir) * 115%)) translateY(40%) rotate(calc(var(--vt-dir) * 30deg)) scale(0.6);
+      animation-timing-function: cubic-bezier(0, 0, 0.35, 1);
+    }
+    55% {
+      transform: scale(0.6);
+      animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+    }
+    100% {
+      transform: none;
     }
   }
   /* test switches (see the script): ?vtoff=1 and ?novtbg=1 */

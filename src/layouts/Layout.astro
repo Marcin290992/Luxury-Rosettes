@@ -199,33 +199,6 @@ const {
     window.addEventListener('load', () => setTimeout(probeScb, 3000), { once: true });
   }
 
-  // Test switches for the jump at the start of a page transition on a phone (they stay for the visit; ?vtoff=0 / ?novtbg=0 clear them):
-  //   ?vtoff=1   the card swing is off on this device: the page just changes (tells whether the jump is in the card animation at all)
-  //   ?novtbg=1  the page has no dark colour of its own behind its content (the way it was before the "pale gap" fix)
-  const TESTS: Record<string, string> = { vtoff: 'vt-test-off', novtbg: 'no-vt-bg' };
-  const applyTests = () => {
-    try {
-      const params = new URLSearchParams(location.search);
-      for (const [key, cls] of Object.entries(TESTS)) {
-        const q = params.get(key);
-        if (q === '1') sessionStorage.setItem('lr-' + key, '1');
-        if (q === '0') sessionStorage.removeItem('lr-' + key);
-        document.documentElement.classList.toggle(cls, sessionStorage.getItem('lr-' + key) === '1');
-      }
-    } catch {
-      /* ignore */
-    }
-  };
-  applyTests();
-  document.addEventListener('astro:after-swap', () => {
-    // the router rewrites <html>'s classes on a swap
-    try {
-      for (const [key, cls] of Object.entries(TESTS)) document.documentElement.classList.toggle(cls, sessionStorage.getItem('lr-' + key) === '1');
-    } catch {
-      /* ignore */
-    }
-  });
-
   // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap
   // (?nolenis=1 turns it off for the visit, ?nolenis=0 on again: a test switch, to tell whether the page transition problem on a phone comes from it)
   const lenisOff = () => {
@@ -505,8 +478,6 @@ const {
       55%,
       66% {
         transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-      }
-      66% {
         animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
       }
       100% {
@@ -514,15 +485,6 @@ const {
       }
     }
   }
-  /* test switches (see the script): ?vtoff=1 and ?novtbg=1 */
-  html.vt-test-off::view-transition-old(root),
-  html.vt-test-off::view-transition-new(root) {
-    animation: none;
-  }
-  html.no-vt-bg {
-    background: none;
-  }
-  /* ?vtlab=1 (see debug-log.ts): the transition is held at its first frame for 4s and its layers are outlined, to read the geometry off a screenshot */
   /* ---- the own card transition on touch devices (scripts/touch-transition.ts) ---- */
   .pt-card {
     position: fixed;
@@ -562,6 +524,7 @@ const {
   html.pt-run > body > :not(#main-nav) {
     visibility: hidden;
   }
+  /* ?vtlab=1 (see debug-log.ts): the transition is held at its first frame for 4s and its layers are outlined, to read the geometry off a screenshot */
   html.vt-lab::view-transition-group(root) {
     outline: 6px solid #0af;
     outline-offset: -6px;

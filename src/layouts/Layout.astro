@@ -54,21 +54,24 @@ const {
 </html>
 
 <script>
-  import { mount } from '../scripts/lifecycle';
-  import { initLenis, destroyLenis } from '../scripts/lenis';
-  import { initDebug } from '../scripts/debug-log';
+    import { mount } from '../scripts/lifecycle';
+  import { initLenis, destroyLenis, freezeLenis } from '../scripts/lenis';
+  import { initDebug, dbg } from '../scripts/debug-log';
 
   initDebug(); // only does anything when the page is opened with ?debug=1
 
   // The page transition is drawn in the browser's "snapshot" space, not in the window you see. On a phone that space also covers the
   // area behind the address bar, so its top edge sits ABOVE the top of the visible page by the height of the bar (measured on a Pixel:
-  // 56.19px; the nav pill is at 20px in the window but at 76.19px in the snapshot space). The picture of the old page was put at the top
-  // of that space, so the whole card sat one bar-height too high and the page seemed to jump up as the transition began.
-  // The offset is read from a fixed element that is in the transition by itself, the nav pill (its own layer is placed correctly by the
-  // browser): its place in the snapshot space minus its place in the window. The root layer is then moved down by exactly that.
-  // (On a desktop the two spaces are the same, the offset is 0 and nothing moves.) ?vtcomp=0 switches this off, ?vtcomp=1 on again.
+  // 56.19px; the nav pill is at 20px in the window but at 76.19px in the snapshot space).
+  // What a screen recording of the Pixel showed, frame by frame: the picture of the OLD page, when the page was scrolled, is drawn one
+  // bar-height too high (the page "lifts" for a moment before the card starts), while the picture of the NEW page, at the top, is
+  // right where it belongs. So only the layer whose page was scrolled is moved down, by min(its scroll, the bar offset), and it is
+  // moved from before the very first frame (a first version moved both layers and only after the first frames: the card lifted for
+  // ~100ms, and then the new page ended 56px too low and jumped up as the transition finished).
+  // The offset itself is read from a fixed element that is in the transition by itself, the nav pill (its own layer is placed correctly
+  // by the browser): its place in the snapshot space minus its place in the window. On a desktop the two spaces are the same, the
+  // offset is 0 and nothing moves. ?vtcomp=0 switches this off, ?vtcomp=1 on again.
   const SCB = 'lr-scb';
-  const applyScb = (px: number) => document.documentElement.style.setProperty('--vt-scb', `${px.toFixed(2)}px`);
   const compOn = () => {
     try {
       const q = new URLSearchParams(location.search).get('vtcomp');
@@ -117,17 +120,44 @@ const {
       /* ignore */
     }
   };
-  // the router rewrites <html>'s attributes on a swap, so the value is set after it, in time for the first frame: the offset that was
-  // measured earlier, scaled by how much of the bar is shown now; the real one replaces it as soon as the transition's layers exist
-  document.addEventListener('astro:after-swap', () => applyScb(compOn() ? scbMax * barShown() : 0));
+  // the offset with the bar fully shown: the measured one, or (before any measurement) 0.7 of the bar's own travel (lvh - svh), the
+  // ratio measured on the Pixel (56.19 of 80)
+  const fullOffset = () => {
+    if (scbMax) return scbMax;
+    document.body.append(unitL, unitS);
+    const gap = unitL.offsetHeight - unitS.offsetHeight;
+    unitL.remove();
+    unitS.remove();
+    return gap >= 4 ? 0.7 * gap : 0;
+  };
+  // how far a layer's picture is drawn too high: only a scrolled page (min of its scroll and the offset), and only while the bar is shown
+  const lift = (scroll: number) => (compOn() ? Math.min(Math.max(scroll, 0), fullOffset()) * barShown() : 0);
+  let scrollOld = 0;
+  let scrollNew = 0;
+  const setVar = (name: string, px: number) => document.documentElement.style.setProperty(name, `${px.toFixed(2)}px`);
+  const applyLayers = () => {
+    setVar('--vt-old', lift(scrollOld));
+    setVar('--vt-new', lift(scrollNew));
+  };
+  // astro:after-preparation is the last moment before the browser takes the picture of the old page, so its offset is in place for the
+  // very first frame; the router rewrites <html>'s attributes on a swap, so everything is set again after it (same task, no frame between)
+  document.addEventListener('astro:after-preparation', () => {
+    scrollOld = scrollY;
+    scrollNew = 0;
+    applyLayers();
+  });
+  document.addEventListener('astro:after-swap', () => {
+    scrollNew = scrollY; // a back navigation lands on a scrolled page: its picture is drawn too high too
+    applyLayers();
+  });
   document.addEventListener('astro:before-swap', (e) => {
     const vt = (e as Event & { viewTransition?: ViewTransition }).viewTransition;
     vt?.ready
       .then(() => {
-        const d = compOn() ? measureScb() : 0;
+        const d = compOn() ? measureScb() : null;
         if (d === null) return;
-        remember(d);
-        applyScb(d);
+        remember(d); // the real offset replaces the estimate
+        applyLayers();
       })
       .catch(() => {});
   });
@@ -189,14 +219,44 @@ const {
       return false;
     }
   };
+    // ?vtkeep=1 — a test switch for the page-transition jump on a phone: instead of DESTROYING Lenis in astro:after-preparation (which
+  // strips `lenis`/`lenis-smooth` from <html> and changes the document height right as the browser takes the snapshot), Lenis is only
+  // FROZEN there and torn down after the capture (astro:before-swap). Lenis itself stays on. ?vtkeep=0 is the current behaviour.
+  const vtKeep = () => {
+    try {
+      const q = new URLSearchParams(location.search).get('vtkeep');
+      if (q === '1') sessionStorage.setItem('lr-vtkeep', '1');
+      if (q === '0') sessionStorage.removeItem('lr-vtkeep');
+      return sessionStorage.getItem('lr-vtkeep') === '1';
+    } catch {
+      return false;
+    }
+  };
+  vtKeep();
+
   mount(() => {
     if (lenisOff()) return;
     initLenis();
     return destroyLenis;
   });
 
-  // Astro captures the outgoing page after preparation, so remove Lenis before that snapshot.
-  document.addEventListener('astro:after-preparation', destroyLenis);
+  // Astro captures the outgoing page after preparation. Normally Lenis is removed before that snapshot; with ?vtkeep=1 it is only
+  // frozen, so <html> keeps its classes through the capture, and the real destroy runs at before-swap (after the capture, before swap).
+  document.addEventListener('astro:after-preparation', () => {
+    if (vtKeep()) {
+      freezeLenis();
+      try {
+        dbg(`KEEP html@capture "${document.documentElement.className}"`);
+      } catch {
+        /* ignore */
+      }
+    } else {
+      destroyLenis();
+    }
+  });
+  document.addEventListener('astro:before-swap', () => {
+    if (vtKeep()) destroyLenis();
+  });
 </script>
 
 <style is:global>
@@ -273,11 +333,16 @@ const {
      which nobody saw, is cropped, not squeezed. (On a desktop all the heights are equal and nothing changes.) */
   ::view-transition-group(root) {
     animation: none;
-    height: 100vh;
-    /* svh = the smallest window (address bar shown): a constant. dvh followed the bar live, so a page scrolled down (bar hidden) changed
-       height at the start of the transition when the bar came back. Taller snapshots are only cropped (object-fit: cover, top). */
-    height: 100svh;
-    translate: 0 var(--vt-scb, 0px); /* the snapshot space starts above the visible page on a phone, see the script above */
+    /* the snapshot space's own height (lvh): it starts above the visible page by the address bar, so it has to reach that much below
+       the top to still cover the whole window; taller pictures are only cropped (object-fit: cover, top) */
+    height: 100lvh;
+  }
+  /* each layer is moved down by the part of its picture that the browser draws too high (see the script above) */
+  ::view-transition-old(root) {
+    translate: 0 var(--vt-old, 0px);
+  }
+  ::view-transition-new(root) {
+    translate: 0 var(--vt-new, 0px);
   }
   ::view-transition-old(root),
   ::view-transition-new(root) {

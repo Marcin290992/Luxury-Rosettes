@@ -106,7 +106,7 @@ function watchTransition() {
       return `${c.width}x${c.height} top ${c.top} tr ${c.transform === 'none' ? '-' : c.transform.replace(/\s/g, '').slice(0, 40)}`;
     };
     const nav = document.getElementById('main-nav')?.getBoundingClientRect();
-    const scb = `scb ${el.style.getPropertyValue('--vt-scb') || '-'} stored ${sessionStorage.getItem('lr-scb') ?? '-'}`;
+    const scb = `old ${el.style.getPropertyValue('--vt-old') || '-'} new ${el.style.getPropertyValue('--vt-new') || '-'} stored ${sessionStorage.getItem('lr-scb') ?? '-'}`;
     dbg(
       `VT#${n} ${scb} inner ${innerHeight} scrollY ${Math.round(scrollY)} navtop ${nav ? Math.round(nav.top) : '-'} | vt ${css('::view-transition')} | group ${css('::view-transition-group(root)')} | old ${css('::view-transition-old(root)')} | navgrp ${css('::view-transition-group(navbar)')}`,
     );

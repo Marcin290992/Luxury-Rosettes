@@ -70,8 +70,10 @@ const {
   import { initLenis, destroyLenis, freezeLenis } from '../scripts/lenis';
   import { initDebug, dbg } from '../scripts/debug-log';
   import { setupTouchTransition } from '../scripts/touch-transition';
+  import { setupScrollRestore } from '../scripts/scroll-restore';
 
   initDebug(); // only does anything when the page is opened with ?debug=1
+  setupScrollRestore(); // going back puts the reader where they were (the router restores it while the page is still short)
   // touch devices: the own card transition (the native one is switched off in the head, see above)
   if (typeof document.startViewTransition !== 'function' && matchMedia('(pointer: coarse)').matches) setupTouchTransition();
 

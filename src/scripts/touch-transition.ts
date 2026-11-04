@@ -40,6 +40,8 @@ const inFrames = (d: number): Keyframe[] => [
   { offset: 1, transform: tf(0, 0, 0, 1, d) },
 ];
 
+import { restoreTarget, restoreNow, settleScrubs } from './scroll-restore';
+
 const root = () => document.documentElement;
 
 /** All the page's CSS as one string, read from the live style sheets (so it can be copied into the old page's card). */
@@ -60,8 +62,7 @@ function collectCss(): string {
  * `isolate`: the copy lives in a shadow root with its own copy of the page's CSS. The router replaces the old page's style sheets on a
  * swap, and a card that is still playing would lose its look; and the old copy must not be found by the new page's scripts either.
  */
-function makeCard(isolate: boolean): HTMLElement {
-  const y = window.scrollY;
+function makeCard(isolate: boolean, y = window.scrollY): HTMLElement {
   const card = document.createElement('div');
   card.className = 'pt-card';
   card.setAttribute('aria-hidden', 'true');
@@ -90,12 +91,39 @@ function makeCard(isolate: boolean): HTMLElement {
   return card;
 }
 
+/**
+ * Resolves when the new page has settled: its height has not changed for a few frames. The components build their pinned sections and
+ * ScrollTrigger re-measures the page for a while after the swap (up to a few hundred ms on a phone); a copy taken before that shows another
+ * layout than the page will have, and the card would change into something else at the very end.
+ */
+function pageSettled(): Promise<void> {
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+    let last = -1;
+    let same = 0;
+    const tick = () => {
+      restoreNow(); // while it settles, the page is kept at the position it is going to show
+      const h = document.documentElement.scrollHeight;
+      same = h === last ? same + 1 : 0;
+      last = h;
+      const age = performance.now() - t0;
+      if ((same >= 4 && age > 150) || age > 900) {
+        settleScrubs(); // the sections stand where this scroll position puts them, not on their way there
+        resolve();
+      }
+      else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
 export function setupTouchTransition() {
   let dir = 1;
   let cardOld: HTMLElement | null = null;
   let running = false;
 
   const clean = () => {
+    restoreNow(); // the live page under the cards is where the new card shows it
     document.querySelectorAll('.pt-card').forEach((c) => c.remove());
     root().classList.remove('pt-run');
     cardOld = null;
@@ -122,24 +150,22 @@ export function setupTouchTransition() {
     const oldCard = cardOld;
     // the router rewrites <html>'s attributes on a swap: the class that hides the live page is set again here
     root().classList.add('pt-run');
-    const safety = window.setTimeout(clean, DURATION + 3000);
-    // two frames: the new page has been built and laid out, so the copy is what the page will show
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        try {
-          const newCard = makeCard(false);
-          const out = oldCard.animate(outFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });
-          const into = newCard.animate(inFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });
-          Promise.allSettled([out.finished, into.finished]).then(() => {
-            window.clearTimeout(safety);
-            clean();
-          });
-        } catch {
+    const safety = window.setTimeout(clean, DURATION + 4000);
+    // the card of the new page is copied once the page has settled (the old card covers everything meanwhile)
+    pageSettled().then(() => {
+      try {
+        const newCard = makeCard(false, restoreTarget() || window.scrollY);
+        const out = oldCard.animate(outFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });
+        const into = newCard.animate(inFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });
+        Promise.allSettled([out.finished, into.finished]).then(() => {
           window.clearTimeout(safety);
           clean();
-        }
-      }),
-    );
+        });
+      } catch {
+        window.clearTimeout(safety);
+        clean();
+      }
+    });
   });
 
   // a navigation that ends without a swap (an error, the same page) must not leave a card over the page

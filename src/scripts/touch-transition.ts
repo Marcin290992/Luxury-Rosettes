@@ -91,6 +91,29 @@ function makeCard(isolate: boolean, y = window.scrollY): HTMLElement {
   return card;
 }
 
+const frames = (n: number) =>
+  new Promise<void>((resolve) => {
+    const step = (left: number) => (left <= 0 ? resolve() : requestAnimationFrame(() => step(left - 1)));
+    step(n);
+  });
+
+/**
+ * A card that is READY before anyone sees it: its pictures are decoded and the browser has had frames to paint it. A card shown the moment
+ * it is made is painted from nothing - the pictures of the copy are new elements that still have to be decoded - and the page flashed
+ * (black or white) before the copy filled in, which is exactly what made it look like a screenshot. The card is on the page from the start,
+ * but practically transparent (so it is really painted), and only when it is ready it becomes opaque.
+ */
+async function prepareCard(isolate: boolean, y?: number): Promise<HTMLElement> {
+  const card = makeCard(isolate, y);
+  card.style.opacity = '0.01';
+  const scope: ParentNode = card.shadowRoot ?? card;
+  const pictures = Array.from(scope.querySelectorAll('img'));
+  const decoded = Promise.all(pictures.map((img) => img.decode().catch(() => {})));
+  await Promise.race([decoded, new Promise((r) => window.setTimeout(r, 500))]);
+  await frames(3);
+  return card;
+}
+
 /**
  * Resolves when the new page has settled: its height has not changed for a few frames. The components build their pinned sections and
  * ScrollTrigger re-measures the page for a while after the swap (up to a few hundred ms on a phone); a copy taken before that shows another
@@ -162,7 +185,32 @@ export function setupTouchTransition() {
   document.addEventListener('astro:before-preparation', (e) => {
     clean();
     dir = (e as Event & { direction?: string }).direction === 'back' ? -1 : 1;
-    if (!calmOn() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!calmOn()) {
+      // cards: the card of the old page is made and made ready while the next page is fetched; the router waits for both (its loader is
+      // awaited), and the old page stays on screen, untouched, until the card is ready to take its place
+      try {
+        const ready = prepareCard(true);
+        const ev = e as Event & { loader: () => Promise<void> };
+        const original = ev.loader;
+        ev.loader = async () => {
+          await original();
+          try {
+            const card = await ready;
+            // it becomes opaque gradually over the identical page below: whatever the browser has not painted of it yet cannot show as a flash
+            await card.animate([{ opacity: 0.01 }, { opacity: 1 }], { duration: 160, easing: 'linear', fill: 'forwards' }).finished.catch(() => {});
+            card.style.opacity = '';
+            cardOld = card;
+            running = true;
+          } catch {
+            clean();
+          }
+        };
+      } catch {
+        clean();
+      }
+      return;
+    }
     // calm: the veil comes down over the live page while the next page is fetched, and the router waits for it (its loader is awaited)
     try {
       const v = makeVeil();
@@ -180,16 +228,6 @@ export function setupTouchTransition() {
       ev.loader = async () => {
         await Promise.all([original(), fade.finished, mark?.finished]);
       };
-    } catch {
-      clean();
-    }
-  });
-
-  document.addEventListener('astro:after-preparation', () => {
-    if (calmOn() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    try {
-      cardOld = makeCard(true);
-      running = true;
     } catch {
       clean();
     }
@@ -220,9 +258,10 @@ export function setupTouchTransition() {
     root().classList.add('pt-run');
     const safety = window.setTimeout(clean, DURATION + 4000);
     // the card of the new page is copied once the page has settled (the old card covers everything meanwhile)
-    pageSettled().then(() => {
+    pageSettled().then(async () => {
       try {
-        const newCard = makeCard(false, restoreTarget() || window.scrollY);
+        const newCard = await prepareCard(false, restoreTarget() || window.scrollY);
+        newCard.style.opacity = '';
         const out = oldCard.animate(outFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });
         const into = newCard.animate(inFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });
         Promise.allSettled([out.finished, into.finished]).then(() => {

@@ -79,7 +79,12 @@ function watchTransition() {
     requestAnimationFrame(tick);
   };
   document.addEventListener('astro:before-preparation', () => start('before-preparation'));
-  document.addEventListener('astro:before-swap', () => dbg('--- before-swap'));
+  document.addEventListener('astro:after-preparation', () => dbg('--- after-preparation (the picture of the old page is taken next)'));
+  document.addEventListener('astro:before-swap', (e) => {
+    dbg('--- before-swap (the update callback starts)');
+    const vt = (e as Event & { viewTransition?: ViewTransition }).viewTransition;
+    vt?.ready.then(() => dbg('--- ready (the transition layers are up)')).catch(() => {});
+  });
   document.addEventListener('astro:after-swap', () => start('after-swap'));
 
   // The window at the moment the page is captured, and the browser's own units (lvh = address bar hidden, svh = shown), so the

@@ -113,6 +113,10 @@ const {
     initLenis();
     return destroyLenis;
   });
+
+  // Astro captures the outgoing page after preparation, so remove Lenis before that snapshot.
+  // The after-swap mount above creates it again for the incoming page.
+  document.addEventListener('astro:after-preparation', destroyLenis);
 </script>
 
 <style is:global>

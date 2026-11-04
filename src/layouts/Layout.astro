@@ -86,31 +86,69 @@ const {
     const d = new DOMMatrix(m).f - nav.getBoundingClientRect().top;
     return Number.isFinite(d) ? d : null;
   };
-  let scbCached = 0;
+  // scbMax = the offset with the address bar fully shown (what was measured). It is needed BEFORE the first frame of a transition, so it
+  // is kept from the last measurement, and for a fresh visit it is measured once, early, by a transition that changes nothing (below).
+  let scbMax = 0;
   try {
-    scbCached = parseFloat(sessionStorage.getItem(SCB) || '0') || 0;
+    scbMax = parseFloat(sessionStorage.getItem(SCB) || '0') || 0;
   } catch {
     /* ignore */
   }
-  // the router rewrites <html>'s attributes on a swap, so the value is set after it: the last measured one right away, the real one
-  // as soon as the transition's layers exist
-  document.addEventListener('astro:after-swap', () => applyScb(compOn() ? scbCached : 0));
+  const unitL = document.createElement('div');
+  unitL.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none;';
+  const unitS = document.createElement('div');
+  unitS.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100svh;visibility:hidden;pointer-events:none;';
+  // how much of the address bar is shown right now: 1 = fully (the window is its smallest), 0 = hidden (the largest)
+  const barShown = () => {
+    document.body.append(unitL, unitS);
+    const l = unitL.offsetHeight;
+    const sm = unitS.offsetHeight;
+    unitL.remove();
+    unitS.remove();
+    return l - sm < 4 ? 1 : Math.min(1, Math.max(0, (l - innerHeight) / (l - sm)));
+  };
+  const remember = (d: number) => {
+    // only a measurement taken with the bar fully shown is the full offset
+    if (barShown() < 0.98 || d < 0) return;
+    scbMax = d;
+    try {
+      sessionStorage.setItem(SCB, String(d));
+    } catch {
+      /* ignore */
+    }
+  };
+  // the router rewrites <html>'s attributes on a swap, so the value is set after it, in time for the first frame: the offset that was
+  // measured earlier, scaled by how much of the bar is shown now; the real one replaces it as soon as the transition's layers exist
+  document.addEventListener('astro:after-swap', () => applyScb(compOn() ? scbMax * barShown() : 0));
   document.addEventListener('astro:before-swap', (e) => {
     const vt = (e as Event & { viewTransition?: ViewTransition }).viewTransition;
     vt?.ready
       .then(() => {
         const d = compOn() ? measureScb() : 0;
         if (d === null) return;
-        scbCached = d;
-        try {
-          sessionStorage.setItem(SCB, String(d));
-        } catch {
-          /* ignore */
-        }
+        remember(d);
         applyScb(d);
       })
       .catch(() => {});
   });
+  // A fresh visit has no measurement yet, and the first transition would start with the card too high for a moment. So once the page has
+  // settled, a transition that changes nothing is started and skipped on the spot, only to read the offset (the picture is the same
+  // before and after, so nothing shows). Phones only, and only while the bar is fully shown (that is when the full offset can be read).
+  if (!scbMax && matchMedia('(pointer: coarse)').matches && typeof document.startViewTransition === 'function') {
+    const probeScb = () => {
+      if (scbMax || !compOn()) return;
+      if (barShown() < 0.98 || document.documentElement.classList.contains('preloading')) return setTimeout(probeScb, 2500);
+      const vt = document.startViewTransition(() => {});
+      vt.ready
+        .then(() => {
+          const d = measureScb();
+          if (d !== null) remember(d);
+          vt.skipTransition();
+        })
+        .catch(() => {});
+    };
+    window.addEventListener('load', () => setTimeout(probeScb, 3000), { once: true });
+  }
 
   // Test switches for the jump at the start of a page transition on a phone (they stay for the visit; ?vtoff=0 / ?novtbg=0 clear them):
   //   ?vtoff=1   the card swing is off on this device: the page just changes (tells whether the jump is in the card animation at all)

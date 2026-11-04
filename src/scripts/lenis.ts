@@ -10,8 +10,7 @@ export function getLenis() {
   return lenis;
 }
 
-// Smooth scroll, driven by GSAP's ticker so ScrollTrigger pins/scrubs stay in sync. On every device, without exceptions:
-// the wheel and the finger both get the same heavy, gliding scroll.
+// Smooth scroll is driven by GSAP's ticker so ScrollTrigger pins/scrubs stay in sync.
 export function initLenis() {
   if (lenis || typeof window === 'undefined') return lenis;
 
@@ -19,9 +18,11 @@ export function initLenis() {
   // the mobile address bar sliding in or out changes only the window's height: that must not re-measure every pin and scrub
   ScrollTrigger.config({ ignoreMobileResize: true });
 
+  const syncTouch = !window.matchMedia('(pointer: coarse)').matches;
   lenis = new Lenis({
     ...SMOOTH_WHEEL,
     ...SMOOTH_TOUCH,
+    syncTouch,
     smoothWheel: true,
     autoRaf: false,
     stopInertiaOnNavigate: true,

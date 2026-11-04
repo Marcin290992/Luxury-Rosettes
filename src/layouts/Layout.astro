@@ -159,11 +159,24 @@ const {
   if (nativeVT && matchMedia('(pointer: coarse)').matches) {
     document.startViewTransition = ((cb?: () => void | Promise<void>) => {
       if (window.scrollY > 1 && barShown() > 0.02) {
-        const done = Promise.resolve().then(() => cb?.());
+        // a dark veil (the live page, no snapshot) fades in, the pages are swapped under it, and it lifts: a short fade instead of the swing
+        const veil = document.createElement('div');
+        veil.className = 'pt-veil'; // the style is below (fixed, dark, under the nav pill)
+        veil.setAttribute('aria-hidden', 'true');
+        veil.style.opacity = '0';
+        document.documentElement.append(veil);
+        const fade = (from: number, to: number, ms: number) =>
+          veil.animate([{ opacity: from }, { opacity: to }], { duration: ms, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', fill: 'forwards' }).finished;
+        const swapped = fade(0, 1, 260).then(() => cb?.());
+        const finished = swapped
+          .then(() => new Promise((r) => setTimeout(r, 120)))
+          .then(() => fade(1, 0, 420))
+          .finally(() => veil.remove());
+        swapped.catch(() => veil.remove());
         const fake = {
-          ready: done,
-          updateCallbackDone: done,
-          finished: done,
+          ready: swapped,
+          updateCallbackDone: swapped,
+          finished,
           skipTransition() {},
         };
         return fake as unknown as ViewTransition;

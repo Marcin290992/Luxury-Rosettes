@@ -66,9 +66,27 @@ const {
     return destroyLenis;
   });
 
-  // Astro captures the outgoing page after preparation, so remove Lenis before that snapshot. A running smooth scroll would otherwise
+    // The card stands in for the snapshot, and the snapshot is the window as it is at the moment the transition starts: its height
+  // changes with the address bar on a phone (larger when the bar is hidden, i.e. when the page is scrolled). So the card's height is
+  // measured here, in the last moment before the snapshot (astro:after-preparation) and on every resize, and read by the CSS as --vt-h.
+  // The page is not scrolled anywhere: a transition started half-way down a page keeps that part in that place, and the card is
+  // exactly as tall as the picture on the screen, so it does not jump when the bar moves.
+  const setCardHeight = () => {
+    document.documentElement.style.setProperty('--vt-h', `${Math.round(window.innerHeight)}px`);
+  };
+  setCardHeight();
+  window.addEventListener('resize', setCardHeight);
+  document.addEventListener('astro:after-preparation', setCardHeight);
+  document.addEventListener('astro:after-swap', setCardHeight);
+
+    // Astro captures the outgoing page after preparation, so remove Lenis before that snapshot. A running smooth scroll would otherwise
   // be caught mid-frame in the snapshot and the card would not match the page it shows.
   document.addEventListener('astro:after-preparation', destroyLenis);
+
+  // The transition leaves the old page's scroll position in place; the new page is a fresh page and starts at its top (its pinned
+  // sections and intro are built to start from there). The browser must not restore an old position either.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  document.addEventListener('astro:after-swap', () => window.scrollTo(0, 0));
 </script>
 
 <style is:global>
@@ -136,17 +154,16 @@ const {
      The old page shrinks, turns and slips away to the lower left; the new one opens from the lower right corner at the same
      reduced size and grows to the full screen.
      The nav pill keeps its own layer and does not move. */
-    ::view-transition {
+      ::view-transition {
     background: #0d0b09;
   }
-  /* The card is cut to the SMALLEST window (svh: the address bar shown), a constant. The snapshot of the page itself is the size of
-     the largest window (lvh: the bar hidden), but the page it comes from is always at the top when a transition starts (NavPill jumps
-     there first, see onLinkClick), so the top of the snapshot is the top of the page and the extra height below the screen — which
-     nobody saw — is cropped by object-fit: cover (top), not squeezed. The card therefore never changes height when the bar moves.
-     On a desktop every viewport unit is equal and nothing changes. */
+  /* The card is exactly as tall as the snapshot: the window's height measured right before the snapshot (--vt-h, see the script),
+     so it shows the same part of the page in the same place, wherever the page is scrolled to, and does not change height when the
+     address bar moves on a phone. 100svh is only a fallback for the very first paint, before the variable is set. */
   ::view-transition-group(root) {
     animation: none;
     height: 100svh;
+    height: var(--vt-h, 100svh);
   }
   ::view-transition-old(root),
   ::view-transition-new(root) {

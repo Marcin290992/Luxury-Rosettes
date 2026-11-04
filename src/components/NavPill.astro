@@ -165,20 +165,10 @@ const isCurrent = (href: string) =>
       // The menu's fold (~0.6s) must finish before the transition starts: the nav pill is its own layer in the transition and freezes
       // exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition).
       const fold = wasOpen ? 650 : 0;
-      leaving = window.setTimeout(() => {
-        // Phones and tablets: go to the top in the same frame the transition begins. The card is cut to the smallest window (svh, see
-        // Layout), and the snapshot comes from the page as it is now. At the top the address bar is in its place, so the snapshot and the
-        // card are the same height and the card does not jump when the bar moves. (On a scrolled page the bar is hidden, and the moment
-        // the transition starts it comes back — that change was the jump.) Doing it here, once the menu has folded, means the page never
-        // sits at the top while the menu is still closing. On a desktop every window is the same height and this does nothing.
-        const touch = window.matchMedia('(pointer: coarse), (max-width: 1024px)').matches;
-        if (touch && window.scrollY > 2) {
-          const lenis = getLenis();
-          if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
-          else window.scrollTo(0, 0);
-        }
-        navigate(url.href);
-      }, fold);
+      // The page is not scrolled anywhere: the transition starts from wherever the reader is (half-way down a long page, say), and the
+      // card is measured to match that picture (--vt-h, see Layout), so it neither jumps nor changes height. The new page opens at its
+      // own top.
+      leaving = window.setTimeout(() => navigate(url.href), fold);
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {

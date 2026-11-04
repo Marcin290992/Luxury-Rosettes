@@ -46,17 +46,17 @@ const {
         }
       } catch (e) {}
     </script>
-    <!-- Phones and tablets get their own card transition (scripts/touch-transition.ts) instead of the browser's: on Android Chrome the native
-         one shows its own frame, drawn an address-bar height too high on a scrolled page, that no CSS can reach. Without document.startViewTransition
-         the router just swaps the pages (fallback="swap"). ?vt=native keeps the native one on a phone, to compare, ?vt=own switches back. -->
+    <!-- The page transition is the browser's own (native View Transitions) everywhere. The own DOM versions for touch devices
+         (scripts/touch-transition.ts) are only switched on by hand: ?vt=cards (the card swing), ?vt=calm (a dark veil with the logo);
+         ?vt=native switches them off again. Without document.startViewTransition the router just swaps the pages (fallback="swap"). -->
     <script is:inline>
       try {
         if (matchMedia('(pointer: coarse)').matches) {
-          if (/[?&]vt=native/.test(location.search)) sessionStorage.setItem('lr-vtnative', '1');
-          if (/[?&]vt=own/.test(location.search)) sessionStorage.removeItem('lr-vtnative');
+          if (/[?&]vt=(own|cards|calm)/.test(location.search)) sessionStorage.setItem('lr-vtown', '1');
+          if (/[?&]vt=native/.test(location.search)) sessionStorage.removeItem('lr-vtown');
           if (/[?&]vt=calm/.test(location.search)) sessionStorage.setItem('lr-vtcalm', '1');
           if (/[?&]vt=(cards|own)/.test(location.search)) sessionStorage.removeItem('lr-vtcalm');
-          if (sessionStorage.getItem('lr-vtnative') !== '1') document.startViewTransition = undefined;
+          if (sessionStorage.getItem('lr-vtown') === '1') document.startViewTransition = undefined;
         }
       } catch (e) {}
     </script>

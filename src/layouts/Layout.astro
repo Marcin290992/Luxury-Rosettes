@@ -115,20 +115,7 @@ const {
   });
 
   // Astro captures the outgoing page after preparation, so remove Lenis before that snapshot.
-  // The after-swap mount above creates it again for the incoming page.
-  // The window height is pinned for the whole transition: on a phone the address bar slides in or out as the page navigates (and Lenis'
-  // scrolling makes the bar state differ from page to page), and a card sized in dvh then re-crops and rescales its picture while it
-  // moves. --vt-h is read here, at the last moment before the snapshot, and kept until the next transition sets it again.
-  let pinnedH = '';
-  document.addEventListener('astro:after-preparation', () => {
-    pinnedH = `${innerHeight}px`;
-    document.documentElement.style.setProperty('--vt-h', pinnedH);
-    destroyLenis();
-  });
-  // the router rewrites <html>'s attributes (style included) on a swap, so the pinned height is put back for the new page's half
-  document.addEventListener('astro:after-swap', () => {
-    if (pinnedH) document.documentElement.style.setProperty('--vt-h', pinnedH);
-  });
+  document.addEventListener('astro:after-preparation', destroyLenis);
 </script>
 
 <style is:global>
@@ -206,8 +193,9 @@ const {
   ::view-transition-group(root) {
     animation: none;
     height: 100vh;
-    height: 100dvh;
-    height: var(--vt-h, 100dvh); /* pinned in px by the script at the start of a transition: it never follows the address bar */
+    /* svh = the smallest window (address bar shown): a constant. dvh followed the bar live, so a page scrolled down (bar hidden) changed
+       height at the start of the transition when the bar came back. Taller snapshots are only cropped (object-fit: cover, top). */
+    height: 100svh;
     translate: 0 var(--vt-shift, 0px); /* test switch, see ?vtshift in the script above */
   }
   ::view-transition-old(root),

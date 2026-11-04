@@ -219,16 +219,30 @@ const {
       const q = new URLSearchParams(location.search).get('vtkeep');
       if (q === '1') sessionStorage.setItem('lr-vtkeep', '1');
       if (q === '0') sessionStorage.removeItem('lr-vtkeep');
-      return sessionStorage.getItem('lr-vtkeep') === '1';
+      // with Lenis on a touch device the freeze-then-destroy order is the default (unless ?vtkeep=0 was set explicitly)
+      if (sessionStorage.getItem('lr-vtkeep') === '1') return true;
+      return q !== '0' && matchMedia('(pointer: coarse)').matches && sessionStorage.getItem('lr-lenistouch') !== '0';
     } catch {
       return false;
     }
   };
+  const lenisTouch = () => {
+    try {
+      const q = new URLSearchParams(location.search).get('lenistouch');
+      if (q === '0') sessionStorage.setItem('lr-lenistouch', '0');
+      if (q === '1') sessionStorage.removeItem('lr-lenistouch');
+      return sessionStorage.getItem('lr-lenistouch') !== '0';
+    } catch {
+      return true;
+    }
+  };
+  lenisTouch(); // reads the URL switch into sessionStorage before vtKeep() needs it
   vtKeep();
 
   mount(() => {
-    // Lenis is switched off on touch devices for now (native scroll there); to bring it back, remove the pointer check
-    if (lenisOff() || matchMedia('(pointer: coarse)').matches) return;
+    // Lenis is on everywhere, touch devices included; ?lenistouch=0 switches it off on touch for the visit (?lenistouch=1 on again).
+    // When it is on, it is only frozen during the transition snapshot and torn down after it (see vtKeep), so <html> does not change under it.
+    if (lenisOff() || (matchMedia('(pointer: coarse)').matches && !lenisTouch())) return;
     initLenis();
     return destroyLenis;
   });

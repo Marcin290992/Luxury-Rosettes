@@ -75,10 +75,19 @@ const {
     } catch {
       /* ignore */
     }
-    document.body.append(probe);
+        document.body.append(probe);
     const bar = Math.max(0, probe.offsetHeight - innerHeight);
     probe.remove();
     document.documentElement.style.setProperty('--vt-shift', `${(k * bar).toFixed(1)}px`);
+  });
+
+    // Freeze the card's height in px to the window as it is at this moment (what the user actually sees), so the snapshot of the
+  // page and the page itself share one height and the card does not change size when the address bar moves at the start of the
+  // transition on a phone. astro:after-preparation fires right before Astro takes the snapshot (and after Lenis was removed), so
+  // this is the last moment to set the height the transition layers will read.
+  document.addEventListener('astro:after-preparation', () => {
+    const h = Math.round(window.visualViewport?.height ?? window.innerHeight);
+    document.documentElement.style.setProperty('--vt-h', `${h}px`);
   });
 
   // Test switches for the jump at the start of a page transition on a phone (they stay for the visit; ?vtoff=0 / ?novtbg=0 clear them):
@@ -190,12 +199,14 @@ const {
      is the window as it is now (bar shown, e.g. 783px). The card was taller than the screen and the page seemed to jump up when it started.
      So the card is cut to the visible window (dvh): the top of the snapshot is the top of the page, and the part below the screen,
      which nobody saw, is cropped, not squeezed. (On a desktop all the heights are equal and nothing changes.) */
-  ::view-transition-group(root) {
+    ::view-transition-group(root) {
     animation: none;
-    height: 100vh;
-    /* svh = the smallest window (address bar shown): a constant. dvh followed the bar live, so a page scrolled down (bar hidden) changed
-       height at the start of the transition when the bar came back. Taller snapshots are only cropped (object-fit: cover, top). */
+    /* The card's height is frozen in px at the start of the transition (?--vt-h, set in astro:before-preparation from the window
+       as it is right now), so the snapshot and the page agree on one height. svh/lvh/dvh each followed a different part of the
+       address bar moving and made the card change height right as the transition began on a phone. Fallbacks in case the variable
+       is not set (e.g. the very first paint): svh. */
     height: 100svh;
+    height: var(--vt-h, 100svh);
     translate: 0 var(--vt-shift, 0px); /* test switch, see ?vtshift in the script above */
   }
   ::view-transition-old(root),

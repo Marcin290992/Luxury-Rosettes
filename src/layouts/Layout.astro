@@ -151,6 +151,26 @@ const {
   };
   // how far a layer's picture is drawn too high: only a scrolled page (min of its scroll and the offset), and only while the bar is shown
   const lift = (scroll: number) => (compOn() ? Math.min(Math.max(scroll, 0), fullOffset()) * barShown() : 0);
+  // The one state where the browser's snapshot of the old page jumps (measured by hand on Chrome Android, with the correction above on
+  // AND off): the page is scrolled and the address bar is visible again (the reader scrolled a little back up). With the bar hidden
+  // the transition is perfect. So in that state, and only there, the page changes at once - the same swap, without a View Transition,
+  // so no snapshot exists that could jump. Phones only, and only when the native transition is in use at all.
+  const nativeVT = document.startViewTransition?.bind(document);
+  if (nativeVT && matchMedia('(pointer: coarse)').matches) {
+    document.startViewTransition = ((cb?: () => void | Promise<void>) => {
+      if (window.scrollY > 1 && barShown() > 0.02) {
+        const done = Promise.resolve().then(() => cb?.());
+        const fake = {
+          ready: done,
+          updateCallbackDone: done,
+          finished: done,
+          skipTransition() {},
+        };
+        return fake as unknown as ViewTransition;
+      }
+      return nativeVT(cb);
+    }) as typeof document.startViewTransition;
+  }
   let scrollOld = 0;
   let scrollNew = 0;
   const setVar = (name: string, px: number) => document.documentElement.style.setProperty(name, `${px.toFixed(2)}px`);

@@ -65,8 +65,7 @@ function warmCss() {
   const run = () => {
     if (cssCache === null) collectCss();
   };
-  const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-  if (ric) ric.call(window, run, { timeout: 2000 });
+  if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 2000 });
   else window.setTimeout(run, 1200);
 }
 

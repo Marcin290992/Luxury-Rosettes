@@ -167,7 +167,15 @@ function makeVeil(): HTMLElement {
   return veil;
 }
 
-export function setupTouchTransition() {
+/** True while the navigation in progress is played by the own cards (so the browser's View Transition must not run for it). */
+let ownNav = false;
+export const isOwnNavigation = () => ownNav;
+
+/**
+ * `shouldRun` is asked at the start of every navigation: false = this one is left to the browser's native transition. (On a phone the
+ * native snapshot jumps when the page is scrolled and the address bar is visible; that navigation is played by the cards instead.)
+ */
+export function setupTouchTransition(shouldRun: () => boolean = () => true) {
   let dir = 1;
   let veil: HTMLElement | null = null;
   let cardOld: HTMLElement | null = null;
@@ -180,12 +188,15 @@ export function setupTouchTransition() {
     root().classList.remove('pt-run');
     cardOld = null;
     running = false;
+    ownNav = false;
   };
 
   document.addEventListener('astro:before-preparation', (e) => {
     clean();
     dir = (e as Event & { direction?: string }).direction === 'back' ? -1 : 1;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!shouldRun()) return; // this navigation is the browser's
+    ownNav = true;
     if (!calmOn()) {
       // cards: the card of the old page is made and made ready while the next page is fetched; the router waits for both (its loader is
       // awaited), and the old page stays on screen, untouched, until the card is ready to take its place

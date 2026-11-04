@@ -71,13 +71,17 @@ const {
     import { mount } from '../scripts/lifecycle';
   import { initLenis, destroyLenis, freezeLenis } from '../scripts/lenis';
   import { initDebug, dbg } from '../scripts/debug-log';
-  import { setupTouchTransition } from '../scripts/touch-transition';
+  import { setupTouchTransition, isOwnNavigation } from '../scripts/touch-transition';
   import { setupScrollRestore } from '../scripts/scroll-restore';
 
   initDebug(); // only does anything when the page is opened with ?debug=1
   setupScrollRestore(); // going back puts the reader where they were (the router restores it while the page is still short)
   // touch devices: the own card transition (the native one is switched off in the head, see above)
-  if (typeof document.startViewTransition !== 'function' && matchMedia('(pointer: coarse)').matches) setupTouchTransition();
+  // On a phone the own card transition plays (a) always, when the native one is switched off (?vt=cards), and (b) for the one
+  // navigation where the native snapshot jumps: the page is scrolled and the address bar is visible (see nativeVT below).
+  if (matchMedia('(pointer: coarse)').matches) {
+    setupTouchTransition(() => typeof nativeVT !== 'function' || (window.scrollY > 1 && barShown() > 0.02));
+  }
 
   // The page transition is drawn in the browser's "snapshot" space, not in the window you see. On a phone that space also covers the
   // area behind the address bar, so its top edge sits ABOVE the top of the visible page by the height of the bar (measured on a Pixel:
@@ -153,30 +157,19 @@ const {
   const lift = (scroll: number) => (compOn() ? Math.min(Math.max(scroll, 0), fullOffset()) * barShown() : 0);
   // The one state where the browser's snapshot of the old page jumps (measured by hand on Chrome Android, with the correction above on
   // AND off): the page is scrolled and the address bar is visible again (the reader scrolled a little back up). With the bar hidden
-  // the transition is perfect. So in that state, and only there, the page changes at once - the same swap, without a View Transition,
-  // so no snapshot exists that could jump. Phones only, and only when the native transition is in use at all.
+  // the transition is perfect. So that one navigation is played by the own cards (touch-transition.ts: the same swing, built from plain
+  // DOM) and the router's swap runs without a View Transition, so no snapshot exists that could jump. Phones only.
   const nativeVT = document.startViewTransition?.bind(document);
   if (nativeVT && matchMedia('(pointer: coarse)').matches) {
     document.startViewTransition = ((cb?: () => void | Promise<void>) => {
-      if (window.scrollY > 1 && barShown() > 0.02) {
-        // a dark veil (the live page, no snapshot) fades in, the pages are swapped under it, and it lifts: a short fade instead of the swing
-        const veil = document.createElement('div');
-        veil.className = 'pt-veil'; // the style is below (fixed, dark, under the nav pill)
-        veil.setAttribute('aria-hidden', 'true');
-        veil.style.opacity = '0';
-        document.documentElement.append(veil);
-        const fade = (from: number, to: number, ms: number) =>
-          veil.animate([{ opacity: from }, { opacity: to }], { duration: ms, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', fill: 'forwards' }).finished;
-        const swapped = fade(0, 1, 260).then(() => cb?.());
-        const finished = swapped
-          .then(() => new Promise((r) => setTimeout(r, 120)))
-          .then(() => fade(1, 0, 420))
-          .finally(() => veil.remove());
-        swapped.catch(() => veil.remove());
+      if (isOwnNavigation()) {
+        // this navigation is played by the own cards (touch-transition.ts, decided at its start): the pages are swapped at once,
+        // with no View Transition, so no snapshot exists that could jump
+        const swapped = Promise.resolve().then(() => cb?.());
         const fake = {
           ready: swapped,
           updateCallbackDone: swapped,
-          finished,
+          finished: swapped,
           skipTransition() {},
         };
         return fake as unknown as ViewTransition;

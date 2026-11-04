@@ -178,7 +178,19 @@ const {
   });
 
   // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap
+  // (?nolenis=1 turns it off for the visit, ?nolenis=0 on again: a test switch, to tell whether the page transition problem on a phone comes from it)
+  const lenisOff = () => {
+    try {
+      const q = new URLSearchParams(location.search).get('nolenis');
+      if (q === '1') sessionStorage.setItem('lr-nolenis', '1');
+      if (q === '0') sessionStorage.removeItem('lr-nolenis');
+      return sessionStorage.getItem('lr-nolenis') === '1';
+    } catch {
+      return false;
+    }
+  };
   mount(() => {
+    if (lenisOff()) return;
     initLenis();
     return destroyLenis;
   });

@@ -1,0 +1,51 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NavPill from '../../components/NavPill.astro';
+
+// A bare test page for the page transition: plain tall content, no scenes, no pins, no scrubs. Open it with ?nolenis=1 to also have no smooth scroll.
+const bands = Array.from({ length: 14 }, (_, i) => i + 1);
+---
+
+<Layout title="Test One">
+  <NavPill />
+  <main>
+    <h1>Test page One</h1>
+    <p>Scroll down to the middle, then tap the link. ?nolenis=1 / ?nolenis=0 switches the smooth scroll, ?debug=1 the log, ?vtlab=1 the frozen frame.</p>
+    {
+      bands.map((n) => (
+        <section style={`background:hsl(${n * 24} 45% ${n % 2 ? 78 : 62}%)`}>
+          <span>One · band {n}</span>
+          {n === 7 && <a href="/vt-bare/two/">Go to page TWO</a>}
+        </section>
+      ))
+    }
+  </main>
+</Layout>
+
+<style>
+  main {
+    padding-top: 6rem;
+    font-family: var(--font-body);
+  }
+  h1,
+  p {
+    margin: 0 1.2rem 1rem;
+  }
+  section {
+    height: 60svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.4rem;
+  }
+  a {
+    padding: 1rem 1.6rem;
+    border: 2px solid #1a1a1a;
+    border-radius: 2rem;
+    color: #1a1a1a;
+    text-decoration: none;
+    background: #fff;
+  }
+</style>

@@ -19,7 +19,13 @@ export function initLenis() {
   // the mobile address bar sliding in or out changes only the window's height: that must not re-measure every pin and scrub
   ScrollTrigger.config({ ignoreMobileResize: true });
 
-  lenis = new Lenis({ ...SMOOTH_WHEEL, ...SMOOTH_TOUCH, smoothWheel: true, autoRaf: false });
+  lenis = new Lenis({
+    ...SMOOTH_WHEEL,
+    ...SMOOTH_TOUCH,
+    smoothWheel: true,
+    autoRaf: false,
+    stopInertiaOnNavigate: true,
+  });
   lenis.on('scroll', ScrollTrigger.update);
   tick = (time) => lenis?.raf(time * 1000);
   gsap.ticker.add(tick);

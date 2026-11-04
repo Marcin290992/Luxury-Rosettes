@@ -81,6 +81,22 @@ function watchTransition() {
   document.addEventListener('astro:before-swap', () => dbg('--- before-swap'));
   document.addEventListener('astro:after-swap', () => start('after-swap'));
 
+  // The window at the moment the page is captured, and the browser's own units (lvh = address bar hidden, svh = shown), so the
+  // log can be read against the transition's layers below: CAP is what the page looked like, VT is where the snapshot was put.
+  const unit = document.createElement('div');
+  unit.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none;';
+  const unitS = document.createElement('div');
+  unitS.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100svh;visibility:hidden;pointer-events:none;';
+  document.addEventListener('astro:before-preparation', () => {
+    document.body.append(unit, unitS);
+    const vv = window.visualViewport;
+    dbg(
+      `CAP inner ${innerHeight} lvh ${unit.offsetHeight} svh ${unitS.offsetHeight} vv ${Math.round(vv?.height ?? 0)}/${Math.round(vv?.offsetTop ?? 0)} scrollY ${Math.round(scrollY)}`,
+    );
+    unit.remove();
+    unitS.remove();
+  });
+
   // The transition's own layers: how big the snapshot is and where it sits, against the window (inner).
   const layers = (n: number) => {
     const el = document.documentElement;
@@ -88,14 +104,41 @@ function watchTransition() {
       const c = getComputedStyle(el, pseudo);
       return `${c.width}x${c.height} top ${c.top} tr ${c.transform === 'none' ? '-' : c.transform.replace(/\s/g, '').slice(0, 40)}`;
     };
-    dbg(`VT#${n} inner ${innerHeight} | vt ${css('::view-transition')} | group ${css('::view-transition-group(root)')} | old ${css('::view-transition-old(root)')}`);
+    const nav = document.getElementById('main-nav')?.getBoundingClientRect();
+    dbg(
+      `VT#${n} inner ${innerHeight} scrollY ${Math.round(scrollY)} navtop ${nav ? Math.round(nav.top) : '-'} | vt ${css('::view-transition')} | group ${css('::view-transition-group(root)')} | old ${css('::view-transition-old(root)')} | navgrp ${css('::view-transition-group(navbar)')}`,
+    );
   };
   document.addEventListener('astro:after-swap', () => {
     [0, 120, 400].forEach((ms, i) => setTimeout(() => layers(i), ms));
   });
 }
 
+// ?vtlab=1: the page transition is FROZEN for 4 seconds right at its first frame, with the layers outlined (blue = the group, red =
+// the old page's picture, green = the new page's picture), so a screenshot shows exactly where the browser puts the snapshot against
+// the screen. It turns the log on too. ?vtlab=0 turns it off. (The outlines are in Layout.astro, under html.vt-lab.)
+const LAB = 'lrvtlab';
+const applyLab = () => {
+  try {
+    document.documentElement.classList.toggle('vt-lab', sessionStorage.getItem(LAB) === '1');
+  } catch {
+    /* ignore */
+  }
+};
+
 export function initDebug() {
+  try {
+    const lab = new URLSearchParams(location.search).get('vtlab');
+    if (lab === '1') {
+      sessionStorage.setItem(LAB, '1');
+      sessionStorage.setItem(ON, '1');
+    }
+    if (lab === '0') sessionStorage.removeItem(LAB);
+  } catch {
+    /* ignore */
+  }
+  applyLab();
+  document.addEventListener('astro:after-swap', applyLab); // the router rewrites <html>'s classes on a swap
   try {
     const q = new URLSearchParams(location.search).get('debug');
     if (q === '1') sessionStorage.setItem(ON, '1');

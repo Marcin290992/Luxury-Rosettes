@@ -357,6 +357,30 @@ const {
   html.no-vt-bg {
     background: none;
   }
+  /* ?vtlab=1 (see debug-log.ts): the transition is held at its first frame for 4s and its layers are outlined, to read the geometry off a screenshot */
+  html.vt-lab::view-transition-group(root) {
+    outline: 6px solid #0af;
+    outline-offset: -6px;
+  }
+  html.vt-lab::view-transition-old(root) {
+    animation: 4s linear both vt-lab-hold !important;
+    outline: 4px solid #f33;
+    outline-offset: -12px;
+    opacity: 0.85;
+  }
+  html.vt-lab::view-transition-new(root) {
+    animation: 4s linear both vt-lab-hold !important;
+    outline: 4px dashed #3f3;
+    outline-offset: -20px;
+    opacity: 0;
+  }
+  @keyframes vt-lab-hold {
+    from,
+    to {
+      transform: none;
+      clip-path: none;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     ::view-transition-old(root),
     ::view-transition-new(root) {

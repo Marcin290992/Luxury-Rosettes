@@ -148,7 +148,7 @@ const isCurrent = (href: string) =>
       const plain = !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
       const wasOpen = nav.classList.contains('expanded');
       setOpen(false);
-      if (!sameOrigin || !plain) return;
+            if (!sameOrigin || !plain) return;
       if (samePage) {
         if (url.hash) return; // an anchor on this page: the browser scrolls to it
         e.preventDefault();
@@ -158,23 +158,27 @@ const isCurrent = (href: string) =>
         return;
       }
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-            e.preventDefault();
-      document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open: false, leaving: true } })); // stays held until the page is gone
+      e.preventDefault();
+      // tell the following scenes to hold still until the page is gone (see awards-spiral.ts)
+      document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open: false, leaving: true } }));
       window.clearTimeout(leaving);
-      // Phones and tablets: jump to the top NOW (no animation), while the menu is still folding. On a scrolled page Chrome has the address
-      // bar hidden; the moment the transition starts it lays the picture out for the window the bar is coming back into, and that change
-      // is the jump. At the top the bar is already where it belongs, so the transition starts without it moving. The jump itself nobody
-      // sees: the open menu panel is still covering the page for those ~0.6s. (An earlier try animated this and it was visible; instant
-      // is hidden under the panel.) The menu's fold (below) still gates when the transition starts.
-      const touch = window.matchMedia('(pointer: coarse), (max-width: 1024px)').matches;
-      if (touch && window.scrollY > 2) {
-        const lenis = getLenis();
-        if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
-        else window.scrollTo(0, 0);
-      }
-      // the menu's fold takes ~0.6s and must be finished before the transition starts: the nav pill is its own layer in the transition and
-      // freezes exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition)
-      leaving = window.setTimeout(() => navigate(url.href), wasOpen ? 650 : 0);
+      // The menu's fold (~0.6s) must finish before the transition starts: the nav pill is its own layer in the transition and freezes
+      // exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition).
+      const fold = wasOpen ? 650 : 0;
+      leaving = window.setTimeout(() => {
+        // Phones and tablets: go to the top in the same frame the transition begins. The card is cut to the smallest window (svh, see
+        // Layout), and the snapshot comes from the page as it is now. At the top the address bar is in its place, so the snapshot and the
+        // card are the same height and the card does not jump when the bar moves. (On a scrolled page the bar is hidden, and the moment
+        // the transition starts it comes back — that change was the jump.) Doing it here, once the menu has folded, means the page never
+        // sits at the top while the menu is still closing. On a desktop every window is the same height and this does nothing.
+        const touch = window.matchMedia('(pointer: coarse), (max-width: 1024px)').matches;
+        if (touch && window.scrollY > 2) {
+          const lenis = getLenis();
+          if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
+          else window.scrollTo(0, 0);
+        }
+        navigate(url.href);
+      }, fold);
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {

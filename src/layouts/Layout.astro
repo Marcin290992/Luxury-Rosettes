@@ -58,72 +58,16 @@ const {
   import { initLenis, destroyLenis } from '../scripts/lenis';
   import { initDebug } from '../scripts/debug-log';
 
-  initDebug(); // only does anything when the page is opened with ?debug=1
+    initDebug(); // only does anything when the page is opened with ?debug=1
 
-  // A test switch for the jump at the start of a page transition on a phone: ?vtshift=1 moves the snapshot of the page down by the
-  // height of the browser's address bar (bar = the largest window minus the window as it is now), -1 moves it up, 0 (or none) leaves it.
-  // It stays for the visit; ?vtshift=off clears it.
-  const probe = document.createElement('div');
-  probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none;';
-  document.addEventListener('astro:before-preparation', () => {
-    let k = 0;
-    try {
-      const q = new URLSearchParams(location.search).get('vtshift');
-      if (q === 'off') sessionStorage.removeItem('lrvtshift');
-      else if (q !== null) sessionStorage.setItem('lrvtshift', q);
-      k = parseFloat(sessionStorage.getItem('lrvtshift') || '0') || 0;
-    } catch {
-      /* ignore */
-    }
-        document.body.append(probe);
-    const bar = Math.max(0, probe.offsetHeight - innerHeight);
-    probe.remove();
-    document.documentElement.style.setProperty('--vt-shift', `${(k * bar).toFixed(1)}px`);
-  });
-
-    // Freeze the card's height in px to the window as it is at this moment (what the user actually sees), so the snapshot of the
-  // page and the page itself share one height and the card does not change size when the address bar moves at the start of the
-  // transition on a phone. astro:after-preparation fires right before Astro takes the snapshot (and after Lenis was removed), so
-  // this is the last moment to set the height the transition layers will read.
-  document.addEventListener('astro:after-preparation', () => {
-    const h = Math.round(window.visualViewport?.height ?? window.innerHeight);
-    document.documentElement.style.setProperty('--vt-h', `${h}px`);
-  });
-
-  // Test switches for the jump at the start of a page transition on a phone (they stay for the visit; ?vtoff=0 / ?novtbg=0 clear them):
-  //   ?vtoff=1   the card swing is off on this device: the page just changes (tells whether the jump is in the card animation at all)
-  //   ?novtbg=1  the page has no dark colour of its own behind its content (the way it was before the "pale gap" fix)
-  const TESTS: Record<string, string> = { vtoff: 'vt-test-off', novtbg: 'no-vt-bg' };
-  const applyTests = () => {
-    try {
-      const params = new URLSearchParams(location.search);
-      for (const [key, cls] of Object.entries(TESTS)) {
-        const q = params.get(key);
-        if (q === '1') sessionStorage.setItem('lr-' + key, '1');
-        if (q === '0') sessionStorage.removeItem('lr-' + key);
-        document.documentElement.classList.toggle(cls, sessionStorage.getItem('lr-' + key) === '1');
-      }
-    } catch {
-      /* ignore */
-    }
-  };
-  applyTests();
-  document.addEventListener('astro:after-swap', () => {
-    // the router rewrites <html>'s classes on a swap
-    try {
-      for (const [key, cls] of Object.entries(TESTS)) document.documentElement.classList.toggle(cls, sessionStorage.getItem('lr-' + key) === '1');
-    } catch {
-      /* ignore */
-    }
-  });
-
-  // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap
+  // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap.
   mount(() => {
     initLenis();
     return destroyLenis;
   });
 
-  // Astro captures the outgoing page after preparation, so remove Lenis before that snapshot.
+  // Astro captures the outgoing page after preparation, so remove Lenis before that snapshot. A running smooth scroll would otherwise
+  // be caught mid-frame in the snapshot and the card would not match the page it shows.
   document.addEventListener('astro:after-preparation', destroyLenis);
 </script>
 
@@ -192,22 +136,17 @@ const {
      The old page shrinks, turns and slips away to the lower left; the new one opens from the lower right corner at the same
      reduced size and grows to the full screen.
      The nav pill keeps its own layer and does not move. */
-  ::view-transition {
+    ::view-transition {
     background: #0d0b09;
   }
-  /* On a phone the snapshot of the page is the size of the LARGEST window (address bar hidden, e.g. 863px), while what is on the screen
-     is the window as it is now (bar shown, e.g. 783px). The card was taller than the screen and the page seemed to jump up when it started.
-     So the card is cut to the visible window (dvh): the top of the snapshot is the top of the page, and the part below the screen,
-     which nobody saw, is cropped, not squeezed. (On a desktop all the heights are equal and nothing changes.) */
-    ::view-transition-group(root) {
+  /* The card is cut to the SMALLEST window (svh: the address bar shown), a constant. The snapshot of the page itself is the size of
+     the largest window (lvh: the bar hidden), but the page it comes from is always at the top when a transition starts (NavPill jumps
+     there first, see onLinkClick), so the top of the snapshot is the top of the page and the extra height below the screen — which
+     nobody saw — is cropped by object-fit: cover (top), not squeezed. The card therefore never changes height when the bar moves.
+     On a desktop every viewport unit is equal and nothing changes. */
+  ::view-transition-group(root) {
     animation: none;
-    /* The card's height is frozen in px at the start of the transition (?--vt-h, set in astro:before-preparation from the window
-       as it is right now), so the snapshot and the page agree on one height. svh/lvh/dvh each followed a different part of the
-       address bar moving and made the card change height right as the transition began on a phone. Fallbacks in case the variable
-       is not set (e.g. the very first paint): svh. */
     height: 100svh;
-    height: var(--vt-h, 100svh);
-    translate: 0 var(--vt-shift, 0px); /* test switch, see ?vtshift in the script above */
   }
   ::view-transition-old(root),
   ::view-transition-new(root) {
@@ -359,14 +298,6 @@ const {
         transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
       }
     }
-  }
-  /* test switches (see the script): ?vtoff=1 and ?novtbg=1 */
-  html.vt-test-off::view-transition-old(root),
-  html.vt-test-off::view-transition-new(root) {
-    animation: none;
-  }
-  html.no-vt-bg {
-    background: none;
   }
   @media (prefers-reduced-motion: reduce) {
     ::view-transition-old(root),

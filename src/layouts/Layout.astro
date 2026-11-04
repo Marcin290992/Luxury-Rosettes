@@ -60,25 +60,56 @@ const {
 
   initDebug(); // only does anything when the page is opened with ?debug=1
 
-  // A test switch for the jump at the start of a page transition on a phone: ?vtshift=1 moves the snapshot of the page down by the
-  // height of the browser's address bar (bar = the largest window minus the window as it is now), -1 moves it up, 0 (or none) leaves it.
-  // It stays for the visit; ?vtshift=off clears it.
-  const probe = document.createElement('div');
-  probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none;';
-  document.addEventListener('astro:before-preparation', () => {
-    let k = 0;
+  // The page transition is drawn in the browser's "snapshot" space, not in the window you see. On a phone that space also covers the
+  // area behind the address bar, so its top edge sits ABOVE the top of the visible page by the height of the bar (measured on a Pixel:
+  // 56.19px; the nav pill is at 20px in the window but at 76.19px in the snapshot space). The picture of the old page was put at the top
+  // of that space, so the whole card sat one bar-height too high and the page seemed to jump up as the transition began.
+  // The offset is read from a fixed element that is in the transition by itself, the nav pill (its own layer is placed correctly by the
+  // browser): its place in the snapshot space minus its place in the window. The root layer is then moved down by exactly that.
+  // (On a desktop the two spaces are the same, the offset is 0 and nothing moves.) ?vtcomp=0 switches this off, ?vtcomp=1 on again.
+  const SCB = 'lr-scb';
+  const applyScb = (px: number) => document.documentElement.style.setProperty('--vt-scb', `${px.toFixed(2)}px`);
+  const compOn = () => {
     try {
-      const q = new URLSearchParams(location.search).get('vtshift');
-      if (q === 'off') sessionStorage.removeItem('lrvtshift');
-      else if (q !== null) sessionStorage.setItem('lrvtshift', q);
-      k = parseFloat(sessionStorage.getItem('lrvtshift') || '0') || 0;
+      const q = new URLSearchParams(location.search).get('vtcomp');
+      if (q === '0') sessionStorage.setItem('lr-vtcomp', '0');
+      if (q === '1') sessionStorage.removeItem('lr-vtcomp');
+      return sessionStorage.getItem('lr-vtcomp') !== '0';
     } catch {
-      /* ignore */
+      return true;
     }
-    document.body.append(probe);
-    const bar = Math.max(0, probe.offsetHeight - innerHeight);
-    probe.remove();
-    document.documentElement.style.setProperty('--vt-shift', `${(k * bar).toFixed(1)}px`);
+  };
+  const measureScb = () => {
+    const nav = document.getElementById('main-nav');
+    const m = getComputedStyle(document.documentElement, '::view-transition-group(navbar)').transform;
+    if (!nav || !m || m === 'none') return null;
+    const d = new DOMMatrix(m).f - nav.getBoundingClientRect().top;
+    return Number.isFinite(d) ? d : null;
+  };
+  let scbCached = 0;
+  try {
+    scbCached = parseFloat(sessionStorage.getItem(SCB) || '0') || 0;
+  } catch {
+    /* ignore */
+  }
+  // the router rewrites <html>'s attributes on a swap, so the value is set after it: the last measured one right away, the real one
+  // as soon as the transition's layers exist
+  document.addEventListener('astro:after-swap', () => applyScb(compOn() ? scbCached : 0));
+  document.addEventListener('astro:before-swap', (e) => {
+    const vt = (e as Event & { viewTransition?: ViewTransition }).viewTransition;
+    vt?.ready
+      .then(() => {
+        const d = compOn() ? measureScb() : 0;
+        if (d === null) return;
+        scbCached = d;
+        try {
+          sessionStorage.setItem(SCB, String(d));
+        } catch {
+          /* ignore */
+        }
+        applyScb(d);
+      })
+      .catch(() => {});
   });
 
   // Test switches for the jump at the start of a page transition on a phone (they stay for the visit; ?vtoff=0 / ?novtbg=0 clear them):
@@ -196,7 +227,7 @@ const {
     /* svh = the smallest window (address bar shown): a constant. dvh followed the bar live, so a page scrolled down (bar hidden) changed
        height at the start of the transition when the bar came back. Taller snapshots are only cropped (object-fit: cover, top). */
     height: 100svh;
-    translate: 0 var(--vt-shift, 0px); /* test switch, see ?vtshift in the script above */
+    translate: 0 var(--vt-scb, 0px); /* the snapshot space starts above the visible page on a phone, see the script above */
   }
   ::view-transition-old(root),
   ::view-transition-new(root) {

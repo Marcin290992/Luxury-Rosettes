@@ -2,6 +2,7 @@
 // Turn it on by opening any page with ?debug=1 (it stays on for the visit, across page transitions), off with ?debug=off.
 // The last lines are kept in sessionStorage and drawn over the bottom of the screen, so they are still there after the page is swapped.
 
+declare const __BUILD__: string;
 const ON = 'lrdebug';
 const LOG = 'lrdebug-log';
 
@@ -105,8 +106,9 @@ function watchTransition() {
       return `${c.width}x${c.height} top ${c.top} tr ${c.transform === 'none' ? '-' : c.transform.replace(/\s/g, '').slice(0, 40)}`;
     };
     const nav = document.getElementById('main-nav')?.getBoundingClientRect();
+    const scb = `scb ${el.style.getPropertyValue('--vt-scb') || '-'} stored ${sessionStorage.getItem('lr-scb') ?? '-'}`;
     dbg(
-      `VT#${n} inner ${innerHeight} scrollY ${Math.round(scrollY)} navtop ${nav ? Math.round(nav.top) : '-'} | vt ${css('::view-transition')} | group ${css('::view-transition-group(root)')} | old ${css('::view-transition-old(root)')} | navgrp ${css('::view-transition-group(navbar)')}`,
+      `VT#${n} ${scb} inner ${innerHeight} scrollY ${Math.round(scrollY)} navtop ${nav ? Math.round(nav.top) : '-'} | vt ${css('::view-transition')} | group ${css('::view-transition-group(root)')} | old ${css('::view-transition-old(root)')} | navgrp ${css('::view-transition-group(navbar)')}`,
     );
   };
   document.addEventListener('astro:after-swap', () => {
@@ -152,7 +154,7 @@ export function initDebug() {
   }
   if (debugOn()) {
     // always at least this line, so it is clear that the log is on (and the bar is not just an empty strip)
-    dbg(`DEBUG ON ${location.pathname} inner ${innerWidth}x${innerHeight} vv ${Math.round(window.visualViewport?.height ?? 0)} dpr ${devicePixelRatio}`);
+    dbg(`DEBUG ON build ${typeof __BUILD__ === 'string' ? __BUILD__ : '?'} ${location.pathname} inner ${innerWidth}x${innerHeight} vv ${Math.round(window.visualViewport?.height ?? 0)} dpr ${devicePixelRatio}`);
   }
   if (debugOn()) watchTransition();
   paintDebug();

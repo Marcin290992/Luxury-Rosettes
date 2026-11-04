@@ -78,6 +78,7 @@ const isCurrent = (href: string) =>
   import { prefetch } from 'astro:prefetch';
   import { mount } from '../scripts/lifecycle';
   import { getLenis } from '../scripts/lenis';
+  import { cover } from '../scripts/page-transition';
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
   mount(() => {
@@ -162,13 +163,16 @@ const isCurrent = (href: string) =>
       // tell the following scenes to hold still until the page is gone (see awards-spiral.ts)
       document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open: false, leaving: true } }));
       window.clearTimeout(leaving);
-      // The menu's fold (~0.6s) must finish before the transition starts: the nav pill is its own layer in the transition and freezes
-      // exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition).
+      // The menu's fold (~0.6s) must finish before the transition starts: the nav pill freezes as it is at that moment (a shorter wait
+      // left the panel hanging half-open for the whole transition).
       const fold = wasOpen ? 650 : 0;
-      // The page is not scrolled anywhere: the transition starts from wherever the reader is (half-way down a long page, say), and the
-      // card is measured to match that picture (--vt-h, see Layout), so it neither jumps nor changes height. The new page opens at its
-      // own top.
-      leaving = window.setTimeout(() => navigate(url.href), fold);
+      // The page is not scrolled anywhere: the transition starts from wherever the reader is, and it is our own cover that moves (see
+      // page-transition.ts), never the browser's snapshot, so the phone's address bar cannot make it jump. The cover is painted first;
+      // once it hides the page, navigate() swaps in the new one underneath, unseen.
+      leaving = window.setTimeout(async () => {
+        await cover('forwards');
+        navigate(url.href);
+      }, fold);
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {

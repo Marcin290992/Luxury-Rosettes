@@ -8,7 +8,7 @@ const {
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:name="root" transition:animate="none">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -57,8 +57,9 @@ const {
   import { mount } from '../scripts/lifecycle';
   import { initLenis, destroyLenis } from '../scripts/lenis';
   import { initDebug } from '../scripts/debug-log';
+  import { reveal } from '../scripts/page-transition';
 
-    initDebug(); // only does anything when the page is opened with ?debug=1
+  initDebug(); // only does anything when the page is opened with ?debug=1
 
   // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap.
   mount(() => {
@@ -66,14 +67,20 @@ const {
     return destroyLenis;
   });
 
-    // Astro captures the outgoing page after preparation, so remove Lenis before that snapshot. A running smooth scroll would otherwise
-  // be caught mid-frame in the snapshot and the card would not match the page it shows.
-  document.addEventListener('astro:after-preparation', destroyLenis);
+  // The smooth scroll must be gone before the page is swapped: a running scroll would otherwise be caught in the new page's layout.
+  document.addEventListener('astro:before-swap', destroyLenis);
 
-  // The transition leaves the old page's scroll position in place; the new page is a fresh page and starts at its top (its pinned
-  // sections and intro are built to start from there). The browser must not restore an old position either.
+  // The new page is a fresh page and starts at its top (its pinned sections and the intro are built to start from there). The browser
+  // must not restore an old position either.
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  document.addEventListener('astro:after-swap', () => window.scrollTo(0, 0));
+
+  // The cover that hid the swap (see page-transition.ts) now opens onto the new page. The direction was decided when the cover was
+  // painted (NavPill, before navigate()); ?pt:dir is read back here so the swing matches.
+  document.addEventListener('astro:after-swap', () => {
+    window.scrollTo(0, 0);
+    const dir = document.documentElement.dataset.ptDir === '-1' ? 'backwards' : 'forwards';
+    reveal(dir);
+  });
 </script>
 
 <style is:global>
@@ -137,176 +144,122 @@ const {
     display: none;
   }
 
-  /* ---- page transition (after codegrid's View Transition demo) ----
-     The old page shrinks, turns and slips away to the lower left; the new one opens from the lower right corner at the same
-     reduced size and grows to the full screen.
-     The nav pill keeps its own layer and does not move. */
-      ::view-transition {
-    background: #0d0b09;
-  }
-    /* The card is exactly the size of the snapshot. The browser always renders the snapshot at the LARGEST window (lvh: as if the phone's
-     address bar were hidden — measured at 863px for a 783px screen), whatever the page is scrolled to, so the card is lvh too. Then the
-     card and the picture inside it are the same size and nothing is squeezed or cropped, and the card does not change height when the
-     bar moves (that change was the jump). On a desktop lvh, svh and the window are all equal and nothing changes. */
-  ::view-transition-group(root) {
-    animation: none;
-    height: 100lvh;
-  }
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    height: 100%;
-    object-fit: cover;
-    object-position: top;
-  }
-  /* On a phone the browser's address bar moves the page a little while it slides in or out, and the strip that shows is whatever is
-     behind the page: it used to be the page's cream and ended up as a pale gap on the cards. So the page is dark behind its content, always
-     (set once, never switched at the start of a transition: the body keeps painting its own cream, so nothing on the page changes). */
-  html {
-    background: #0d0b09;
-  }
-  /* the intro of the home page: dark from the very first paint (the preloader's own dark veil takes over once it exists) */
+    /* The intro of the home page is dark from the very first paint (the preloader's own dark veil takes over once it exists). */
   html.preloading {
     background: #000;
   }
   html.preloading body {
     background: #000;
   }
-  #main-nav {
-    view-transition-name: navbar;
+
+  /* ---- page transition (see scripts/page-transition.ts) ----
+     The browser's own View Transition snapshot is not used: it is drawn at the height of the largest window, while a scrolled phone
+     screen shows the smaller one, and that mismatch was the jump at the start of every transition. Instead the transition is this
+     overlay — plain DOM in the page's own colour — so the phone's address bar has no part in it and cannot make it jump.
+
+     The overlay is the screen; the card inside it is what moves, exactly as in the codegrid demo: the page folds away to the lower
+     left, then a fresh card swings in from the lower right and opens to the full screen. */
+
+  .pt-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999; /* above the nav pill (1000): the whole picture leaves, the pill included */
+    display: none;
+    pointer-events: none;
+    perspective: 1400px;
   }
-  ::view-transition-group(navbar) {
-    animation: none;
-    z-index: 100;
-  }
-  ::view-transition-old(navbar),
-  ::view-transition-new(navbar) {
-    animation: none;
-    mix-blend-mode: normal;
-  }
-  /* Astro marks the direction of the navigation on <html>: forward goes left, back is the same swing the other way round. */
-  :root {
-    --vt-dir: 1;
-  }
-  :root[data-astro-transition='back'] {
-    --vt-dir: -1;
+  .pt-card {
+    position: absolute;
+    inset: 0;
+    background: var(--paper);
+    will-change: transform, clip-path;
+    backface-visibility: hidden;
   }
 
-  /* The two pages swap places like cards: the old one shrinks and swings out to the lower left (tilting, as in codegrid's demo), the new
-     one swings in from the lower right, mirrored, into the same place at the same small size, rests there for a moment, and only then grows to the full screen. */
-  ::view-transition-old(root) {
-    animation: 1500ms linear both page-out;
+  /* the direction of the swing: 1 forward (leaves left), -1 back (leaves right). Set in page-transition.ts. */
+  :root {
+    --pt-dir: 1;
   }
-  ::view-transition-new(root) {
-    animation: 1500ms linear both page-in;
+  :root[data-pt-dir='-1'] {
+    --pt-dir: -1;
   }
-  @keyframes page-out {
+
+  /* Phase 1: the page folds away to the lower left. */
+  .pt-overlay.is-out .pt-card {
+    animation: pt-out 520ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  }
+  /* Phase 2: the new page swings in from the lower right and opens. */
+  .pt-overlay.is-in .pt-card {
+    animation: pt-in 780ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  }
+
+  @keyframes pt-out {
     0% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
+      transform: translateX(0) translateY(0) rotate(0deg) scale(1);
       clip-path: inset(0% round 0px);
-      animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
-    }
-    25% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
-    }
-    40% {
-      transform: translateX(calc(var(--vt-dir) * -45%)) translateY(8%) rotate(calc(var(--vt-dir) * -14deg)) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: linear;
-    }
-    55%,
-    100% {
-      transform: translateX(calc(var(--vt-dir) * -115%)) translateY(40%) rotate(calc(var(--vt-dir) * -30deg)) scale(0.6);
-      clip-path: inset(0% round 40px);
-    }
-  }
-  @keyframes page-in {
-    0%,
-    25% {
-      transform: translateX(calc(var(--vt-dir) * 115%)) translateY(40%) rotate(calc(var(--vt-dir) * 30deg)) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: linear;
-    }
-    40% {
-      transform: translateX(calc(var(--vt-dir) * 45%)) translateY(8%) rotate(calc(var(--vt-dir) * 14deg)) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: cubic-bezier(0, 0, 0.35, 1);
     }
     55% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
+      transform: translateX(calc(var(--pt-dir) * -35%)) translateY(6%) rotate(calc(var(--pt-dir) * -10deg)) scale(0.72);
       clip-path: inset(0% round 40px);
-    }
-    66% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
     }
     100% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
+      transform: translateX(calc(var(--pt-dir) * -115%)) translateY(34%) rotate(calc(var(--pt-dir) * -26deg)) scale(0.6);
+      clip-path: inset(0% round 40px);
+    }
+  }
+  @keyframes pt-in {
+    0% {
+      transform: translateX(calc(var(--pt-dir) * 115%)) translateY(34%) rotate(calc(var(--pt-dir) * 26deg)) scale(0.6);
+      clip-path: inset(0% round 40px);
+    }
+    45% {
+      transform: translateX(calc(var(--pt-dir) * 35%)) translateY(6%) rotate(calc(var(--pt-dir) * 10deg)) scale(0.72);
+      clip-path: inset(0% round 40px);
+    }
+    60% {
+      transform: translateX(0) translateY(0) rotate(0deg) scale(0.72);
+      clip-path: inset(0% round 40px);
+    }
+    100% {
+      transform: translateX(0) translateY(0) rotate(0deg) scale(1);
       clip-path: inset(0% round 0px);
     }
   }
-  /* Phones and tablets: the same swing, but cheaper. Animating clip-path (the rounded corners) cannot run on the GPU: every frame
-     the browser re-cuts a full-screen picture on the main thread, which is where the stutter came from. Transforms alone stay on the
-     GPU, so here the corners are not rounded; the animation is also a little shorter. */
+
+  /* Phones and tablets: the same swing, but cheaper. Animating clip-path (the rounded corners) cannot run on the GPU: every frame the
+     browser re-cuts a full-screen picture on the main thread, which is where the stutter came from. Transforms alone stay on the GPU,
+     so here the corners are not rounded. */
   @media (pointer: coarse), (max-width: 1024px) {
-    ::view-transition-old(root) {
-      animation-name: page-out-lite;
-      animation-duration: 1100ms;
+    .pt-overlay.is-out .pt-card {
+      animation-name: pt-out-lite;
     }
-    ::view-transition-new(root) {
-      animation-name: page-in-lite;
-      animation-duration: 1100ms;
+    .pt-overlay.is-in .pt-card {
+      animation-name: pt-in-lite;
     }
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      will-change: transform;
-    }
-    @keyframes page-out-lite {
+    @keyframes pt-out-lite {
       0% {
-        transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
-        animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
+        transform: translateX(0) translateY(0) rotate(0deg) scale(1);
       }
-      25% {
-        transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-        animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
-      }
-      40% {
-        transform: translateX(calc(var(--vt-dir) * -45%)) translateY(8%) rotate(calc(var(--vt-dir) * -14deg)) scale(0.6);
-        animation-timing-function: linear;
-      }
-      55%,
-      100% {
-        transform: translateX(calc(var(--vt-dir) * -115%)) translateY(40%) rotate(calc(var(--vt-dir) * -30deg)) scale(0.6);
-      }
-    }
-    @keyframes page-in-lite {
-      0%,
-      25% {
-        transform: translateX(calc(var(--vt-dir) * 115%)) translateY(40%) rotate(calc(var(--vt-dir) * 30deg)) scale(0.6);
-        animation-timing-function: linear;
-      }
-      40% {
-        transform: translateX(calc(var(--vt-dir) * 45%)) translateY(8%) rotate(calc(var(--vt-dir) * 14deg)) scale(0.6);
-        animation-timing-function: cubic-bezier(0, 0, 0.35, 1);
-      }
-      55%,
-      66% {
-        transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-      }
-      66% {
-        animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+      55% {
+        transform: translateX(calc(var(--pt-dir) * -35%)) translateY(6%) rotate(calc(var(--pt-dir) * -10deg)) scale(0.72);
       }
       100% {
-        transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
+        transform: translateX(calc(var(--pt-dir) * -115%)) translateY(34%) rotate(calc(var(--pt-dir) * -26deg)) scale(0.6);
       }
     }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      animation: none;
+    @keyframes pt-in-lite {
+      0% {
+        transform: translateX(calc(var(--pt-dir) * 115%)) translateY(34%) rotate(calc(var(--pt-dir) * 26deg)) scale(0.6);
+      }
+      45% {
+        transform: translateX(calc(var(--pt-dir) * 35%)) translateY(6%) rotate(calc(var(--pt-dir) * 10deg)) scale(0.72);
+      }
+      60% {
+        transform: translateX(0) translateY(0) rotate(0deg) scale(0.72);
+      }
+      100% {
+        transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+      }
     }
   }
 </style>

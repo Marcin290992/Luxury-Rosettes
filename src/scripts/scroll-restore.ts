@@ -1,5 +1,6 @@
-// Going back to a page puts the reader where they were.
+// Going back to a page opens it at its top (the hero) - the position the reader was at is deliberately NOT restored.
 //
+// (Originally this put the reader back where they were; the notes below describe why the position has to be forced repeatedly.)
 // The router restores the scroll position right after it swaps the pages - while the page is still short: its pinned sections (their
 // spacers) are only built afterwards by the components' setup. ScrollTrigger then re-measures the page, which has become much longer, and
 // moves the scroll to the same PROPORTIONAL place (on the home page a position of 4200 became 9324, 6500 became 16620). So after the swap the
@@ -34,9 +35,9 @@ export function settleScrubs() {
   }
 }
 
-/** Puts the page at the saved position now (if it is somewhere else). */
+/** Puts the page at the wanted position now (the top, see below) if it is somewhere else. */
 export function restoreNow() {
-  if (!target || Math.abs(window.scrollY - target) < 2) return;
+  if (!watching || Math.abs(window.scrollY - target) < 2) return;
   const lenis = getLenis();
   if (lenis) lenis.scrollTo(target, { immediate: true, force: true });
   else window.scrollTo(0, target);
@@ -52,10 +53,11 @@ export function setupScrollRestore() {
   document.addEventListener('astro:before-preparation', stop);
   document.addEventListener('astro:after-swap', () => {
     stop();
-    // the router saved the position in the history entry it came back to (a page reached by a link has 0 there)
-    const saved = Number((history.state as { scrollY?: number } | null)?.scrollY ?? 0);
-    target = Number.isFinite(saved) && saved > 0 ? saved : 0;
-    if (!target) return;
+    // Going back does NOT return the reader to where they were: every page opens at its top (the hero). The router puts the saved
+    // position back right after the swap, so the top is forced again and again until the page has settled (as the saved position
+    // used to be). A link to an #anchor keeps the browser's own behaviour.
+    target = 0;
+    if (location.hash) return;
     watching = true;
     // the setup of the components and ScrollTrigger's re-measuring happen in the next frames and up to about a second later
     for (const ms of [0, 40, 100, 200, 350, 550, 800, 1100, 1500, 2000]) {

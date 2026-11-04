@@ -57,8 +57,10 @@ const {
   import { mount } from '../scripts/lifecycle';
   import { initLenis, destroyLenis } from '../scripts/lenis';
   import { initDebug } from '../scripts/debug-log';
+  import { setupTransitionLock } from '../scripts/transition-lock';
 
   initDebug(); // only does anything when the page is opened with ?debug=1
+  setupTransitionLock();
 
   // A test switch for the jump at the start of a page transition on a phone: ?vtshift=1 moves the snapshot of the page down by the
   // height of the browser's address bar (bar = the largest window minus the window as it is now), -1 moves it up, 0 (or none) leaves it.

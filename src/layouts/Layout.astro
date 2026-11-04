@@ -66,19 +66,6 @@ const {
     return destroyLenis;
   });
 
-    // The card stands in for the snapshot, and the snapshot is the window as it is at the moment the transition starts: its height
-  // changes with the address bar on a phone (larger when the bar is hidden, i.e. when the page is scrolled). So the card's height is
-  // measured here, in the last moment before the snapshot (astro:after-preparation) and on every resize, and read by the CSS as --vt-h.
-  // The page is not scrolled anywhere: a transition started half-way down a page keeps that part in that place, and the card is
-  // exactly as tall as the picture on the screen, so it does not jump when the bar moves.
-  const setCardHeight = () => {
-    document.documentElement.style.setProperty('--vt-h', `${Math.round(window.innerHeight)}px`);
-  };
-  setCardHeight();
-  window.addEventListener('resize', setCardHeight);
-  document.addEventListener('astro:after-preparation', setCardHeight);
-  document.addEventListener('astro:after-swap', setCardHeight);
-
     // Astro captures the outgoing page after preparation, so remove Lenis before that snapshot. A running smooth scroll would otherwise
   // be caught mid-frame in the snapshot and the card would not match the page it shows.
   document.addEventListener('astro:after-preparation', destroyLenis);
@@ -157,13 +144,13 @@ const {
       ::view-transition {
     background: #0d0b09;
   }
-  /* The card is exactly as tall as the snapshot: the window's height measured right before the snapshot (--vt-h, see the script),
-     so it shows the same part of the page in the same place, wherever the page is scrolled to, and does not change height when the
-     address bar moves on a phone. 100svh is only a fallback for the very first paint, before the variable is set. */
+    /* The card is exactly the size of the snapshot. The browser always renders the snapshot at the LARGEST window (lvh: as if the phone's
+     address bar were hidden — measured at 863px for a 783px screen), whatever the page is scrolled to, so the card is lvh too. Then the
+     card and the picture inside it are the same size and nothing is squeezed or cropped, and the card does not change height when the
+     bar moves (that change was the jump). On a desktop lvh, svh and the window are all equal and nothing changes. */
   ::view-transition-group(root) {
     animation: none;
-    height: 100svh;
-    height: var(--vt-h, 100svh);
+    height: 100lvh;
   }
   ::view-transition-old(root),
   ::view-transition-new(root) {

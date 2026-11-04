@@ -46,7 +46,6 @@ const root = () => document.documentElement;
 
 /** All the page's CSS as one string, read from the live style sheets (so it can be copied into the old page's card). */
 function collectCss(): string {
-  if (cssCache !== null) return cssCache;
   let css = '';
   for (const sheet of Array.from(document.styleSheets)) {
     try {
@@ -55,18 +54,7 @@ function collectCss(): string {
       /* a sheet from another site (the web font's): its @font-face is already known to the document */
     }
   }
-  cssCache = css;
   return css;
-}
-
-/** The page's CSS is collected once per page, in an idle moment after it has loaded, so starting a transition does not pay for it. */
-let cssCache: string | null = null;
-function warmCss() {
-  const run = () => {
-    if (cssCache === null) collectCss();
-  };
-  if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 2000 });
-  else window.setTimeout(run, 1200);
 }
 
 /**
@@ -142,7 +130,7 @@ function pageSettled(): Promise<void> {
       same = h === last ? same + 1 : 0;
       last = h;
       const age = performance.now() - t0;
-      if ((same >= 3 && age > 120) || age > 700) {
+      if ((same >= 4 && age > 150) || age > 900) {
         settleScrubs(); // the sections stand where this scroll position puts them, not on their way there
         resolve();
       }
@@ -246,7 +234,6 @@ export function setupTouchTransition() {
   });
 
   document.addEventListener('astro:after-swap', () => {
-    cssCache = null; // the new page has its own style sheets
     if (calmOn() && running && veil) {
       // calm: the new page is built under the veil, put where it belongs, and when it has settled the veil lifts - the page is the live one
       const v = veil;
@@ -289,9 +276,7 @@ export function setupTouchTransition() {
   });
 
   // a navigation that ends without a swap (an error, the same page) must not leave a card over the page
-  warmCss();
   document.addEventListener('astro:page-load', () => {
-    warmCss();
     if (!running) clean();
   });
 }

@@ -77,6 +77,7 @@ const {
   import { setupTouchTransition, isOwnNavigation } from '../scripts/touch-transition';
   import { setupScrollRestore } from '../scripts/scroll-restore';
   import { settleLayout } from '../scripts/scroller';
+  import { awaitHeld } from '../scripts/page-ready';
 
   // After a page transition the nav is already on screen: the home hero must not hide it and run its intro for it again
   // (see Hero.astro). The router rewrites <html>'s classes on a swap, so `intro-ready` is put back at once.
@@ -203,6 +204,7 @@ const {
       wrapped(async () => {
         await cb?.();
         settleLayout();
+        await awaitHeld(); // what the new page builds asynchronously (the spiral's photos) is there before the page slides in
       })) as typeof document.startViewTransition;
   }
   let scrollOld = 0;

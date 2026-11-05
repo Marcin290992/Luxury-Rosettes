@@ -39,6 +39,7 @@ import hero from '../assets/img/hero_img.webp';
 
 <script>
   import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { clamp } from '../scripts/math';
   import { HERO, WORD_HIDDEN } from '../scripts/settings';
   import { mount } from '../scripts/lifecycle';
@@ -117,6 +118,24 @@ import hero from '../assets/img/hero_img.webp';
       });
     };
     addEventListener('resize', onResize);
+    // The eye's place (photo.dataset.eye) is worked out from the hero's size. On a phone the hero is sometimes measured at the start while the
+    // page is still laid out narrower (measured on an iPhone: a width of ~200px instead of 390px, so the zoom's origin came out at 1% instead of
+    // 25% and the whole zoom, and the preloader's window, were pushed to the right). A window resize never fires then (the window itself did
+    // not change), so the hero's own size is watched: whenever it changes the place is worked out again and the scroll scenes re-measure.
+    let heroW = hero.clientWidth;
+    let heroH = hero.clientHeight;
+    let roRaf = 0;
+    const ro = new ResizeObserver(() => {
+      if (hero.clientWidth === heroW && hero.clientHeight === heroH) return;
+      heroW = hero.clientWidth;
+      heroH = hero.clientHeight;
+      cancelAnimationFrame(roRaf);
+      roRaf = requestAnimationFrame(() => {
+        placeCat();
+        ScrollTrigger.refresh();
+      });
+    });
+    ro.observe(hero);
     let opening: gsap.core.Timeline | undefined;
     let cancelled = false;
 
@@ -163,6 +182,8 @@ import hero from '../assets/img/hero_img.webp';
     return () => {
       cancelled = true;
       removeEventListener('resize', onResize);
+      ro.disconnect();
+      cancelAnimationFrame(roRaf);
       cancelAnimationFrame(raf);
       opening?.kill();
     };

@@ -15,6 +15,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import * as THREE from 'three';
 import { AWARDS_SPIRAL, WEBGL_ENABLED } from './settings';
+import { holdTransition } from './page-ready';
 import { dbg, debugOn } from './debug-log';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
@@ -133,15 +134,26 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     // the photos, cropped to cover: uCrop = (scale x, scale y, offset x, offset y) in the photo's own uv
     const crops = urls.map(() => ({ value: new THREE.Vector4(1, 1, 0, 0) }));
     const loader = new THREE.TextureLoader();
-    const textures = urls.map((url, i) =>
-      loader.load(url, (t) => {
-        const img = t.image as { width: number; height: number };
-        const photo = img.width / img.height;
-        const want = 1 / ASPECT;
-        if (photo > want) crops[i].value.set(want / photo, 1, (1 - want / photo) / 2, 0);
-        else crops[i].value.set(1, photo / want, 0, (1 - photo / want) / 2);
-      }),
-    );
+    // the page transition waits for the photos (see page-ready.ts): otherwise the spiral is empty and the photos pop in while the page slides in
+    const loaded: Promise<void>[] = [];
+    const textures = urls.map((url, i) => {
+      let done!: () => void;
+      loaded.push(new Promise<void>((resolve) => (done = resolve)));
+      return loader.load(
+        url,
+        (t) => {
+          const img = t.image as { width: number; height: number };
+          const photo = img.width / img.height;
+          const want = 1 / ASPECT;
+          if (photo > want) crops[i].value.set(want / photo, 1, (1 - want / photo) / 2, 0);
+          else crops[i].value.set(1, photo / want, 0, (1 - photo / want) / 2);
+          done();
+        },
+        undefined,
+        () => done(),
+      );
+    });
+    holdTransition(Promise.all(loaded));
     textures.forEach((t) => {
       t.minFilter = THREE.LinearFilter;
       t.generateMipmaps = false;

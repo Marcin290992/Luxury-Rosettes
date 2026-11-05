@@ -145,6 +145,7 @@ import hero from '../assets/img/hero_img.webp';
       gsap.set(rail, { y: HERO.railRise });
       // after the intro the photo is already on screen (the preloader's last frame): no second zoom on top of it
       gsap.set(media, { scale: document.documentElement.classList.contains('preloading') ? 1 : HERO.mediaZoom });
+      gsap.set(hero, { '--tint': 0 }); // the photo starts undimmed; the darkening arrives at the end of the opening
       if (nav && !arrived) gsap.set(nav, { autoAlpha: 0 });
     }
 
@@ -177,6 +178,8 @@ import hero from '../assets/img/hero_img.webp';
         .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at);
       // the nav only arrives with the very first intro; after a page transition it was already on screen
       if (!arrived) opening.to(nav, { autoAlpha: 1, duration: T.nav.dur, clearProps: 'opacity,visibility' }, T.nav.at);
+      // the very last thing: the photo darkens under the text and the nav (the end of the longest part of the timeline)
+      opening.to(hero, { '--tint': 1, duration: T.tint.dur, ease: 'power1.inOut' }, `>${T.tint.overlap}`);
     });
 
     return () => {
@@ -216,12 +219,14 @@ import hero from '../assets/img/hero_img.webp';
     display: block;
     will-change: transform;
   }
-  /* Static dark overlay: even tint + heavier top (nav) and bottom edges */
+  /* Dark overlay: even tint + heavier top (nav) and bottom edges. --tint is 1 (fully on) except during the opening sequence, which
+     brings it in last (see the script), once the photo, the name, the rail and the nav are all there. */
   .hero::after {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
+    opacity: var(--tint, 1);
     background:
       linear-gradient(to bottom, rgba(8, 7, 6, 0.55) 0%, rgba(8, 7, 6, 0.2) 35%, rgba(8, 7, 6, 0.65) 100%),
       rgba(8, 7, 6, 0.3);

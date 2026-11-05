@@ -241,6 +241,7 @@ export const HERO = {
     chars: { at: 0.45, dur: 1.3, stagger: 0.05 },
     rail: { at: 1.7, dur: 1 },
     nav: { at: 1.2, dur: 1 },
+    tint: { dur: 1.4, overlap: -0.2 }, // the darkening of the photo: the last step, starting this many seconds before everything else has finished
   },
 };
 
@@ -339,7 +340,7 @@ export const PRELOADER = {
   holdBefore: 0.25, // s between the end of the count and the frame opening
   open: 1.1, // s the frame takes to grow to the full screen
   fade: 0.6, // s the preloader takes to melt away over the hero
-  rounds: 1.5, // how many times the photos go round while counting
+  rounds: 1, // how many times the photos go round while counting
   frame: { width: 240, height: 300 }, // px, the small frame
 };
 

@@ -2,13 +2,16 @@
 import { Image } from 'astro:assets';
 import kita from '../assets/img/cats/kita.webp';
 import candy from '../assets/img/cats/candy.webp';
+import draco from '../assets/img/cats/draco.webp';
+import cosmo from '../assets/img/cats/cosmo.webp';
+import charlie from '../assets/img/cats/charlie.webp';
 import chester from '../assets/img/cats/chester.webp';
 import hero from '../assets/img/hero_img.webp';
 import logo from '../assets/logo/logo-cat.svg';
 import { PRELOADER as P } from '../scripts/settings';
 
-// the photos that pass through the frame (only the cleanest, evenly lit ones); the last one is the hero's own, so the frame opens onto the page it hands over to
-const photos = [kita, candy, chester, hero];
+// the photos that pass through the frame; the last one is the hero's own, so the frame opens onto the page it hands over to
+const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
 ---
 
 <!--
@@ -100,7 +103,8 @@ const photos = [kita, candy, chester, hero];
       }
       // the photos go round `rounds` times and the count ends on the last one (the hero's)
       const last = photos.length - 1;
-      const step = Math.floor((progress.n / 100) * last * P.rounds) % last; // the frame's own photos only (the last one is the wallpaper)
+      // the same number of changes as always (photos.length * rounds), but only through the frame's own photos: the last one is the wallpaper
+      const step = Math.floor((progress.n / 100) * photos.length * P.rounds) % last;
       const idx = progress.n >= 100 ? last : step;
       if (idx !== shownPhoto) {
         shownPhoto = idx;

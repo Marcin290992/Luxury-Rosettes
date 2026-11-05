@@ -190,21 +190,8 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
     transform: scaleY(0);
     transform-origin: bottom;
   }
-  /* the two big words: the letters come out of a blur once the section has come up AND the page transition has finished (see the script) */
-  .sp[data-live] :global(.sp-big .sp-lit) {
-    display: inline-block;
-    filter: blur(12px);
-    opacity: 0;
-    transition:
-      filter 0.8s ease,
-      opacity 0.8s ease;
-  }
-  .sp[data-live].is-in :global(.sp-big .sp-lit) {
-    filter: blur(0);
-    opacity: 1;
-  }
-  /* the small line is there at once, with no animation */
-  .sp[data-live] :global(.sp-line .sp-lit) {
+  /* the text has no appearing animation: every letter is visible at once (the big words still slide in with the scroll, see the script) */
+  .sp[data-live] :global(.sp-lit) {
     display: inline-block;
   }
 </style>

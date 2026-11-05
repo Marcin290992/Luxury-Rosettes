@@ -542,8 +542,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         img.alt = '';
         img.src = canvas.toDataURL('image/webp', 0.92);
         img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;';
-        canvas.after(img);
-        canvas.style.opacity = '0';
+        canvas.after(img); // lies over the canvas: the canvas is hidden only once the picture is decoded, so there is never a frame with neither
         canvas.style.pointerEvents = 'none';
         still = img;
         // the transition waits (a few ms) until the picture is decoded, so it is in the snapshot
@@ -551,6 +550,8 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         const original = nav.loader;
         nav.loader = async () => {
           await img.decode().catch(() => {});
+          if (still === img) canvas.style.opacity = '0'; // the picture is ready and on screen: now the canvas can go
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); // and one frame so that the swap is painted before the snapshot
           await original();
         };
         // if the navigation never happens (cancelled), the live canvas comes back

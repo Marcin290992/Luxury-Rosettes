@@ -241,6 +241,7 @@ export const HERO = {
     chars: { at: 0.45, dur: 1.3, stagger: 0.05 },
     rail: { at: 1.7, dur: 1 },
     nav: { at: 1.2, dur: 1 },
+    tint: { dur: 1.4, overlap: -0.2 }, // the darkening of the photo: the last step, starting this many seconds before everything else has finished
   },
 };
 

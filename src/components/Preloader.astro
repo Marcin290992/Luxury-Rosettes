@@ -10,7 +10,7 @@ import hero from '../assets/img/hero_img.webp';
 import logo from '../assets/logo/logo-cat.svg';
 import { PRELOADER as P } from '../scripts/settings';
 
-// the photos that flash by in the frame; the last one is the hero's own, so the frame opens onto the page it hands over to
+// the photos that pass through the frame; the last one is the hero's own, so the frame opens onto the page it hands over to
 const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
 ---
 
@@ -23,13 +23,13 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
 <div class="preloader" aria-hidden="true" style={`--pl-w:${P.frame.width}px;--pl-h:${P.frame.height}px`}>
   <div class="pl-veil"></div>
   <div class="pl-head">
-    <p class="pl-word">{P.words[0]}</p>
     <div class="pl-brand">
       <img class="pl-logo" src={logo.src} alt="" width="40" height="70" />
       <p class="pl-title">Luxury Rosettes</p>
       <p class="pl-sub">Bengal Cattery</p>
     </div>
   </div>
+  <p class="pl-word">{P.words[0]}</p>
   <div class="pl-frame">
     {
       photos.slice(0, -1).map((img, i) => (
@@ -41,8 +41,6 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
       from the start, hidden; the small frame shows a window onto it (a clip-path) at the end of the count, and that window opens. It is never scaled. */}
   <div class="pl-wall">
     <Image src={photos[photos.length - 1]} alt="" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" class="pl-photo pl-hero" />
-    {/* the same dark tint the hero has over its photo; it grows in as the window opens, so at the hand-over the two are identical */}
-    <div class="pl-shade"></div>
   </div>
   <div class="pl-foot">
     <p class="pl-count">000</p>
@@ -69,7 +67,7 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     const photos = Array.from(el.querySelectorAll<HTMLElement>('.pl-photo'));
     const texts = [word, count, el.querySelector<HTMLElement>('.pl-brand')!];
     const veil = el.querySelector<HTMLElement>('.pl-veil')!;
-    const parts = [el.querySelector<HTMLElement>('.pl-head')!, frame, el.querySelector<HTMLElement>('.pl-foot')!];
+    const parts = [el.querySelector<HTMLElement>('.pl-head')!, frame, word, el.querySelector<HTMLElement>('.pl-foot')!];
     let dead = false;
 
     // it starts dark and empty: nothing pops in while the fonts and the first photos are still loading
@@ -78,7 +76,6 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     const progress = { n: 0 };
     const wallpaper = photos[photos.length - 1];
     const wall = el.querySelector<HTMLElement>('.pl-wall')!; // the window is cut out of this (photo and tint together)
-    const shade = el.querySelector<HTMLElement>('.pl-shade')!;
     // the four sides of the window (px from each edge); animated as numbers, because the browser shortens the written clip-path and a tween of that string goes wrong
     const win = { t: 0, r: 0, b: 0, l: 0 };
     const applyWindow = () => {
@@ -106,8 +103,9 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
       }
       // the photos go round `rounds` times and the count ends on the last one (the hero's)
       const last = photos.length - 1;
-      const step = Math.floor((progress.n / 100) * photos.length * P.rounds) % photos.length;
-      const idx = progress.n >= 100 ? last : step === last ? 0 : step;
+      // the same number of changes as always (photos.length * rounds), but only through the frame's own photos: the last one is the wallpaper
+      const step = Math.floor((progress.n / 100) * photos.length * P.rounds) % last;
+      const idx = progress.n >= 100 ? last : step;
       if (idx !== shownPhoto) {
         shownPhoto = idx;
         if (idx === last) placeWindow();
@@ -134,8 +132,8 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     tl.to(texts, { opacity: 0, duration: 0.3 }, `+=${P.holdBefore}`);
     // the window opens onto the wallpaper (the photo does not scale: only more of it is shown)
     tl.add(() => {
+      // (the photo opens undimmed: the hero darkens it only at the very end of its own opening, see Hero.astro)
       gsap.to(win, { t: 0, r: 0, b: 0, l: 0, duration: P.open, ease: 'hop', onUpdate: applyWindow });
-      gsap.to(shade, { opacity: 1, duration: P.open, ease: 'hop' });
     });
     // the hero starts its own opening while the preloader melts away over it
     tl.add(handOver, `+=${P.open}`);
@@ -206,11 +204,11 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     color: var(--ink);
     font-family: var(--font-heading);
   }
+  /* the brand stands alone and centred at the top: nothing shares its row, so its width can never change */
   .pl-head {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
-    gap: 1.5rem;
+    justify-content: center;
   }
   /* the same lockup as in the open menu: the cat, the name in gold, the line under it */
   .pl-brand {
@@ -220,7 +218,7 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     text-align: center;
   }
   .pl-logo {
-    width: clamp(1.6rem, 3vw, 2.4rem);
+    width: clamp(2rem, 4.5vw, 3rem);
     height: auto;
     margin-bottom: 0.6rem;
   }
@@ -260,6 +258,8 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     translate: -50% -50%;
     background: var(--placeholder);
   }
+  /* The photos in the small frame change with a quick cross-fade instead of a hard cut: the new one fades in on top of the old one, and the
+     old one leaves only after that (so the frame's grey never shows through in the middle of the fade). */
   .pl-photo {
     position: absolute;
     inset: 0;
@@ -267,9 +267,12 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     height: 100%;
     object-fit: cover;
     opacity: 0;
+    transition: opacity 0.01s linear 0.28s;
   }
   .pl-photo.is-on {
     opacity: 1;
+    z-index: 1;
+    transition: opacity 0.28s ease-out;
   }
   /* the wallpaper: over the small frame, the size of the screen; only the window of the frame is shown until it opens */
   .pl-wall {
@@ -278,19 +281,27 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     z-index: 1;
     pointer-events: none;
   }
-  .pl-shade {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    /* copied from the hero's tint (.hero::after in Hero.astro) */
-    background:
-      linear-gradient(to bottom, rgba(8, 7, 6, 0.55) 0%, rgba(8, 7, 6, 0.2) 35%, rgba(8, 7, 6, 0.65) 100%),
-      rgba(8, 7, 6, 0.3);
-  }
   .pl-head,
   .pl-foot {
     position: relative;
     z-index: 2;
+  }
+  /* the changing word sits under the frame, centred, on a line of its own: a longer or shorter word moves nothing else */
+  .pl-word {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50vh + var(--pl-h) / 2 + clamp(1.1rem, 3vh, 1.9rem));
+    top: calc(50svh + var(--pl-h) / 2 + clamp(1.1rem, 3vh, 1.9rem));
+    z-index: 2;
+    margin: 0;
+    height: 1.2em;
+    font-size: clamp(1.5rem, 4.4vw, 2.4rem);
+    font-style: italic;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    text-align: center;
+    white-space: nowrap;
   }
   .pl-foot {
     display: flex;

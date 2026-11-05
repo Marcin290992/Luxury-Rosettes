@@ -15,7 +15,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import * as THREE from 'three';
 import { AWARDS_SPIRAL, WEBGL_ENABLED } from './settings';
-import { dbg, debugOn } from './debug-log';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -86,16 +85,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
 
     let renderer: THREE.WebGLRenderer;
     try {
-      // preserveDrawingBuffer: Safari takes the picture of the old page for the page transition from the canvas as it is composited, and a WebGL
-      // canvas without it is empty at that moment (the spiral blinked out when leaving the page)
-      // On iOS Safari, we also need to prevent canvas from being composited in the transition snapshot
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      renderer = new THREE.WebGLRenderer({ 
-        canvas, 
-        antialias: true, 
-        alpha: true, 
-        preserveDrawingBuffer: !isIOS // iOS has issues with preserveDrawingBuffer, handle differently
-      });
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     } catch {
       return; // no WebGL: the page stays as the plain words, line and grid
     }
@@ -104,47 +94,32 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     root.dataset.live = '';
     root.style.setProperty('--sp-length', String(total));
 
-    // ---- the words: letters come out of a blur once the section is on the screen ----
-    const splits = [
-      SplitText.create(top, { type: 'chars', charsClass: 'sp-lit' }),
-      SplitText.create(line, { type: 'words', wordsClass: 'sp-lit' }),
-      SplitText.create(bottom, { type: 'chars', charsClass: 'sp-lit' }),
-    ];
-    splits.forEach((s, k) => {
-      const parts = (s.chars.length ? s.chars : s.words) as HTMLElement[];
-      const offset = k === 2 ? 0 : k === 1 ? splits[0].chars.length : 0;
-      if (k === 1) return; // the small line has no animation and so no delays (they made its words appear one by one)
-      parts.forEach((el, i) => (el.style.transitionDelay = `${(offset + i) * 0.05}s`));
-    });
-    // `is-in` (the blur-in of the big words) starts only when the section is in view AND the page transition is over, so it does not run
-    // while the page is still sliding in at a reduced size. Astro keeps data-astro-transition on <html> for the length of the transition.
-    let seen = false;
-    let settled = !document.documentElement.hasAttribute('data-astro-transition');
-    const showWords = () => root.classList.toggle('is-in', seen && settled);
+    // ---- the words: the two big ones come out of a blur (the small line is plain text and is simply there) ----
+    const big = [top, bottom].map((el) => SplitText.create(el, { type: 'chars', charsClass: 'sp-lit' }));
+    big.forEach((split) => (split.chars as HTMLElement[]).forEach((el, i) => (el.style.transitionDelay = `${i * 0.05}s`)));
+    // `is-in` starts the blur-in. It needs two things: the section is in view, and the page transition is over (Astro keeps
+    // data-astro-transition on <html> for its length), so the letters do not come out while the page is still sliding in, reduced in size.
+    const html = document.documentElement;
+    let inView = false;
+    let transitionOver = !html.hasAttribute('data-astro-transition');
+    const showWords = () => root.classList.toggle('is-in', inView && transitionOver);
     const watch = new IntersectionObserver(
       ([entry]) => {
-        seen = entry.isIntersecting;
+        inView = entry.isIntersecting;
         showWords();
       },
       { rootMargin: '-30% 0px' },
     );
     watch.observe(root);
-    let settleTimer = 0;
-    let transitionWatch: MutationObserver | undefined;
-    if (!settled) {
-      const done = () => {
-        if (settled) return;
-        settled = true;
-        transitionWatch?.disconnect();
-        window.clearTimeout(settleTimer);
-        showWords();
-      };
-      transitionWatch = new MutationObserver(() => {
-        if (!document.documentElement.hasAttribute('data-astro-transition')) done();
-      });
-      transitionWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-astro-transition'] });
-      settleTimer = window.setTimeout(done, 3000); // safety: never hold the words back longer than this
-    }
+    const transitionWatch = new MutationObserver(() => {
+      transitionOver = !html.hasAttribute('data-astro-transition');
+      showWords();
+    });
+    if (!transitionOver) transitionWatch.observe(html, { attributes: true, attributeFilter: ['data-astro-transition'] });
+    const transitionSafety = window.setTimeout(() => {
+      transitionOver = true; // never hold the words back for longer than this
+      showWords();
+    }, 3000);
 
     // ---- three.js ----
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -167,19 +142,68 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
 
     // the photos, cropped to cover: uCrop = (scale x, scale y, offset x, offset y) in the photo's own uv
     const crops = urls.map(() => ({ value: new THREE.Vector4(1, 1, 0, 0) }));
+    const setCrop = (i: number, img: { width: number; height: number }) => {
+      const photo = img.width / img.height;
+      const want = 1 / ASPECT;
+      if (photo > want) crops[i].value.set(want / photo, 1, (1 - want / photo) / 2, 0);
+      else crops[i].value.set(1, photo / want, 0, (1 - photo / want) / 2);
+    };
+
+    // The canvas stays invisible until every photo is loaded, decoded and uploaded to the GPU, and then fades in. On a first visit (nothing
+    // cached) the nine 1200px photos used to be decoded and uploaded all at once in the first frames, and on a phone that heavy moment
+    // showed as a blurred, doubled picture. So each photo is decoded off the main thread and the uploads are one per frame.
+    canvas.style.opacity = '0';
+    let gone = false; // set when the scene is taken down: nothing may touch the renderer after that
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      // two frames: one to draw, one so that the picture is on the screen before it is shown
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (gone || still) return; // the page is already leaving: the still picture is on screen
+          canvas.style.transition = 'opacity 0.3s ease-out';
+          canvas.style.opacity = '1';
+        }),
+      );
+    };
+    // Safety only, for a request that never finishes: it must be much longer than the photos can take on a slow mobile connection (nine photos of
+    // ~150 KB on a first visit). With 1.5 s here the canvas came up on a phone before the photos had arrived, and they popped in over each other.
+    const revealTimer = window.setTimeout(reveal, 10000);
+    const upload = (list: THREE.Texture[]) => {
+      let i = 0;
+      const step = () => {
+        if (gone) return;
+        if (i >= list.length) return reveal();
+        try {
+          renderer.initTexture(list[i++]); // uploads this one texture now, so the first real frame has nothing left to upload
+        } catch {
+          /* it is drawn (and uploaded) by the first frame instead */
+        }
+        requestAnimationFrame(step);
+      };
+      step();
+    };
+    const textures: THREE.Texture[] = [];
+    let waiting = urls.length;
     const loader = new THREE.TextureLoader();
-    const textures = urls.map((url, i) =>
-      loader.load(url, (t) => {
-        const img = t.image as { width: number; height: number };
-        const photo = img.width / img.height;
-        const want = 1 / ASPECT;
-        if (photo > want) crops[i].value.set(want / photo, 1, (1 - want / photo) / 2, 0);
-        else crops[i].value.set(1, photo / want, 0, (1 - photo / want) / 2);
-      }),
-    );
-    textures.forEach((t) => {
-      t.minFilter = THREE.LinearFilter;
-      t.generateMipmaps = false;
+    urls.forEach((url, i) => {
+      const done = () => {
+        if (--waiting === 0) upload(textures);
+      };
+      const texture = loader.load(
+        url,
+        (t) => {
+          const img = t.image as HTMLImageElement;
+          setCrop(i, img);
+          Promise.resolve(img.decode?.()).catch(() => {}).then(done); // decoded off the main thread before it is uploaded
+        },
+        undefined,
+        done,
+      );
+      texture.minFilter = THREE.LinearFilter;
+      texture.generateMipmaps = false;
+      textures[i] = texture;
     });
 
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0x9e9e9e });
@@ -429,37 +453,6 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     };
     document.addEventListener('nav-menu', onMenu);
 
-    // ---- ?debug=1: what the scene and the window measure while the menu is open and the page leaves (see debug-log.ts) ----
-    let watching = 0;
-    let lastSig = '';
-    const probe = () => {
-      if (!debugOn() || !(hold || performance.now() < watching)) return;
-      const sig = [
-        `scene ${scene3.clientHeight}`,
-        `canvasBox ${Math.round(canvas.getBoundingClientRect().height)}`,
-        `buf ${canvas.height}`,
-        `inner ${innerHeight}`,
-        `vv ${Math.round(window.visualViewport?.height ?? 0)}`,
-        `scrollY ${Math.round(scrollY)}`,
-        `top ${Math.round(scene3.getBoundingClientRect().top)}`,
-        `target ${target.toFixed(3)}`,
-        `shown ${shown.toFixed(3)}`,
-      ].join(' | ');
-      if (sig !== lastSig) {
-        lastSig = sig;
-        dbg(sig);
-      }
-    };
-    const onLeaveStart = () => {
-      watching = performance.now() + 4000;
-      dbg('--- before-preparation');
-    };
-    const onMenuLog = (e: Event) => dbg(`--- nav-menu ${JSON.stringify((e as CustomEvent).detail)}`);
-    document.addEventListener('astro:before-preparation', onLeaveStart);
-    document.addEventListener('nav-menu', onMenuLog);
-    gsap.ticker.add(probe);
-    dbg(`spiral ready: scene ${scene3.clientHeight} canvas ${canvas.width}x${canvas.height}`);
-
     const draw = () => {
       if (!near || hold) return;
       const dt = Math.min(gsap.ticker.deltaRatio(60) / 60, 0.05);
@@ -543,16 +536,17 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         s.style.transform = `scaleY(${clamp01((exit * 0.7 - start) / 0.3)})`;
       });
 
-      // Only render if the page is visible (prevent white canvas on iOS Safari page transitions)
-      if (document.visibilityState === 'visible') {
-        renderer.render(scene, camera);
-      }
+      if (!document.hidden) renderer.render(scene, camera); // a page that is not on the screen is not drawn (a white canvas on iOS Safari)
     };
     gsap.ticker.add(draw);
 
     // When a page transition starts while the scene is on the screen, the live WebGL canvas is swapped for a still picture of its last
-    // frame. A WebGL canvas inside the transition's snapshot is composited on its own (on phones it came out with another height
-    // than the rest of the page); a plain image is part of the page like everything else. Only the picture is lost: the page is leaving.
+    // frame: a WebGL canvas inside the transition's snapshot is composited on its own (on phones it came out with another height than the
+    // rest of the page, and on iOS it blinked), while a plain image is part of the page like everything else. Only the picture is lost:
+    // the page is leaving. The order matters (this was the iOS blink):
+    //  1. all of it in the same task as the event, because the router reads `loader` right after it and the buffer still holds the frame;
+    //  2. the picture goes OVER the canvas, and the canvas is hidden only once the picture is decoded, so no frame has neither;
+    //  3. one more frame, so that this is painted before the browser takes the picture of the old page.
     let still: HTMLImageElement | undefined;
     let unfreeze = 0;
     const thaw = () => {
@@ -564,68 +558,37 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     const freeze = (e: Event) => {
       if (!near || still) return;
       try {
-        // all in the same task as the event: the router reads `loader` right after it, and the buffer still holds the last frame
-        // (an earlier version did this inside requestAnimationFrame: `loader` was then replaced too late and the transition did not wait
-        // for the picture, so the snapshot of the old page could hold an empty canvas on iOS)
         renderer.render(scene, camera);
         const img = new Image();
         img.alt = '';
         img.src = canvas.toDataURL('image/webp', 0.92);
         img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;';
-        canvas.after(img); // lies over the canvas: the canvas is hidden only once the picture is decoded, so there is never a frame with neither
+        canvas.after(img);
         canvas.style.pointerEvents = 'none';
         still = img;
-        // the transition waits (a few ms) until the picture is decoded, so it is in the snapshot
         const nav = e as Event & { loader: () => Promise<void> };
         const original = nav.loader;
         nav.loader = async () => {
           await img.decode().catch(() => {});
-          if (still === img) canvas.style.opacity = '0'; // the picture is ready and on screen: now the canvas can go
-          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); // and one frame so that the swap is painted before the snapshot
+          if (still === img) canvas.style.opacity = '0';
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
           await original();
         };
-        // if the navigation never happens (cancelled), the live canvas comes back
-        unfreeze = window.setTimeout(thaw, 5000);
+        unfreeze = window.setTimeout(thaw, 5000); // the navigation never happened (cancelled): the live canvas comes back
       } catch {
         thaw();
       }
     };
     document.addEventListener('astro:before-preparation', freeze);
-    
-    // On iOS Safari, after page transition (especially back navigation), force render the canvas
-    // to restore WebGL scene immediately when page becomes visible again
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && document.querySelector('.sp[data-live]') === root) {
-        // Re-render immediately to restore scene
-        try {
-          renderer.render(scene, camera);
-        } catch {}
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    
-    // Also force render on astro page transitions
-    const forceRenderOnRestore = () => {
-      if (document.querySelector('.sp[data-live]') === root) {
-        requestAnimationFrame(() => {
-          try {
-            renderer.render(scene, camera);
-          } catch {}
-        });
-      }
-    };
-    document.addEventListener('astro:after-swap', forceRenderOnRestore);
 
     return () => {
+      gone = true;
       document.removeEventListener('astro:before-preparation', freeze);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      document.removeEventListener('astro:after-swap', forceRenderOnRestore);
       document.removeEventListener('nav-menu', onMenu);
-      document.removeEventListener('nav-menu', onMenuLog);
-      document.removeEventListener('astro:before-preparation', onLeaveStart);
-      gsap.ticker.remove(probe);
       window.clearTimeout(release);
       window.clearTimeout(unfreeze);
+      window.clearTimeout(revealTimer);
+      window.clearTimeout(transitionSafety);
       thaw();
       gsap.ticker.remove(draw);
       window.removeEventListener('resize', onResize);
@@ -633,10 +596,9 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       scene3.removeEventListener('pointerleave', onLeave);
       trigger.kill();
       watch.disconnect();
-      transitionWatch?.disconnect();
-      window.clearTimeout(settleTimer);
+      transitionWatch.disconnect();
       range.disconnect();
-      splits.forEach((s) => s.revert());
+      big.forEach((split) => split.revert());
       dropGrid();
       ribbons.forEach((m) => {
         m.geometry.dispose();

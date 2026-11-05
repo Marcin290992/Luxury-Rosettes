@@ -20,21 +20,18 @@ const urls = (await Promise.all(photos.map((p) => getImage({ src: p, width: 1200
 const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
 ---
 
-<!-- Until the script has built the scene (or has decided not to), the words and the plain grid are hidden: the page would otherwise show them unstyled
-     for a moment (in the fallback font, stacked) and then jump. The script lifts the class; the timeout is only a safety. -->
+<!-- Until the scene is built (or the script has decided not to build one), the words and the plain grid are hidden: the page would
+     otherwise show them unstyled for a moment (in the fallback font, stacked) and then jump. The scene's script lifts `sp-pending` as soon
+     as it has built the scene and the fonts are in (awards-spiral.ts); the lifts here are the page's own end (a full load: DOMContentLoaded;
+     a click through: astro:page-load) and a safety timeout, so the words can never stay hidden. -->
 <script is:inline>
   try {
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      document.documentElement.classList.add('sp-pending');
-      const lift = () => document.documentElement.classList.remove('sp-pending');
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', lift, { once: true });
-      } else {
-        document.addEventListener('astro:page-load', lift, { once: true });
-      }
-      setTimeout(function () {
-        document.documentElement.classList.remove('sp-pending');
-      }, 5000);
+      const html = document.documentElement;
+      const lift = () => html.classList.remove('sp-pending');
+      html.classList.add('sp-pending');
+      document.addEventListener(document.readyState === 'loading' ? 'DOMContentLoaded' : 'astro:page-load', lift, { once: true });
+      setTimeout(lift, 5000);
     }
   } catch (e) {}
 </script>
@@ -169,9 +166,7 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
     height: 100%;
     z-index: 1;
     pointer-events: none;
-    /* Prevent canvas from being composited in page transition snapshots on iOS Safari */
-    -webkit-user-select: none;
-    will-change: auto;
+    /* its own compositing layer, so that on iOS Safari the canvas does not flicker with the rest of the page during a transition */
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
@@ -190,7 +185,8 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
     transform: scaleY(0);
     transform-origin: bottom;
   }
-  /* the two big words: the letters come out of a blur once the section has come up AND the page transition has finished (see the script) */
+  /* The two big words: the letters come out of a blur once the section is in view and the page transition is over (`is-in`, see the
+     script). The small line is plain text: it has no animation and is simply there. */
   .sp[data-live] :global(.sp-big .sp-lit) {
     display: inline-block;
     filter: blur(12px);
@@ -202,12 +198,5 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
   .sp[data-live].is-in :global(.sp-big .sp-lit) {
     filter: blur(0);
     opacity: 1;
-  }
-  /* the small line is there at once, with no animation. `transition: none` matters: the default transition covers every property, `visibility`
-     included, so a word with a transition-delay became visible later than the others when the words were un-hidden (sp-pending): the
-     line appeared word by word. */
-  .sp[data-live] :global(.sp-line .sp-lit) {
-    display: inline-block;
-    transition: none;
   }
 </style>

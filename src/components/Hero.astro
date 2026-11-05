@@ -43,7 +43,6 @@ import hero from '../assets/img/hero_img.webp';
   import { clamp } from '../scripts/math';
   import { HERO, WORD_HIDDEN } from '../scripts/settings';
   import { mount } from '../scripts/lifecycle';
-  import { dbg } from '../scripts/debug-log';
 
   mount(() => {
     // Opening sequence: the photo settles from a slow zoom, the name rises letter by letter across the bottom edge,
@@ -53,6 +52,9 @@ import hero from '../assets/img/hero_img.webp';
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     // true when this page was reached by a page transition (set in Layout.astro): the nav must not hide and fade in again
     const arrived = !!(window as unknown as { __lrSwapped?: boolean }).__lrSwapped;
+    // true only on a real load of the home page, when the intro (Preloader.astro) plays: only then does the photo start undimmed and darken at
+    // the end of the opening. Any other arrival (back to the hero, a click through) has the dark overlay from the first frame, always.
+    const introPlays = document.documentElement.classList.contains('preloading');
     const media = hero.querySelector<HTMLElement>('.hero-media')!;
     const title = hero.querySelector<HTMLElement>('.hero-title')!;
     const rail = hero.querySelector<HTMLElement>('.hero-rail')!;
@@ -100,7 +102,6 @@ import hero from '../assets/img/hero_img.webp';
       const eyeY = EYE.y * sH - py * (sH - H);
       // w = width of the eye in px (see HERO.eyeWidth): lets the scroll zoom pick a scale that fits the screen
       photo.dataset.eye = JSON.stringify({ ox: (eyeX / W) * 100, oy: (eyeY / H) * 100, w: HERO.eyeWidth * sW });
-      dbg(`placeCat W${W} H${H} iw${iw} ih${ih} sW${Math.round(sW)} px${px.toFixed(2)} eyeX${Math.round(eyeX)} ox${((eyeX / W) * 100).toFixed(1)}`);
     };
     placeCat();
 
@@ -145,6 +146,7 @@ import hero from '../assets/img/hero_img.webp';
       gsap.set(rail, { y: HERO.railRise });
       // after the intro the photo is already on screen (the preloader's last frame): no second zoom on top of it
       gsap.set(media, { scale: document.documentElement.classList.contains('preloading') ? 1 : HERO.mediaZoom });
+      if (introPlays) gsap.set(hero, { '--tint': 0 }); // the photo starts undimmed; the darkening arrives at the end of the opening
       if (nav && !arrived) gsap.set(nav, { autoAlpha: 0 });
     }
 
@@ -177,6 +179,8 @@ import hero from '../assets/img/hero_img.webp';
         .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at);
       // the nav only arrives with the very first intro; after a page transition it was already on screen
       if (!arrived) opening.to(nav, { autoAlpha: 1, duration: T.nav.dur, clearProps: 'opacity,visibility' }, T.nav.at);
+      // the very last thing: the photo darkens under the text and the nav (the end of the longest part of the timeline)
+      if (introPlays) opening.to(hero, { '--tint': 1, duration: T.tint.dur, ease: 'power1.inOut' }, `>${T.tint.overlap}`);
     });
 
     return () => {
@@ -216,12 +220,14 @@ import hero from '../assets/img/hero_img.webp';
     display: block;
     will-change: transform;
   }
-  /* Static dark overlay: even tint + heavier top (nav) and bottom edges */
+  /* Dark overlay: even tint + heavier top (nav) and bottom edges. --tint is 1 (fully on) except during the opening sequence, which
+     brings it in last (see the script), once the photo, the name, the rail and the nav are all there. */
   .hero::after {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
+    opacity: var(--tint, 1);
     background:
       linear-gradient(to bottom, rgba(8, 7, 6, 0.55) 0%, rgba(8, 7, 6, 0.2) 35%, rgba(8, 7, 6, 0.65) 100%),
       rgba(8, 7, 6, 0.3);

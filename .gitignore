@@ -22,3 +22,14 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# reference material (demos and sketches studied while building the site): kept on disk, not part of the repository
+faq code/
+src/awwward list section/
+src/better slider/
+src/choregraphy page/
+src/codegrid-view-page-transition/
+src/intro awwards/
+src/intro luxury/
+src/story awwards/
+src/white desert animation/

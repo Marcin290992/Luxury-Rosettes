@@ -169,24 +169,46 @@ Natywny snapshot WebKit nadal migał (pasek menu i treść), a na Chrome nie. Dl
 **Poprawka (`src/scripts/awards-spiral.ts`, funkcja `freeze`):**
 1. Zamrażanie jest synchroniczne, w tym samym zadaniu co `astro:before-preparation`: `renderer.render`, `toDataURL`, wstawienie `<img>` NAD canvasem i podmiana `nav.loader`.
 2. Canvas jest chowany (`opacity: 0`) dopiero w `loader`, po `img.decode()`, i jeszcze jedna klatka (`requestAnimationFrame`) czeka, żeby zamiana została namalowana przed zrzutem starej strony. Zdjęcie leży na canvasie, więc nigdy nie ma klatki bez obrazu.
-3. Renderer ma `preserveDrawingBuffer: true`, żeby bufor trzymał ostatnią klatkę do zrzutu.
+3. Renderer ma domyślne ustawienia (`preserveDrawingBuffer` nie jest potrzebne): `render` i `toDataURL` idą jedno po drugim w tym samym zadaniu, a wtedy bufor jeszcze trzyma klatkę. Sprawdzone pomiarem: zdjęcie zastępujące canvas różni się od canvasu o 0 pikseli na górze strony, w WebKit i Chromium.
 
 **WebGL na telefonach: jak to działa na iOS i na Androidzie (podsumowanie):**
 - **Wspólna zasada (oba systemy):** canvas WebGL w zrzucie przejścia jest składany osobno i na telefonach wychodził z inną wysokością niż reszta strony. Dlatego tuż przed przejściem canvas jest zamieniany na zwykłe zdjęcie swojej ostatniej klatki (`freeze` w `awards-spiral.ts`). Zdjęcie jest częścią strony jak każdy inny element, a ucieka tylko obraz, bo strona i tak odchodzi. `thaw` przywraca canvas, gdyby nawigacja się nie odbyła (po 5 s).
 - **Android (Chrome):** działa natywne przejście przeglądarki i samo synchroniczne zamrożenie wystarcza. Dla zrzutu stosowane jest obejście wysokości (`::view-transition-group(root) { height: 100lvh }` i `object-fit: cover` w `Layout.astro`), bo zrzut ma rozmiar największego okna (pasek adresu schowany). Strona przewija się wewnątrz `#scroll-root`, więc dokument nie przewija się nigdy i zrzut nie "podskakuje".
-- **iOS (Safari):** też natywne przejście (własne karty z `touch-transition.ts` zostały tylko jako test `?vt=cards`). Potrzebne było: (1) kolejność zamrożenia z wpisu wyżej (zdjęcie na wierzchu, canvas chowany po `decode()`), (2) `preserveDrawingBuffer: true`, (3) w `Layout.astro` blok `@supports (-webkit-touch-callout: none)`, który wyłącza obejście `100lvh` / `cover` tylko na iOS (zrzut nie jest tam tak wysoki, więc `cover` go rozciągał i strona na końcu przejścia "skakała" w rozmiarze), (4) menu bez własnej warstwy w przejściu (`view-transition-name: navbar` usunięte), bo osobna warstwa z `backdrop-filter` migała w WebKit.
+- **iOS (Safari):** też natywne przejście (własne karty z `touch-transition.ts` zostały tylko jako test `?vt=cards`). Potrzebne było: (1) kolejność zamrożenia z wpisu wyżej (zdjęcie na wierzchu, canvas chowany po `decode()`), (2) w `Layout.astro` blok `@supports (-webkit-touch-callout: none)`, który wyłącza obejście `100lvh` / `cover` tylko na iOS (zrzut nie jest tam tak wysoki, więc `cover` go rozciągał i strona na końcu przejścia "skakała" w rozmiarze), (3) menu bez własnej warstwy w przejściu (`view-transition-name: navbar` usunięte), bo osobna warstwa z `backdrop-filter` migała w WebKit.
 - **Przełącznik diagnostyczny:** `WEBGL_ENABLED` w `src/scripts/settings.ts` wyłącza obie sceny WebGL (spiralę Awards i palenie w Why Bengals) na czas testów; obie mają zapasową wersję bez WebGL. Domyślnie `true`.
 - **Why Bengals (palenie, `ember-burn.ts`):** też WebGL, ale nie było z nim problemu przy przejściu strony; tej sceny to nie dotyczyło.
 
 **Co NIE pomogło (nie wracać do tego):**
 - Czekanie przejścia na załadowanie tekstur spirali (`holdTransition` / `awaitHeld` w osobnym pliku): psuło przejście przy cofaniu na iOS, cofnięte.
-- Samo `preserveDrawingBuffer` oraz `visibilitychange` / wymuszony render po `astro:after-swap`: bez zmiany.
+- `preserveDrawingBuffer: true` (także z wykrywaniem iOS po user-agencie), `visibilitychange` i wymuszony render po `astro:after-swap`: bez efektu, usunięte przy przepisywaniu. Po wymianie strony scena i tak jest budowana od nowa, a ticker rysuje każdą klatkę.
 
 **Pokrewne poprawki na Awards (ten sam dzień):**
-- Mały napis ("Every title earned…") pojawiał się słowo po słowie, na Androidzie też. Słowa miały inline `transition-delay`, a domyślne przejście obejmuje `visibility`, więc po zdjęciu `sp-pending` każde słowo stawało się widoczne z własnym opóźnieniem. Poprawka: `transition: none` na `.sp-line .sp-lit` i brak opóźnień dla tej linii.
+- Mały napis ("Every title earned…") pojawiał się słowo po słowie, na Androidzie też. Słowa miały inline `transition-delay`, a domyślne przejście obejmuje `visibility`, więc po zdjęciu `sp-pending` każde słowo stawało się widoczne z własnym opóźnieniem. Poprawka: ten napis nie jest już dzielony na słowa (`SplitText` tylko dla dwóch dużych słów), więc nie ma czego opóźniać. Różnica po przepisaniu: tekst jest zwykłym tekstem, a nie ciągiem `inline-block`, więc subpikselowo renderuje się odrobinę inaczej (0,03% pikseli ekranu).
 - Na starcie widać było tylko "NS" i "BY" z krawędzi: duże słowa startowały o 1/6 wsunięte. Teraz `slide = clamp01(px / (vh * 3.2))`, na samej górze są poza ekranem.
 - Rozmycie dużych słów (`is-in`) startuje dopiero po zakończeniu przejścia (czekanie na zdjęcie `data-astro-transition` z `<html>`, awaryjnie 3 s), a nie w trakcie, gdy strona jest jeszcze pomniejszona.
 
 **Pliki:** `src/scripts/awards-spiral.ts`, `src/components/AwardsSpiral.astro`.
 
 **Gdyby wracało:** sprawdzić najpierw kolejność w `freeze` (zdjęcie na wierzchu, canvas chowany po `decode()`), potem czy `nav.loader` jest podmieniane synchronicznie. Test bez telefonu: w WebKit (Playwright) Home → Awards → wstecz → naprzód, w konsoli nie powinno być błędów; mrugnięcia kompozytora iOS emulacja nie odtworzy, trzeba sprawdzić na iPhonie.
+
+## Awards: rozmazane, podwójne krawędzie zdjęć spirali przy pierwszym wejściu na stronę
+
+**Objaw:** tylko przy pierwszej wizycie na stronie Awards (pierwszy raz po wyczyszczeniu danych), na początku pojawiania się spirali, krawędzie zdjęć wyglądały na podwójne albo rozmazane. Przy kolejnych wejściach, i dalej przy przewijaniu, było idealnie. Wyglądało jak drgnięcie, ale to nie było drgnięcie.
+
+**Przyczyna:** spirala używa dziewięciu zdjęć po 1200 px jako tekstur. Przy pierwszej wizycie (nic w pamięci podręcznej) wszystkie były dekodowane i wgrywane na GPU naraz, w pierwszych klatkach, kiedy canvas już był widoczny. Telefon gubił wtedy klatki, a to na krawędziach zdjęć wygląda jak podwojenie i rozmazanie. Dodatkowo kadrowanie (`uCrop`) ustawiało się dopiero po załadowaniu każdego zdjęcia, więc pierwsze klatki rysowały zdjęcia bez kadru. Za drugim razem zdekodowane obrazy są w pamięci, stąd "tylko za pierwszym razem".
+
+**Poprawka (`src/scripts/awards-spiral.ts`, blok wczytywania zdjęć):**
+1. Canvas jest niewidoczny (`opacity: 0`), dopóki wszystkie zdjęcia nie są załadowane, zdekodowane i wgrane na GPU. Potem wchodzi łagodnym przenikaniem (0,3 s).
+2. Każde zdjęcie jest dekodowane poza głównym wątkiem (`img.decode()`).
+3. Wgrywanie na GPU idzie po jednej teksturze na klatkę (`renderer.initTexture`), a nie wszystkie naraz.
+4. Bezpiecznik, po którym canvas pokazuje się w każdym razie (żeby zdjęcie, które się nie załaduje, nie trzymało spirali w ukryciu), ma **10 s**. Pierwsza wersja miała 1,5 s i to był błąd: na pierwszej wizycie przez sieć komórkową dziewięć zdjęć po ok. 150 KB nie zdąża się pobrać w 1,5 s, więc canvas wchodził bez zdjęć i bez kadrowania, a zdjęcia wskakiwały później jedno na drugie. Problem wrócił właśnie dlatego ("raz na sesję", potem dobrze, bo zdjęcia są już w pamięci podręcznej). Test: symulacja opóźnienia 2,5 s na każde zdjęcie, canvas wchodzi dopiero po ich załadowaniu (ok. 3,8 s).
+
+Cena: na zimnej pamięci spirala pojawia się ok. 0,5 s później niż wcześniej (zmierzone w emulacji).
+
+**Co NIE było przyczyną (sprawdzone):** kompilacja shaderów na żądanie (`renderer.compileAsync` przed pokazaniem canvasu nie zmieniła zacięć po pojawieniu się spirali, wycofane), pozycja przewinięcia (zostaje na 0), zamiana canvasu na zdjęcie (różnica 0 pikseli), zwykła siatka zdjęć pod canvasem (jest ukryta do czasu włączenia spirali), wolne pobranie modułu three.js (ukrywanie wytrzymuje).
+
+**Gdyby wracało:** sprawdzić najpierw rozmiar tekstur (`getImage({ width: 1200 })` w `AwardsSpiral.astro`). Mniejsze zdjęcia (np. 800 px) to mniej pracy dla dekodera i GPU. Test: wyczyścić dane witryny w Safari i wejść na Awards po raz pierwszy.
+
+## Przepisanie spirali Awards na czysto (bez nawarstwionych łatek)
+
+Po serii poprawek `awards-spiral.ts` i `AwardsSpiral.astro` zostały przepisane na czysto, z tym samym zachowaniem (porównanie pikseli ze stanem sprzed przepisania: te same zrzuty w WebKit i Chromium na czterech pozycjach przewinięcia, jedyna różnica to subpikselowy tekst małego napisu). Usunięte jako zbędne: blok diagnostyczny `?debug=1` w spirali, wykrywanie iOS po user-agencie i `preserveDrawingBuffer`, nasłuchiwanie `visibilitychange` i wymuszony render po `astro:after-swap`, dzielenie małego napisu na słowa. Matematyka sceny (spirala, karty, shadery) bez zmian. Plik: 713 → 624 linii.

@@ -124,6 +124,10 @@ Najszybciej: w `Layout.astro` usunąć blok `@media (pointer: coarse)` dla `html
 
 **Nie zweryfikowane na Safari iOS** (brak urządzenia). Jeśli nadal miga: sprawdzić `will-change: transform` na `::view-transition-old/new(root)` (można zdjąć) i czy miga treść pod `#scroll-root` (wtedy spróbować `-webkit-transform: translateZ(0)` na kontenerze). Jeśli nadal za wolno: skrócić czekanie 650 ms na zwinięcie menu w `NavPill.astro` (`leaving`).
 
+### Lenis na telefonie
+
+Lenis był na dotyku wyłączony (commity `cf632b9`, `1e68e90`, `cc3d8e1`), bo przewijał dokument: po `window.scrollTo` w trakcie zrzutu i przez zmianę klas `lenis` na `<html>` (wysokość dokumentu) przejście skakało. Teraz dokument stoi, więc `initLenis()` dostaje `wrapper: #scroll-root, content: #scroll-root` (`lenis.ts`), a klasy `lenis` trafiają na kontener, nie na `<html>`. Zniszczenie/odtworzenie po swapie działa jak na desktopie (`mount`). Test w emulacji Pixel 7: kontener ma klasę `lenis`, gest przewija płynnie (`scrollY` dokumentu = 0), nawigacja bez błędów. Parametry gładkości na dotyku: `SMOOTH_TOUCH` w `settings.ts`. Wyłączenie testowe: `?nolenis=1`.
+
 ## Commity
 
 - `51afbee` — wyjście z About na telefonie/tablecie przez czarną warstwę

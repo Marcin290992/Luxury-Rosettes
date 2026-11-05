@@ -2,6 +2,7 @@ import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SMOOTH_WHEEL, SMOOTH_TOUCH } from './settings';
+import { scrollBox } from './scroller';
 
 let lenis: Lenis | undefined;
 let tick: ((time: number) => void) | undefined;
@@ -18,9 +19,13 @@ export function initLenis() {
   // the mobile address bar sliding in or out changes only the window's height: that must not re-measure every pin and scrub
   ScrollTrigger.config({ ignoreMobileResize: true });
 
+  // on touch devices the page scrolls inside #scroll-root (scripts/scroller.ts): Lenis smooths that box instead of the window
+  const box = scrollBox();
+
   lenis = new Lenis({
     ...SMOOTH_WHEEL,
     ...SMOOTH_TOUCH,
+    ...(box ? { wrapper: box, content: box } : {}),
     smoothWheel: true,
     autoRaf: false,
     stopInertiaOnNavigate: true,

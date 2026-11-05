@@ -86,7 +86,9 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
 
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      // preserveDrawingBuffer: Safari takes the picture of the old page for the page transition from the canvas as it is composited, and a WebGL
+      // canvas without it is empty at that moment (the spiral blinked out when leaving the page)
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
     } catch {
       return; // no WebGL: the page stays as the plain words, line and grid
     }

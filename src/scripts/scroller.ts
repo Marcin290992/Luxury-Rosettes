@@ -23,6 +23,14 @@ if (typeof window !== 'undefined' && innerScroll()) {
   };
   apply();
   document.addEventListener('astro:after-swap', apply);
+  // The box only ever scrolls up and down. overflow-x:hidden still lets Safari move it sideways (restoring a position after going back,
+  // the hero's big zoom reaching past the screen edge): the page then looked pushed far to the right. So the sideways offset is put back to 0.
+  const keepLeft = () => {
+    const box = document.querySelector<HTMLElement>(SCROLL_ROOT);
+    if (box && box.scrollLeft !== 0) box.scrollLeft = 0;
+  };
+  window.addEventListener('scroll', (e) => { if ((e.target as HTMLElement)?.id === 'scroll-root') keepLeft(); }, { passive: true, capture: true });
+  document.addEventListener('astro:after-swap', keepLeft);
 }
 
 export const scrollBox = () => (innerScroll() ? document.querySelector<HTMLElement>(SCROLL_ROOT) : null);

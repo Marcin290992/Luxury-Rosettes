@@ -27,6 +27,7 @@ export function paintDebug() {
   }
   try {
     box.textContent = (JSON.parse(sessionStorage.getItem(LOG) || '[]') as string[]).join('\n');
+    box.scrollTop = box.scrollHeight; // the newest lines stay in view
   } catch {
     /* ignore */
   }
@@ -153,6 +154,7 @@ function watchZoom() {
       `eye ${Math.round(eye.ox ?? -1)}/${Math.round(eye.oy ?? -1)}`,
       `vv ${Math.round(vv?.width ?? 0)}x${Math.round(vv?.height ?? 0)} s${(vv?.scale ?? 1).toFixed(2)} off ${Math.round(vv?.offsetLeft ?? 0)}`,
       `win ${innerWidth} doc ${document.documentElement.scrollWidth}`,
+      `hero ${document.getElementById('hero')?.clientWidth}x${document.getElementById('hero')?.clientHeight} data ${img.dataset.w}x${img.dataset.h} pos ${img.style.objectPosition}`,
     ].join(' ');
     if (line !== last && (box?.scrollTop ?? 0) > 0) {
       last = line;

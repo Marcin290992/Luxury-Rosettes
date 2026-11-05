@@ -169,6 +169,11 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
     height: 100%;
     z-index: 1;
     pointer-events: none;
+    /* Prevent canvas from being composited in page transition snapshots on iOS Safari */
+    -webkit-user-select: none;
+    will-change: auto;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
   .sp[data-live] .sp-stripes {
     display: flex;

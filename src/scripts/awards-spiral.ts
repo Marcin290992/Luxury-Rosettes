@@ -88,7 +88,14 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     try {
       // preserveDrawingBuffer: Safari takes the picture of the old page for the page transition from the canvas as it is composited, and a WebGL
       // canvas without it is empty at that moment (the spiral blinked out when leaving the page)
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      // On iOS Safari, we also need to prevent canvas from being composited in the transition snapshot
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      renderer = new THREE.WebGLRenderer({ 
+        canvas, 
+        antialias: true, 
+        alpha: true, 
+        preserveDrawingBuffer: !isIOS // iOS has issues with preserveDrawingBuffer, handle differently
+      });
     } catch {
       return; // no WebGL: the page stays as the plain words, line and grid
     }
@@ -506,7 +513,10 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         s.style.transform = `scaleY(${clamp01((exit * 0.7 - start) / 0.3)})`;
       });
 
-      renderer.render(scene, camera);
+      // Only render if the page is visible (prevent white canvas on iOS Safari page transitions)
+      if (document.visibilityState === 'visible') {
+        renderer.render(scene, camera);
+      }
     };
     gsap.ticker.add(draw);
 
@@ -551,8 +561,19 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     };
     document.addEventListener('astro:before-preparation', freeze);
     
-    // On iOS Safari, after page transition back to awards, force render the canvas
-    // to prevent WebGL flicker when returning from back navigation
+    // On iOS Safari, after page transition (especially back navigation), force render the canvas
+    // to restore WebGL scene immediately when page becomes visible again
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && document.querySelector('.sp[data-live]') === root) {
+        // Re-render immediately to restore scene
+        try {
+          renderer.render(scene, camera);
+        } catch {}
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    
+    // Also force render on astro page transitions
     const forceRenderOnRestore = () => {
       if (document.querySelector('.sp[data-live]') === root) {
         requestAnimationFrame(() => {
@@ -566,6 +587,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
 
     return () => {
       document.removeEventListener('astro:before-preparation', freeze);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       document.removeEventListener('astro:after-swap', forceRenderOnRestore);
       document.removeEventListener('nav-menu', onMenu);
       document.removeEventListener('nav-menu', onMenuLog);

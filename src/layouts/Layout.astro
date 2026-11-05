@@ -46,23 +46,6 @@ const {
         }
       } catch (e) {}
     </script>
-    <!-- On touch devices the page transition is the browser's own too: the page scrolls inside #scroll-root (see scripts/scroller.ts), the
-         document never scrolls and the address bar never moves, so the browser's snapshot has nothing to jump against. The own DOM versions
-         (scripts/touch-transition.ts) are only switched on by hand: ?vt=cards (the card swing), ?vt=calm (a dark veil with the logo);
-         ?vt=native switches them off again. Without document.startViewTransition the router just swaps the pages (fallback="swap"). -->
-    <script is:inline>
-      try {
-        if (matchMedia('(pointer: coarse)').matches) {
-          if (/[?&]vt=native/.test(location.search)) sessionStorage.setItem('lr-vtnative', '1');
-          // iOS now uses the native transition too (the nav pill no longer has a layer of its own, which is what flickered in WebKit); the own cards stay as ?vt=cards
-          if (/[?&]vt=(own|cards|calm)/.test(location.search)) sessionStorage.setItem('lr-vtown', '1');
-          if (/[?&]vt=native/.test(location.search)) sessionStorage.removeItem('lr-vtown');
-          if (/[?&]vt=calm/.test(location.search)) sessionStorage.setItem('lr-vtcalm', '1');
-          if (/[?&]vt=(cards|own)/.test(location.search)) sessionStorage.removeItem('lr-vtcalm');
-          if (sessionStorage.getItem('lr-vtown') === '1') document.startViewTransition = undefined;
-        }
-      } catch (e) {}
-    </script>
     <ClientRouter fallback="swap" />
   </head>
   <body>
@@ -71,220 +54,41 @@ const {
 </html>
 
 <script>
-    import { mount } from '../scripts/lifecycle';
-  import { initLenis, destroyLenis, freezeLenis } from '../scripts/lenis';
-  import { initDebug, dbg } from '../scripts/debug-log';
-  import { setupTouchTransition, isOwnNavigation } from '../scripts/touch-transition';
+  import { mount } from '../scripts/lifecycle';
+  import { initLenis, destroyLenis } from '../scripts/lenis';
+  import { initDebug } from '../scripts/debug-log';
   import { setupScrollRestore } from '../scripts/scroll-restore';
   import { settleLayout } from '../scripts/scroller';
 
-  // After a page transition the nav is already on screen: the home hero must not hide it and run its intro for it again
-  // (see Hero.astro). The router rewrites <html>'s classes on a swap, so `intro-ready` is put back at once.
+  // After a page transition the nav is already on screen: the home hero must not hide it and run its intro for it again (see Hero.astro).
+  // The router rewrites <html>'s classes on a swap, so `intro-ready` is put back at once.
   document.addEventListener('astro:after-swap', () => {
     (window as unknown as { __lrSwapped?: boolean }).__lrSwapped = true;
     document.documentElement.classList.add('intro-ready');
   });
-  initDebug(); // only does anything when the page is opened with ?debug=1
-  setupScrollRestore(); // going back puts the reader where they were (the router restores it while the page is still short)
-  // touch devices: the own card transition is only an opt-in test (?vt=cards / ?vt=calm, see the head); by default the native one runs
-  const ownTransition = () => {
-    try {
-      return sessionStorage.getItem('lr-vtown') === '1';
-    } catch {
-      return false;
-    }
-  };
-  if (matchMedia('(pointer: coarse)').matches && ownTransition()) {
-    setupTouchTransition();
-  }
 
-  // The offset code below is a leftover from the time the document itself scrolled on a phone: it only ever moves a layer whose page was
-  // scrolled (scrollY), and on touch devices scrollY is now always 0 (the page scrolls inside #scroll-root), so it moves nothing.
-  // The page transition is drawn in the browser's "snapshot" space, not in the window you see. On a phone that space also covers the
-  // area behind the address bar, so its top edge sits ABOVE the top of the visible page by the height of the bar (measured on a Pixel:
-  // 56.19px; the nav pill is at 20px in the window but at 76.19px in the snapshot space).
-  // What a screen recording of the Pixel showed, frame by frame: the picture of the OLD page, when the page was scrolled, is drawn one
-  // bar-height too high (the page "lifts" for a moment before the card starts), while the picture of the NEW page, at the top, is
-  // right where it belongs. So only the layer whose page was scrolled is moved down, by min(its scroll, the bar offset), and it is
-  // moved from before the very first frame (a first version moved both layers and only after the first frames: the card lifted for
-  // ~100ms, and then the new page ended 56px too low and jumped up as the transition finished).
-  // The offset itself is read from a fixed element that is in the transition by itself, the nav pill (its own layer is placed correctly
-  // by the browser): its place in the snapshot space minus its place in the window. On a desktop the two spaces are the same, the
-  // offset is 0 and nothing moves. ?vtcomp=0 switches this off, ?vtcomp=1 on again.
-  const SCB = 'lr-scb';
-  const compOn = () => {
-    try {
-      const q = new URLSearchParams(location.search).get('vtcomp');
-      if (q === '0') sessionStorage.setItem('lr-vtcomp', '0');
-      if (q === '1') sessionStorage.removeItem('lr-vtcomp');
-      return sessionStorage.getItem('lr-vtcomp') !== '0';
-    } catch {
-      return true;
-    }
-  };
-  const measureScb = () => {
-    const nav = document.getElementById('main-nav');
-    const m = getComputedStyle(document.documentElement, '::view-transition-group(navbar)').transform;
-    if (!nav || !m || m === 'none') return null;
-    const d = new DOMMatrix(m).f - nav.getBoundingClientRect().top;
-    return Number.isFinite(d) ? d : null;
-  };
-  // scbMax = the offset with the address bar fully shown (what was measured). It is needed BEFORE the first frame of a transition, so it
-  // is kept from the last measurement, and for a fresh visit it is measured once, early, by a transition that changes nothing (below).
-  let scbMax = 0;
-  try {
-    scbMax = parseFloat(sessionStorage.getItem(SCB) || '0') || 0;
-  } catch {
-    /* ignore */
-  }
-  const unitL = document.createElement('div');
-  unitL.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none;';
-  const unitS = document.createElement('div');
-  unitS.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100svh;visibility:hidden;pointer-events:none;';
-  // how much of the address bar is shown right now: 1 = fully (the window is its smallest), 0 = hidden (the largest)
-  const barShown = () => {
-    document.body.append(unitL, unitS);
-    const l = unitL.offsetHeight;
-    const sm = unitS.offsetHeight;
-    unitL.remove();
-    unitS.remove();
-    return l - sm < 4 ? 1 : Math.min(1, Math.max(0, (l - innerHeight) / (l - sm)));
-  };
-  const remember = (d: number) => {
-    // only a measurement taken with the bar fully shown is the full offset
-    if (barShown() < 0.98 || d < 0) return;
-    scbMax = d;
-    try {
-      sessionStorage.setItem(SCB, String(d));
-    } catch {
-      /* ignore */
-    }
-  };
-  // the offset with the bar fully shown: the measured one, or (before any measurement) 0.7 of the bar's own travel (lvh - svh), the
-  // ratio measured on the Pixel (56.19 of 80)
-  const fullOffset = () => {
-    if (scbMax) return scbMax;
-    document.body.append(unitL, unitS);
-    const gap = unitL.offsetHeight - unitS.offsetHeight;
-    unitL.remove();
-    unitS.remove();
-    return gap >= 4 ? 0.7 * gap : 0;
-  };
-  // how far a layer's picture is drawn too high: only a scrolled page (min of its scroll and the offset), and only while the bar is shown
-  const lift = (scroll: number) => (compOn() ? Math.min(Math.max(scroll, 0), fullOffset()) * barShown() : 0);
-  // The one state where the browser's snapshot of the old page jumps (measured by hand on Chrome Android, with the correction above on
-  // AND off): the page is scrolled and the address bar is visible again (the reader scrolled a little back up). With the bar hidden
-  // the transition is perfect. So that one navigation is played by the own cards (touch-transition.ts: the same swing, built from plain
-  // DOM) and the router's swap runs without a View Transition, so no snapshot exists that could jump. Phones only.
-  const nativeVT = document.startViewTransition?.bind(document);
-  if (nativeVT && matchMedia('(pointer: coarse)').matches) {
-    document.startViewTransition = ((cb?: () => void | Promise<void>) => {
-      if (isOwnNavigation()) {
-        // this navigation is played by the own cards (touch-transition.ts, decided at its start): the pages are swapped at once,
-        // with no View Transition, so no snapshot exists that could jump
-        const swapped = Promise.resolve().then(() => cb?.());
-        const fake = {
-          ready: swapped,
-          updateCallbackDone: swapped,
-          finished: swapped,
-          skipTransition() {},
-        };
-        return fake as unknown as ViewTransition;
-      }
-      return nativeVT(cb);
-    }) as typeof document.startViewTransition;
-  }
-  // The picture of the NEW page is taken right after the swap callback returns, but the page is not built yet then: its pins and
-  // spacers appear a few hundred ms later (measured: 25002px at the snapshot, 45597px when settled), so at the end of the transition
-  // the picture was replaced by a different-looking live page (a blink). So the callback is not finished until the layout is measured.
+  initDebug(); // only does anything when the page is opened with ?debug=1
+  setupScrollRestore(); // every page opens at its top; the router's restored position is put right while the page settles
+
+  // The new page's picture is taken right after the swap callback returns, but the page is not built yet then: its pins and spacers appear a
+  // few hundred ms later. So the callback is not finished until the layout is measured, or the picture would differ from the page that
+  // replaces it at the end of the transition (a blink).
   if (typeof document.startViewTransition === 'function') {
-    const wrapped = document.startViewTransition.bind(document);
-    document.startViewTransition = ((cb?: () => void | Promise<void>) =>
-      wrapped(async () => {
-        await cb?.();
+    const start = document.startViewTransition.bind(document);
+    document.startViewTransition = ((callback?: () => void | Promise<void>) =>
+      start(async () => {
+        await callback?.();
         settleLayout();
       })) as typeof document.startViewTransition;
   }
-  let scrollOld = 0;
-  let scrollNew = 0;
-  const setVar = (name: string, px: number) => document.documentElement.style.setProperty(name, `${px.toFixed(2)}px`);
-  const applyLayers = () => {
-    setVar('--vt-old', lift(scrollOld));
-    setVar('--vt-new', lift(scrollNew));
-  };
-  // astro:after-preparation is the last moment before the browser takes the picture of the old page, so its offset is in place for the
-  // very first frame; the router rewrites <html>'s attributes on a swap, so everything is set again after it (same task, no frame between)
-  document.addEventListener('astro:after-preparation', () => {
-    scrollOld = scrollY;
-    scrollNew = 0;
-    applyLayers();
-  });
-  document.addEventListener('astro:after-swap', () => {
-    scrollNew = scrollY; // a back navigation lands on a scrolled page: its picture is drawn too high too
-    applyLayers();
-  });
-  document.addEventListener('astro:before-swap', (e) => {
-    const vt = (e as Event & { viewTransition?: ViewTransition }).viewTransition;
-    vt?.ready
-      .then(() => {
-        const d = compOn() ? measureScb() : null;
-        if (d === null) return;
-        remember(d); // the real offset replaces the estimate
-        applyLayers();
-      })
-      .catch(() => {});
-  });
 
-  // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap
-  // (?nolenis=1 turns it off for the visit, ?nolenis=0 on again: a test switch, to tell whether the page transition problem on a phone comes from it)
-  const lenisOff = () => {
-    try {
-      const q = new URLSearchParams(location.search).get('nolenis');
-      if (q === '1') sessionStorage.setItem('lr-nolenis', '1');
-      if (q === '0') sessionStorage.removeItem('lr-nolenis');
-      return sessionStorage.getItem('lr-nolenis') === '1';
-    } catch {
-      return false;
-    }
-  };
-    // ?vtkeep=1 — a test switch for the page-transition jump on a phone: instead of DESTROYING Lenis in astro:after-preparation (which
-  // strips `lenis`/`lenis-smooth` from <html> and changes the document height right as the browser takes the snapshot), Lenis is only
-  // FROZEN there and torn down after the capture (astro:before-swap). Lenis itself stays on. ?vtkeep=0 is the current behaviour.
-  const vtKeep = () => {
-    try {
-      const q = new URLSearchParams(location.search).get('vtkeep');
-      if (q === '1') sessionStorage.setItem('lr-vtkeep', '1');
-      if (q === '0') sessionStorage.removeItem('lr-vtkeep');
-      return sessionStorage.getItem('lr-vtkeep') === '1';
-    } catch {
-      return false;
-    }
-  };
-  vtKeep();
-
+  // The smooth scroll (the "weight" of the page) belongs to every page: it is built with the page and taken away before the browser takes
+  // the picture of the old page (it changes <html>'s classes and the document's height).
   mount(() => {
-    if (lenisOff()) return;
     initLenis();
     return destroyLenis;
   });
-
-  // Astro captures the outgoing page after preparation. Normally Lenis is removed before that snapshot; with ?vtkeep=1 it is only
-  // frozen, so <html> keeps its classes through the capture, and the real destroy runs at before-swap (after the capture, before swap).
-  document.addEventListener('astro:after-preparation', () => {
-    if (vtKeep()) {
-      freezeLenis();
-      try {
-        dbg(`KEEP html@capture "${document.documentElement.className}"`);
-      } catch {
-        /* ignore */
-      }
-    } else {
-      destroyLenis();
-    }
-  });
-  document.addEventListener('astro:before-swap', () => {
-    if (vtKeep()) destroyLenis();
-  });
+  document.addEventListener('astro:after-preparation', destroyLenis);
 </script>
 
 <style is:global>
@@ -377,39 +181,29 @@ const {
     display: none;
   }
 
-  /* ---- page transition (after codegrid's View Transition demo) ----
-     The old page shrinks, turns and slips away to the lower left; the new one opens from the lower right corner at the same
-     reduced size and grows to the full screen.
-     The nav pill has no layer of its own: it is part of the page and moves with it. */
+  /* ---- page transition (after codegrid's View Transition demo, see src/codegrid-view-page-transition) ----
+     The old page shrinks to 85% and slides up and out (1200ms); the new one waits below the screen, slides up at 85% and grows to the
+     full screen (1800ms). Only transforms are animated, so it runs on the GPU. The nav pill has no layer of its own: it is part of
+     the page and moves with it. The dark background is the frame seen around the shrunken pages. */
   ::view-transition {
     background: #0d0b09;
   }
-  /* On a phone the snapshot of the page is the size of the LARGEST window (address bar hidden, e.g. 863px), while what is on the screen
-     is the window as it is now (bar shown, e.g. 783px). The card was taller than the screen and the page seemed to jump up when it started.
-     So the card is cut to the visible window (dvh): the top of the snapshot is the top of the page, and the part below the screen,
-     which nobody saw, is cropped, not squeezed. (On a desktop all the heights are equal and nothing changes.) */
+  /* On a phone the snapshot of the page is the size of the LARGEST window (address bar hidden, lvh), while the screen shows the window as it is
+     now. So the layer is lvh tall and the picture fills it from the top (cover): the top of the snapshot is the top of the page, and the
+     part below the screen, which nobody sees, is cropped, not squeezed. (On a desktop all the heights are equal and nothing changes.) */
   ::view-transition-group(root) {
     animation: none;
-    /* the snapshot space's own height (lvh): it starts above the visible page by the address bar, so it has to reach that much below
-       the top to still cover the whole window; taller pictures are only cropped (object-fit: cover, top) */
     height: 100lvh;
-  }
-  /* each layer is moved down by the part of its picture that the browser draws too high (see the script above) */
-  ::view-transition-old(root) {
-    translate: 0 var(--vt-old, 0px);
-  }
-  ::view-transition-new(root) {
-    translate: 0 var(--vt-new, 0px);
   }
   ::view-transition-old(root),
   ::view-transition-new(root) {
     height: 100%;
     object-fit: cover;
     object-position: top;
+    will-change: transform;
   }
-  /* iOS Safari only (-webkit-touch-callout exists nowhere else): the 100lvh / cover trick above is for Chrome Android. On iOS the picture
-     is not that tall, so `cover` stretched it a little and the live page, a moment later, was smaller than the picture (the page seemed
-     to scale at the end of the transition). Here the picture keeps its own size: nothing is stretched. */
+  /* iOS Safari only (-webkit-touch-callout exists nowhere else): there the picture is not that tall, so `cover` would stretch it and the
+     live page, a moment later, would be smaller than the picture (the page seemed to scale at the end). The picture keeps its own size. */
   @supports (-webkit-touch-callout: none) {
     ::view-transition-group(root) {
       height: 100%;
@@ -420,99 +214,13 @@ const {
       object-fit: initial;
     }
   }
-  /* On a phone the browser's address bar moves the page a little while it slides in or out, and the strip that shows is whatever is
-     behind the page: it used to be the page's cream and ended up as a pale gap on the cards. So the page is dark behind its content, always
-     (set once, never switched at the start of a transition: the body keeps painting its own cream, so nothing on the page changes). */
-  html {
-    background: #0d0b09;
-  }
-  /* the intro of the home page: dark from the very first paint (the preloader's own dark veil takes over once it exists) */
-  html.preloading {
-    background: #000;
-  }
-  html.preloading body {
-    background: #000;
-  }
-  /* Astro marks the direction of the navigation on <html>: forward goes left, back is the same swing the other way round. */
-  :root {
-    --vt-dir: 1;
-  }
-  :root[data-astro-transition='back'] {
-    --vt-dir: -1;
-  }
-
-  /* The two pages swap places like cards: the old one shrinks and swings out to the lower left (tilting, as in codegrid's demo), the new
-     one swings in from the lower right, mirrored, into the same place at the same small size, rests there for a moment, and only then grows to the full screen. */
   ::view-transition-old(root) {
-    animation: 1500ms linear both page-out;
+    animation: 1200ms linear both vt-out;
   }
   ::view-transition-new(root) {
-    animation: 1500ms linear both page-in;
+    animation: 1800ms linear both vt-in;
   }
-  @keyframes page-out {
-    0% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
-      clip-path: inset(0% round 0px);
-      animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
-    }
-    25% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
-    }
-    40% {
-      transform: translateX(calc(var(--vt-dir) * -45%)) translateY(8%) rotate(calc(var(--vt-dir) * -14deg)) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: linear;
-    }
-    55%,
-    100% {
-      transform: translateX(calc(var(--vt-dir) * -115%)) translateY(40%) rotate(calc(var(--vt-dir) * -30deg)) scale(0.6);
-      clip-path: inset(0% round 40px);
-    }
-  }
-  @keyframes page-in {
-    0%,
-    25% {
-      transform: translateX(calc(var(--vt-dir) * 115%)) translateY(40%) rotate(calc(var(--vt-dir) * 30deg)) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: linear;
-    }
-    40% {
-      transform: translateX(calc(var(--vt-dir) * 45%)) translateY(8%) rotate(calc(var(--vt-dir) * 14deg)) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: cubic-bezier(0, 0, 0.35, 1);
-    }
-    55% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-      clip-path: inset(0% round 40px);
-    }
-    66% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-      clip-path: inset(0% round 40px);
-      animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
-    }
-    100% {
-      transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
-      clip-path: inset(0% round 0px);
-    }
-  }
-  /* The page change, ported from codegrid's View Transition demo (see src/codegrid-view-page-transition). The same timeline as its
-     playPageTransition(), written as CSS keyframes so Astro's router plays it by itself:
-       old page: shrinks to 85% (0 - 600ms), then slides up and out (600 - 1200ms)
-       new page: waits below the screen (0 - 600ms), slides up at 85% (600 - 1200ms), then grows back to 100% (1200 - 1800ms)
-     The dark ::view-transition background (#0d0b09) is the frame seen around the shrunken pages. Transforms only (GPU, no clip-path). */
-  ::view-transition-old(root) {
-    animation: 1200ms linear both page-out-lite;
-  }
-  ::view-transition-new(root) {
-    animation: 1800ms linear both page-in-lite;
-  }
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    will-change: transform;
-  }
-  @keyframes page-out-lite {
+  @keyframes vt-out {
     0% {
       transform: scale(1);
       animation-timing-function: cubic-bezier(0.86, 0, 0.07, 1);
@@ -525,7 +233,7 @@ const {
       transform: translateY(-100%) scale(0.85);
     }
   }
-  @keyframes page-in-lite {
+  @keyframes vt-in {
     0%,
     33.333% {
       transform: translateY(100%) scale(0.85);
@@ -539,44 +247,16 @@ const {
       transform: translateY(0) scale(1);
     }
   }
-  /* ---- the own card transition on touch devices (scripts/touch-transition.ts) ---- */
-  .pt-card {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 900; /* under the nav pill (1000), which stays where it is */
-    transform: translateZ(0); /* a containing block for the fixed things inside the copy, as the window is for the live page */
-    background: var(--paper, #faf8f3);
-    will-change: transform;
-    touch-action: none;
-    pointer-events: auto;
-    backface-visibility: hidden;
-  }
-  /* the calm variant (?vt=calm): a dark veil with the logo over the live page, under the nav pill */
-  .pt-veil {
-    position: fixed;
-    inset: 0;
-    z-index: 900;
-    display: grid;
-    place-items: center;
+  /* On a phone the address bar moves the page a little while it slides in or out, and the strip that shows is whatever is behind the
+     page: it used to be the page's cream and ended up as a pale gap. So the page is dark behind its content, always (the body keeps
+     painting its own cream). */
+  html {
     background: #0d0b09;
-    touch-action: none;
-    pointer-events: auto;
   }
-  .pt-veil img {
-    width: 56px;
-    height: auto;
-    opacity: 0.95;
-  }
-  /* while the cards play, the live page (already the new one) is out of sight; only the nav pill stays */
-  html.pt-run > body {
-    background: transparent;
-  }
-  html.pt-run > body > :not(#main-nav) {
-    visibility: hidden;
+  /* the intro of the home page: dark from the very first paint (the preloader's own dark veil takes over once it exists) */
+  html.preloading,
+  html.preloading body {
+    background: #000;
   }
   /* ?vtlab=1 (see debug-log.ts): the transition is held at its first frame for 4s and its layers are outlined, to read the geometry off a screenshot */
   html.vt-lab::view-transition-group(root) {
@@ -599,7 +279,6 @@ const {
     from,
     to {
       transform: none;
-      clip-path: none;
     }
   }
   @media (prefers-reduced-motion: reduce) {

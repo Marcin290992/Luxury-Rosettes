@@ -14,9 +14,6 @@ let target = 0;
 let watching = false;
 const timers: number[] = [];
 
-/** Where the page being shown is supposed to be scrolled to (0 for a page reached by a link). */
-export const restoreTarget = () => target;
-
 function stop() {
   watching = false;
   timers.splice(0).forEach((t) => window.clearTimeout(t));
@@ -27,7 +24,7 @@ function stop() {
  * they would still be on their way there, and a copy of the page, or the first look at it, would show the sections in an earlier state.
  * So the smoothing tweens are finished at once: every pinned or scrubbed section stands exactly where this scroll position puts it.
  */
-export function settleScrubs() {
+function settleScrubs() {
   try {
     ScrollTrigger.update();
     ScrollTrigger.getAll().forEach((st) => st.getTween?.()?.progress(1));
@@ -37,7 +34,7 @@ export function settleScrubs() {
 }
 
 /** Puts the page at the wanted position now (the top, see below) if it is somewhere else. */
-export function restoreNow() {
+function restoreNow() {
   if (!watching || Math.abs(getScrollY() - target) < 2) return;
   const lenis = getLenis();
   if (lenis) lenis.scrollTo(target, { immediate: true, force: true });

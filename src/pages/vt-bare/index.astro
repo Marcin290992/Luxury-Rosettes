@@ -10,7 +10,7 @@ const bands = Array.from({ length: 14 }, (_, i) => i + 1);
   <NavPill />
   <main>
     <h1>Test page One</h1>
-    <p>Scroll down to the middle, then tap the link. ?nolenis=1 / ?nolenis=0 switches the smooth scroll, ?debug=1 the log, ?vtlab=1 the frozen frame.</p>
+    <p>Scroll down to the middle, then tap the link. ?debug=1 the log, ?vtlab=1 the frozen frame.</p>
     {
       bands.map((n) => (
         <section style={`background:hsl(${n * 24} 45% ${n % 2 ? 78 : 62}%)`}>

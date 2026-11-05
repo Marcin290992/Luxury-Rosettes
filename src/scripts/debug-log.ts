@@ -133,6 +133,33 @@ const applyLab = () => {
   }
 };
 
+// ?debug=1 on the home page: while the hero zoom plays, one line every 600ms with where the photo really is, so a sideways shift of the
+// page on a phone can be read off the screen (the photo's box, its transform, the visual viewport and the scroll box's sideways offset).
+function watchZoom() {
+  let last = '';
+  window.setInterval(() => {
+    const img = document.querySelector<HTMLElement>('.hero-img');
+    if (!img) return;
+    const r = img.getBoundingClientRect();
+    const box = document.getElementById('scroll-root');
+    const vv = window.visualViewport;
+    const m = getComputedStyle(img).transform;
+    const t = m && m !== 'none' ? new DOMMatrix(m) : null;
+    const eye = (() => { try { return JSON.parse(img.dataset.eye || '{}'); } catch { return {}; } })();
+    const line = [
+      `ZOOM top ${Math.round(box?.scrollTop ?? scrollY)} left ${Math.round(box?.scrollLeft ?? 0)}`,
+      `img ${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)}`,
+      `sc ${t ? t.a.toFixed(2) : '1'} tx ${t ? Math.round(t.e) : 0}`,
+      `eye ${Math.round(eye.ox ?? -1)}/${Math.round(eye.oy ?? -1)}`,
+      `vv ${Math.round(vv?.width ?? 0)}x${Math.round(vv?.height ?? 0)} s${(vv?.scale ?? 1).toFixed(2)} off ${Math.round(vv?.offsetLeft ?? 0)}`,
+      `win ${innerWidth} doc ${document.documentElement.scrollWidth}`,
+    ].join(' ');
+    if (line !== last && (box?.scrollTop ?? 0) > 0) {
+      last = line;
+      dbg(line);
+    }
+  }, 600);
+}
 export function initDebug() {
   try {
     const lab = new URLSearchParams(location.search).get('vtlab');
@@ -162,6 +189,7 @@ export function initDebug() {
     dbg(`DEBUG ON build ${typeof __BUILD__ === 'string' ? __BUILD__ : '?'} ${location.pathname} inner ${innerWidth}x${innerHeight} vv ${Math.round(window.visualViewport?.height ?? 0)} dpr ${devicePixelRatio}`);
   }
   if (debugOn()) watchTransition();
+  if (debugOn()) watchZoom();
   paintDebug();
   document.addEventListener('astro:after-swap', paintDebug);
 }

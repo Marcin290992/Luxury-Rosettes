@@ -168,12 +168,13 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     // the photos, cropped to cover: uCrop = (scale x, scale y, offset x, offset y) in the photo's own uv
     const crops = urls.map(() => ({ value: new THREE.Vector4(1, 1, 0, 0) }));
     const loader = new THREE.TextureLoader();
-    // The canvas stays invisible until every photo has loaded and been drawn once, and then fades in. The photos load a moment after the
-    // scene is built, so the first frames showed them without their crop (and without their picture) and they twitched into place while
-    // the page was still arriving (a returning visitor, with the photos in the cache, saw it as a slight jump at the start).
+    // The canvas stays invisible until every photo has loaded, been decoded and uploaded to the GPU, and then fades in. On the first visit
+    // (nothing cached) the nine 1200px photos used to be decoded and uploaded all at once in the first frame, and on a phone that one heavy
+    // frame showed as a blurred, doubled picture. Now each photo is decoded off the main thread, and the uploads are one per frame.
     canvas.style.opacity = '0';
     let waiting = urls.length;
     let revealed = false;
+    let gone = false;
     const reveal = () => {
       if (revealed) return;
       revealed = true;
@@ -186,20 +187,38 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         }),
       );
     };
+    const uploadAll = () => {
+      let i = 0;
+      const step = () => {
+        if (gone) return;
+        if (i < textures.length) {
+          try {
+            renderer.initTexture(textures[i++]); // uploads this one texture now, so the first real frame has nothing left to upload
+          } catch {
+            /* the texture is drawn (and uploaded) by the first frame instead */
+          }
+          requestAnimationFrame(step);
+        } else reveal();
+      };
+      step();
+    };
     const arrived = () => {
-      if (--waiting <= 0) reveal();
+      if (--waiting <= 0) uploadAll();
     };
     const revealTimer = window.setTimeout(reveal, 1500); // safety: a photo that never loads must not keep the spiral away
     const textures = urls.map((url, i) =>
       loader.load(
         url,
         (t) => {
-          const img = t.image as { width: number; height: number };
+          const img = t.image as HTMLImageElement;
           const photo = img.width / img.height;
           const want = 1 / ASPECT;
           if (photo > want) crops[i].value.set(want / photo, 1, (1 - want / photo) / 2, 0);
           else crops[i].value.set(1, photo / want, 0, (1 - photo / want) / 2);
-          arrived();
+          // decoded off the main thread before it is uploaded (the upload itself then only copies pixels)
+          Promise.resolve(img.decode?.())
+            .catch(() => {})
+            .then(arrived);
         },
         undefined,
         arrived,
@@ -655,6 +674,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       window.clearTimeout(release);
       window.clearTimeout(unfreeze);
       window.clearTimeout(revealTimer);
+      gone = true;
       thaw();
       gsap.ticker.remove(draw);
       window.removeEventListener('resize', onResize);

@@ -238,6 +238,13 @@ const isCurrent = (href: string) =>
     --glass: rgba(24, 20, 16, 0.7);
   }
 
+  /* during a page transition: no blur (see Layout.astro), the same look as a solid glass */
+  :global(html.vt-run) .nav-pill {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    --glass: rgba(40, 35, 30, 0.9);
+  }
+
   .nav-pill.expanded {
     border-radius: 28px;
   }

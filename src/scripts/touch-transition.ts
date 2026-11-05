@@ -1,4 +1,4 @@
-// The page transition on phones and tablets (touch): the same card swing as the native View Transition on a desktop, but built from
+﻿// The page transition on phones and tablets (touch): the same card swing as the native View Transition on a desktop, but built from
 // plain DOM, so the browser's own snapshot is never involved.
 //
 // Why: on Android Chrome the native transition shows, for ~130ms between taking the picture of the old page and starting the animation,
@@ -14,7 +14,7 @@
 //   4. The cards are removed; the live page (the same picture) is under them.
 // The cards live on <html>, which the router does not replace on a swap.
 
-const DURATION = 1100;
+const DURATION = 800;
 const LINEAR = 'linear';
 const EASE_IN = 'cubic-bezier(0.65, 0, 1, 1)';
 const EASE_OUT = 'cubic-bezier(0, 0, 0.35, 1)';

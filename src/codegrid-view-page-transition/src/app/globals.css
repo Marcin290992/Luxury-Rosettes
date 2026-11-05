@@ -1,0 +1,187 @@
+@import url("https://fonts.cdnfonts.com/css/pp-neue-montreal");
+
+:root {
+  --bg: #fff;
+  --fg: #1a1a1a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  font-family: "PP Neue Montreal";
+  background-color: #000;
+  color: var(--fg);
+}
+
+img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.navbar {
+  position: fixed;
+  width: 100%;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 2;
+}
+
+.navbar-items {
+  display: flex;
+  gap: clamp(1rem, 4vw, 2rem);
+}
+
+.navbar-item {
+  padding: 1.5rem;
+}
+
+.navbar-item a {
+  text-decoration: none;
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.home {
+  width: 100%;
+  height: 100svh;
+  background-color: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.home h1 {
+  width: 100%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-transform: uppercase;
+  color: var(--fg);
+  font-size: 20vw;
+  font-weight: bolder;
+  line-height: 1;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+}
+
+.projects {
+  width: 100%;
+  height: 100svh;
+  overflow-y: auto;
+}
+
+.projects-container {
+  width: 100%;
+  min-height: 100svh;
+  background-color: var(--bg);
+  padding: 15rem 2rem;
+}
+
+.images {
+  width: 30%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.info {
+  width: 100%;
+  height: 100%;
+  min-height: 100svh;
+  background-color: var(--bg);
+  display: flex;
+}
+
+.col {
+  flex: 1;
+}
+
+.col:nth-child(2) {
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.col p {
+  font-weight: 500;
+  font-size: 2rem;
+  color: var(--fg);
+}
+
+.char,
+.line {
+  position: relative;
+  will-change: transform;
+}
+
+@media (max-width: 1000px) {
+  .images {
+    width: calc(100% - 1rem);
+  }
+
+  .info {
+    flex-direction: column;
+  }
+
+  .info p {
+    font-size: 1.25rem;
+  }
+
+  .col:nth-child(2) {
+    align-items: flex-start;
+  }
+}
+
+::view-transition-group(navbar) {
+  animation: none;
+  z-index: 100;
+}
+
+::view-transition-old(.page-exit) {
+  animation: 1600ms cubic-bezier(0.65, 0, 0.35, 1) both page-out;
+}
+
+::view-transition-new(.page-enter) {
+  animation: 1500ms cubic-bezier(0.65, 0, 0.35, 1) both page-in;
+  animation-delay: 0.25s;
+}
+
+@keyframes page-out {
+  0% {
+    transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(-50%) translateY(20%) rotate(-10deg) scale(0.65);
+    opacity: 0.25;
+  }
+}
+
+@keyframes page-in {
+  from {
+    transform: translateX(100%) translateY(20%);
+    clip-path: polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%);
+  }
+  to {
+    transform: translateX(0%) translateY(0%);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+}

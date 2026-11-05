@@ -1,0 +1,20 @@
+/* White Desert animation — page transition v2 (saved aside, not wired in).
+   The old page darkens (opacity over the dark ::view-transition background) while the new one wipes up from the bottom edge, 0.8s.
+   Same for forward and back. To use it: paste into the global <style> of src/layouts/Layout.astro AFTER the card-swing rules
+   (page-out-lite / page-in-lite and the 1100ms desktop rule), so it overrides them.
+   The whole experiment (also the menu sync in NavPill.astro: navigate after the panel has really folded, input locked until the
+   animation ends) is kept on the local branch page-transition-v2. */
+::view-transition-old(root) {
+  animation: 800ms cubic-bezier(0.65, 0, 0.35, 1) both pt-darken;
+}
+::view-transition-new(root) {
+  animation: 800ms cubic-bezier(0.65, 0, 0.35, 1) both pt-wipe-up;
+}
+@keyframes pt-darken {
+  from { opacity: 1; }
+  to { opacity: 0.25; }
+}
+@keyframes pt-wipe-up {
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}

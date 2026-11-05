@@ -518,26 +518,31 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     const thaw = () => {
       still?.remove();
       still = undefined;
-      canvas.style.visibility = '';
+      canvas.style.opacity = '1';
+      canvas.style.pointerEvents = '';
     };
     const freeze = (e: Event) => {
       if (!near || still) return;
       try {
-        renderer.render(scene, camera); // in the same task, so the buffer still holds this frame
-        const img = new Image();
-        img.alt = '';
-        img.src = canvas.toDataURL('image/webp', 0.92);
-        img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;';
-        canvas.after(img);
-        canvas.style.visibility = 'hidden';
-        still = img;
-        // the transition waits (a few ms) until the picture is decoded, so it is in the snapshot
-        const nav = e as Event & { loader: () => Promise<void> };
-        const original = nav.loader;
-        nav.loader = async () => {
-          await img.decode().catch(() => {});
-          await original();
-        };
+        // Force final render with current scene state
+        requestAnimationFrame(() => {
+          renderer.render(scene, camera);
+          const img = new Image();
+          img.alt = '';
+          img.src = canvas.toDataURL('image/webp', 0.92);
+          img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;';
+          canvas.after(img);
+          canvas.style.opacity = '0';
+          canvas.style.pointerEvents = 'none';
+          still = img;
+          // the transition waits (a few ms) until the picture is decoded, so it is in the snapshot
+          const nav = e as Event & { loader: () => Promise<void> };
+          const original = nav.loader;
+          nav.loader = async () => {
+            await img.decode().catch(() => {});
+            await original();
+          };
+        });
         // if the navigation never happens (cancelled), the live canvas comes back
         unfreeze = window.setTimeout(thaw, 5000);
       } catch {
@@ -545,9 +550,23 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       }
     };
     document.addEventListener('astro:before-preparation', freeze);
+    
+    // On iOS Safari, after page transition back to awards, force render the canvas
+    // to prevent WebGL flicker when returning from back navigation
+    const forceRenderOnRestore = () => {
+      if (document.querySelector('.sp[data-live]') === root) {
+        requestAnimationFrame(() => {
+          try {
+            renderer.render(scene, camera);
+          } catch {}
+        });
+      }
+    };
+    document.addEventListener('astro:after-swap', forceRenderOnRestore);
 
     return () => {
       document.removeEventListener('astro:before-preparation', freeze);
+      document.removeEventListener('astro:after-swap', forceRenderOnRestore);
       document.removeEventListener('nav-menu', onMenu);
       document.removeEventListener('nav-menu', onMenuLog);
       document.removeEventListener('astro:before-preparation', onLeaveStart);

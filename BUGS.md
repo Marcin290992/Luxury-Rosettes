@@ -157,3 +157,29 @@ Natywny snapshot WebKit nadal migał (pasek menu i treść), a na Chrome nie. Dl
 2. `Layout.astro` po `astro:after-swap` ustawia `window.__lrSwapped` i `intro-ready`; `Hero.astro` przy `arrived` nie chowa i nie animuje menu.
 
 **Niezweryfikowane na prawdziwym iPhonie.** Miganie treści tuż przed przejściem (klon całego `body` na iOS) nie było ruszane - jeśli zostanie, podejrzewać `prepareCard` (dekodowanie zdjęć kopii, puste canvasy WebGL) i rozmiar klonowanej strony.
+
+## Awards na iOS Safari: spirala WebGL mrugała przy wyjściu ze strony
+
+**Objaw:** na Safari iOS, przy cofnięciu albo przejściu na inną stronę z Awards, canvas ze spiralą na chwilę mrugał (znikał na klatkę), a reszta strony była w porządku. Na Androidzie (Chrome) działało idealnie.
+
+**Przyczyna:** przed przejściem canvas jest zamieniany na zwykłe zdjęcie swojej ostatniej klatki (`freeze` w `awards-spiral.ts`, bo WebGL w zrzucie przejścia jest składany osobno). W kolejnych wersjach były dwa błędy:
+1. Canvas był chowany od razu, a zdjęcie jeszcze się dekodowało. Przez jedną klatkę nie było nic: ani canvasu, ani zdjęcia.
+2. Jedna z wersji robiła całe zamrażanie w `requestAnimationFrame`. Router Astro odczytuje `loader` zaraz po zdarzeniu, więc `nav.loader` było podmieniane za późno i przejście w ogóle nie czekało na zdjęcie. Zrzut starej strony mógł zawierać pusty canvas.
+
+**Poprawka (`src/scripts/awards-spiral.ts`, funkcja `freeze`):**
+1. Zamrażanie jest synchroniczne, w tym samym zadaniu co `astro:before-preparation`: `renderer.render`, `toDataURL`, wstawienie `<img>` NAD canvasem i podmiana `nav.loader`.
+2. Canvas jest chowany (`opacity: 0`) dopiero w `loader`, po `img.decode()`, i jeszcze jedna klatka (`requestAnimationFrame`) czeka, żeby zamiana została namalowana przed zrzutem starej strony. Zdjęcie leży na canvasie, więc nigdy nie ma klatki bez obrazu.
+3. Renderer ma `preserveDrawingBuffer: true`, żeby bufor trzymał ostatnią klatkę do zrzutu.
+
+**Co NIE pomogło (nie wracać do tego):**
+- Czekanie przejścia na załadowanie tekstur spirali (`holdTransition` / `awaitHeld` w osobnym pliku): psuło przejście przy cofaniu na iOS, cofnięte.
+- Samo `preserveDrawingBuffer` oraz `visibilitychange` / wymuszony render po `astro:after-swap`: bez zmiany.
+
+**Pokrewne poprawki na Awards (ten sam dzień):**
+- Mały napis ("Every title earned…") pojawiał się słowo po słowie, na Androidzie też. Słowa miały inline `transition-delay`, a domyślne przejście obejmuje `visibility`, więc po zdjęciu `sp-pending` każde słowo stawało się widoczne z własnym opóźnieniem. Poprawka: `transition: none` na `.sp-line .sp-lit` i brak opóźnień dla tej linii.
+- Na starcie widać było tylko "NS" i "BY" z krawędzi: duże słowa startowały o 1/6 wsunięte. Teraz `slide = clamp01(px / (vh * 3.2))`, na samej górze są poza ekranem.
+- Rozmycie dużych słów (`is-in`) startuje dopiero po zakończeniu przejścia (czekanie na zdjęcie `data-astro-transition` z `<html>`, awaryjnie 3 s), a nie w trakcie, gdy strona jest jeszcze pomniejszona.
+
+**Pliki:** `src/scripts/awards-spiral.ts`, `src/components/AwardsSpiral.astro`.
+
+**Gdyby wracało:** sprawdzić najpierw kolejność w `freeze` (zdjęcie na wierzchu, canvas chowany po `decode()`), potem czy `nav.loader` jest podmieniane synchronicznie. Test bez telefonu: w WebKit (Playwright) Home → Awards → wstecz → naprzód, w konsoli nie powinno być błędów; mrugnięcia kompozytora iOS emulacja nie odtworzy, trzeba sprawdzić na iPhonie.

@@ -113,6 +113,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     splits.forEach((s, k) => {
       const parts = (s.chars.length ? s.chars : s.words) as HTMLElement[];
       const offset = k === 2 ? 0 : k === 1 ? splits[0].chars.length : 0;
+      if (k === 1) return; // the small line has no animation and so no delays (they made its words appear one by one)
       parts.forEach((el, i) => (el.style.transitionDelay = `${(offset + i) * 0.05}s`));
     });
     // `is-in` (the blur-in of the big words) starts only when the section is in view AND the page transition is over, so it does not run

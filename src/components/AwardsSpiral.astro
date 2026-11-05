@@ -203,8 +203,11 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
     filter: blur(0);
     opacity: 1;
   }
-  /* the small line is there at once, with no animation */
+  /* the small line is there at once, with no animation. `transition: none` matters: the default transition covers every property, `visibility`
+     included, so a word with a transition-delay became visible later than the others when the words were un-hidden (sp-pending): the
+     line appeared word by word. */
   .sp[data-live] :global(.sp-line .sp-lit) {
     display: inline-block;
+    transition: none;
   }
 </style>

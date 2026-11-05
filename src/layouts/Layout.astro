@@ -382,7 +382,7 @@ const {
   /* ---- page transition (after codegrid's View Transition demo) ----
      The old page shrinks, turns and slips away to the lower left; the new one opens from the lower right corner at the same
      reduced size and grows to the full screen.
-     The nav pill keeps its own layer and does not move. */
+     The nav pill has no layer of its own: it is part of the page and moves with it. */
   ::view-transition {
     background: #0d0b09;
   }
@@ -421,18 +421,6 @@ const {
   }
   html.preloading body {
     background: #000;
-  }
-  #main-nav {
-    view-transition-name: navbar;
-  }
-  ::view-transition-group(navbar) {
-    animation: none;
-    z-index: 100;
-  }
-  ::view-transition-old(navbar),
-  ::view-transition-new(navbar) {
-    animation: none;
-    mix-blend-mode: normal;
   }
   /* Astro marks the direction of the navigation on <html>: forward goes left, back is the same swing the other way round. */
   :root {

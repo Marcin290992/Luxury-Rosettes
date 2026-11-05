@@ -40,7 +40,6 @@ const photos = [kita, candy, chester, hero];
     <Image src={photos[photos.length - 1]} alt="" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" class="pl-photo pl-hero" />
   </div>
   <div class="pl-foot">
-    <div class="pl-bar"><i></i></div>
     <p class="pl-count">000</p>
   </div>
 </div>
@@ -63,8 +62,7 @@ const photos = [kita, candy, chester, hero];
     const count = el.querySelector<HTMLElement>('.pl-count')!;
     const frame = el.querySelector<HTMLElement>('.pl-frame')!;
     const photos = Array.from(el.querySelectorAll<HTMLElement>('.pl-photo'));
-    const bar = el.querySelector<HTMLElement>('.pl-bar i')!;
-    const texts = [word, count, el.querySelector<HTMLElement>('.pl-bar')!, el.querySelector<HTMLElement>('.pl-brand')!];
+    const texts = [word, count, el.querySelector<HTMLElement>('.pl-brand')!];
     const veil = el.querySelector<HTMLElement>('.pl-veil')!;
     const parts = [el.querySelector<HTMLElement>('.pl-head')!, frame, word, el.querySelector<HTMLElement>('.pl-foot')!];
     let dead = false;
@@ -95,7 +93,6 @@ const photos = [kita, candy, chester, hero];
     let shownPhoto = 0;
     const draw = () => {
       count.textContent = String(Math.round(progress.n)).padStart(3, '0');
-      bar.style.transform = `scaleX(${progress.n / 100})`;
       const w = Math.min(P.words.length - 1, Math.floor((progress.n / 100) * P.words.length));
       if (w !== shownWord) {
         shownWord = w;
@@ -103,8 +100,8 @@ const photos = [kita, candy, chester, hero];
       }
       // the photos go round `rounds` times and the count ends on the last one (the hero's)
       const last = photos.length - 1;
-      const step = Math.floor((progress.n / 100) * photos.length * P.rounds) % photos.length;
-      const idx = progress.n >= 100 ? last : step === last ? 0 : step;
+      const step = Math.floor((progress.n / 100) * last * P.rounds) % last; // the frame's own photos only (the last one is the wallpaper)
+      const idx = progress.n >= 100 ? last : step;
       if (idx !== shownPhoto) {
         shownPhoto = idx;
         if (idx === last) placeWindow();
@@ -257,6 +254,8 @@ const photos = [kita, candy, chester, hero];
     translate: -50% -50%;
     background: var(--placeholder);
   }
+  /* The photos in the small frame change with a quick cross-fade instead of a hard cut: the new one fades in on top of the old one, and the
+     old one leaves only after that (so the frame's grey never shows through in the middle of the fade). */
   .pl-photo {
     position: absolute;
     inset: 0;
@@ -264,9 +263,12 @@ const photos = [kita, candy, chester, hero];
     height: 100%;
     object-fit: cover;
     opacity: 0;
+    transition: opacity 0.01s linear 0.28s;
   }
   .pl-photo.is-on {
     opacity: 1;
+    z-index: 1;
+    transition: opacity 0.28s ease-out;
   }
   /* the wallpaper: over the small frame, the size of the screen; only the window of the frame is shown until it opens */
   .pl-wall {
@@ -297,31 +299,15 @@ const photos = [kita, candy, chester, hero];
     text-align: center;
     white-space: nowrap;
   }
-  /* the count is small and quiet, with a hairline that fills as it goes */
   .pl-foot {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.85rem;
-  }
-  .pl-bar {
-    width: min(9rem, 40vw);
-    height: 1px;
-    background: rgba(26, 26, 26, 0.16);
-  }
-  .pl-bar i {
-    display: block;
-    height: 100%;
-    background: #ba8e47;
-    transform: scaleX(0);
-    transform-origin: left;
+    align-items: flex-end;
+    justify-content: space-between;
   }
   .pl-count {
     margin: 0;
-    font-size: clamp(1rem, 2.2vw, 1.35rem);
-    letter-spacing: 0.32em;
-    padding-left: 0.32em; /* balances the trailing letter-spacing so the number is centred */
-    line-height: 1;
+    font-size: clamp(2.6rem, 8vw, 7rem);
+    line-height: 0.9;
     font-variant-numeric: lining-nums tabular-nums;
   }
 </style>

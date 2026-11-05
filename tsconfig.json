@@ -1,5 +1,17 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "src/**/*"],
-  "exclude": ["dist", "Luxury Rosettes old web"]
+  "exclude": [
+    "dist",
+    "Luxury Rosettes old web",
+    "faq code",
+    "src/awwward list section",
+    "src/better slider",
+    "src/choregraphy page",
+    "src/codegrid-view-page-transition",
+    "src/intro awwards",
+    "src/intro luxury",
+    "src/story awwards",
+    "src/white desert animation"
+  ]
 }

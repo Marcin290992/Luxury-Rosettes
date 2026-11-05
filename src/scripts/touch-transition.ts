@@ -14,30 +14,24 @@
 //   4. The cards are removed; the live page (the same picture) is under them.
 // The cards live on <html>, which the router does not replace on a swap.
 
-const DURATION = 800;
+// The timeline of codegrid's page change (same as page-out-lite / page-in-lite in Layout.astro):
+//   old card: shrinks to 85% (0 - 600ms), then slides up and out (600 - 1200ms)
+//   new card: waits below the screen (0 - 600ms), slides up at 85% (600 - 1200ms), then grows to 100% (1200 - 1800ms)
+const OLD_DURATION = 1200;
+const NEW_DURATION = 1800;
 const LINEAR = 'linear';
-const EASE_IN = 'cubic-bezier(0.65, 0, 1, 1)';
-const EASE_OUT = 'cubic-bezier(0, 0, 0.35, 1)';
-const EASE_IO = 'cubic-bezier(0.76, 0, 0.24, 1)';
+const EASE = 'cubic-bezier(0.86, 0, 0.07, 1)';
 
-const tf = (x: number, y: number, rot: number, scale: number, d: number) =>
-  `translate(${x * d}%, ${y}%) rotate(${rot * d}deg) scale(${scale})`;
-
-// the same keyframes as page-out-lite / page-in-lite in Layout.astro (d = 1 forwards, -1 back)
-const outFrames = (d: number): Keyframe[] => [
-  { offset: 0, transform: tf(0, 0, 0, 1, d), easing: EASE_IN },
-  { offset: 0.25, transform: tf(0, 0, 0, 0.6, d), easing: EASE_IN },
-  { offset: 0.4, transform: tf(-45, 8, -14, 0.6, d), easing: LINEAR },
-  { offset: 0.55, transform: tf(-115, 40, -30, 0.6, d) },
-  { offset: 1, transform: tf(-115, 40, -30, 0.6, d) },
+const outFrames = (): Keyframe[] => [
+  { offset: 0, transform: 'scale(1)', easing: EASE },
+  { offset: 0.5, transform: 'scale(0.85)', easing: EASE },
+  { offset: 1, transform: 'translateY(-100%) scale(0.85)' },
 ];
-const inFrames = (d: number): Keyframe[] => [
-  { offset: 0, transform: tf(115, 40, 30, 0.6, d), easing: LINEAR },
-  { offset: 0.25, transform: tf(115, 40, 30, 0.6, d), easing: LINEAR },
-  { offset: 0.4, transform: tf(45, 8, 14, 0.6, d), easing: EASE_OUT },
-  { offset: 0.55, transform: tf(0, 0, 0, 0.6, d), easing: LINEAR },
-  { offset: 0.66, transform: tf(0, 0, 0, 0.6, d), easing: EASE_IO },
-  { offset: 1, transform: tf(0, 0, 0, 1, d) },
+const inFrames = (): Keyframe[] => [
+  { offset: 0, transform: 'translateY(100%) scale(0.85)', easing: LINEAR },
+  { offset: 1 / 3, transform: 'translateY(100%) scale(0.85)', easing: EASE },
+  { offset: 2 / 3, transform: 'translateY(0) scale(0.85)', easing: EASE },
+  { offset: 1, transform: 'translateY(0) scale(1)' },
 ];
 
 import { restoreTarget, restoreNow, settleScrubs } from './scroll-restore';
@@ -208,7 +202,6 @@ export const isOwnNavigation = () => ownNav;
  * native snapshot jumps when the page is scrolled and the address bar is visible; that navigation is played by the cards instead.)
  */
 export function setupTouchTransition(shouldRun: () => boolean = () => true) {
-  let dir = 1;
   let veil: HTMLElement | null = null;
   let cardOld: HTMLElement | null = null;
   let running = false;
@@ -225,7 +218,6 @@ export function setupTouchTransition(shouldRun: () => boolean = () => true) {
 
   document.addEventListener('astro:before-preparation', (e) => {
     clean();
-    dir = (e as Event & { direction?: string }).direction === 'back' ? -1 : 1;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (!shouldRun()) return; // this navigation is the browser's
     ownNav = true;
@@ -301,14 +293,14 @@ export function setupTouchTransition(shouldRun: () => boolean = () => true) {
     // the router rewrites <html>'s attributes on a swap: the class that hides the live page is set again here
     root().classList.add('pt-run');
     syncNavCopy();
-    const safety = window.setTimeout(clean, DURATION + 4000);
+    const safety = window.setTimeout(clean, NEW_DURATION + 4000);
     // the card of the new page is copied once the page has settled (the old card covers everything meanwhile)
     pageSettled().then(async () => {
       try {
         const newCard = await prepareCard(false, restoreTarget() || getScrollY(), 150, 1);
         newCard.style.opacity = '';
-        const out = oldCard.animate(outFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });
-        const into = newCard.animate(inFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });
+        const out = oldCard.animate(outFrames(), { duration: OLD_DURATION, easing: LINEAR, fill: 'both' });
+        const into = newCard.animate(inFrames(), { duration: NEW_DURATION, easing: LINEAR, fill: 'both' });
         Promise.allSettled([out.finished, into.finished]).then(() => {
           window.clearTimeout(safety);
           clean();

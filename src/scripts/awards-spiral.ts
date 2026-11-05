@@ -534,25 +534,25 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     const freeze = (e: Event) => {
       if (!near || still) return;
       try {
-        // Force final render with current scene state
-        requestAnimationFrame(() => {
-          renderer.render(scene, camera);
-          const img = new Image();
-          img.alt = '';
-          img.src = canvas.toDataURL('image/webp', 0.92);
-          img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;';
-          canvas.after(img);
-          canvas.style.opacity = '0';
-          canvas.style.pointerEvents = 'none';
-          still = img;
-          // the transition waits (a few ms) until the picture is decoded, so it is in the snapshot
-          const nav = e as Event & { loader: () => Promise<void> };
-          const original = nav.loader;
-          nav.loader = async () => {
-            await img.decode().catch(() => {});
-            await original();
-          };
-        });
+        // all in the same task as the event: the router reads `loader` right after it, and the buffer still holds the last frame
+        // (an earlier version did this inside requestAnimationFrame: `loader` was then replaced too late and the transition did not wait
+        // for the picture, so the snapshot of the old page could hold an empty canvas on iOS)
+        renderer.render(scene, camera);
+        const img = new Image();
+        img.alt = '';
+        img.src = canvas.toDataURL('image/webp', 0.92);
+        img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;';
+        canvas.after(img);
+        canvas.style.opacity = '0';
+        canvas.style.pointerEvents = 'none';
+        still = img;
+        // the transition waits (a few ms) until the picture is decoded, so it is in the snapshot
+        const nav = e as Event & { loader: () => Promise<void> };
+        const original = nav.loader;
+        nav.loader = async () => {
+          await img.decode().catch(() => {});
+          await original();
+        };
         // if the navigation never happens (cancelled), the live canvas comes back
         unfreeze = window.setTimeout(thaw, 5000);
       } catch {

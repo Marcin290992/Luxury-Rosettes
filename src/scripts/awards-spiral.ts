@@ -168,14 +168,42 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     // the photos, cropped to cover: uCrop = (scale x, scale y, offset x, offset y) in the photo's own uv
     const crops = urls.map(() => ({ value: new THREE.Vector4(1, 1, 0, 0) }));
     const loader = new THREE.TextureLoader();
+    // The canvas stays invisible until every photo has loaded and been drawn once, and then fades in. The photos load a moment after the
+    // scene is built, so the first frames showed them without their crop (and without their picture) and they twitched into place while
+    // the page was still arriving (a returning visitor, with the photos in the cache, saw it as a slight jump at the start).
+    canvas.style.opacity = '0';
+    let waiting = urls.length;
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      // two frames: one to upload the textures and draw, one so that the picture is on the screen before it is shown
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (still) return; // the page is already leaving: the still picture is on screen
+          canvas.style.transition = 'opacity 0.3s ease-out';
+          canvas.style.opacity = '1';
+        }),
+      );
+    };
+    const arrived = () => {
+      if (--waiting <= 0) reveal();
+    };
+    const revealTimer = window.setTimeout(reveal, 1500); // safety: a photo that never loads must not keep the spiral away
     const textures = urls.map((url, i) =>
-      loader.load(url, (t) => {
-        const img = t.image as { width: number; height: number };
-        const photo = img.width / img.height;
-        const want = 1 / ASPECT;
-        if (photo > want) crops[i].value.set(want / photo, 1, (1 - want / photo) / 2, 0);
-        else crops[i].value.set(1, photo / want, 0, (1 - photo / want) / 2);
-      }),
+      loader.load(
+        url,
+        (t) => {
+          const img = t.image as { width: number; height: number };
+          const photo = img.width / img.height;
+          const want = 1 / ASPECT;
+          if (photo > want) crops[i].value.set(want / photo, 1, (1 - want / photo) / 2, 0);
+          else crops[i].value.set(1, photo / want, 0, (1 - photo / want) / 2);
+          arrived();
+        },
+        undefined,
+        arrived,
+      ),
     );
     textures.forEach((t) => {
       t.minFilter = THREE.LinearFilter;
@@ -626,6 +654,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       gsap.ticker.remove(probe);
       window.clearTimeout(release);
       window.clearTimeout(unfreeze);
+      window.clearTimeout(revealTimer);
       thaw();
       gsap.ticker.remove(draw);
       window.removeEventListener('resize', onResize);

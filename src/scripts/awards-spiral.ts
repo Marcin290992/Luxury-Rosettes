@@ -114,11 +114,13 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     const transitionWatch = new MutationObserver(() => {
       transitionOver = !html.hasAttribute('data-astro-transition');
       showWords();
+      revealIfReady();
     });
     if (!transitionOver) transitionWatch.observe(html, { attributes: true, attributeFilter: ['data-astro-transition'] });
     const transitionSafety = window.setTimeout(() => {
-      transitionOver = true; // never hold the words back for longer than this
+      transitionOver = true; // never hold the words (or the canvas) back for longer than this
       showWords();
+      revealIfReady();
     }, 3000);
 
     // ---- three.js ----
@@ -155,8 +157,12 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     canvas.style.opacity = '0';
     let gone = false; // set when the scene is taken down: nothing may touch the renderer after that
     let revealed = false;
-    const reveal = () => {
-      if (revealed) return;
+    let photosReady = false;
+    // The canvas comes up when the photos are ready AND the page transition is over (the same moment as the big words). During the transition
+    // the page is scaled (it grows from 85% to full size), and a canvas that comes up in the middle of that is rasterised small and then
+    // enlarged: it looked slightly soft for a moment, once, on the way back to the page.
+    function revealIfReady() {
+      if (revealed || !photosReady || !transitionOver) return;
       revealed = true;
       // two frames: one to draw, one so that the picture is on the screen before it is shown
       requestAnimationFrame(() =>
@@ -166,6 +172,10 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
           canvas.style.opacity = '1';
         }),
       );
+    }
+    const reveal = () => {
+      photosReady = true;
+      revealIfReady();
     };
     // Safety only, for a request that never finishes: it must be much longer than the photos can take on a slow mobile connection (nine photos of
     // ~150 KB on a first visit). With 1.5 s here the canvas came up on a phone before the photos had arrived, and they popped in over each other.

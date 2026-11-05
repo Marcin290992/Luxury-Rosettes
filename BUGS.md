@@ -205,6 +205,8 @@ Natywny snapshot WebKit nadal migał (pasek menu i treść), a na Chrome nie. Dl
 
 Cena: na zimnej pamięci spirala pojawia się ok. 0,5 s później niż wcześniej (zmierzone w emulacji).
 
+**Pokrewne: bardzo lekkie rozmycie zdjęć raz przy wejściu po cofnięciu (iOS i Android).** Po cofnięciu zdjęcia są już w pamięci podręcznej, więc canvas wchodził w trakcie przejścia, gdy nowa strona rośnie z 85% do pełnego rozmiaru. Warstwa z canvasem jest wtedy skalowana i przez chwilę jest lekko miękka. Poprawka: canvas wchodzi dopiero, gdy zdjęcia są gotowe **i** przejście się skończyło (`revealIfReady` w `awards-spiral.ts`, ten sam warunek `transitionOver` co dla dużych słów; awaryjnie po 3 s). Przy bezpośrednim otwarciu strony (bez przejścia) wchodzi od razu po załadowaniu zdjęć. To hipoteza, sprawdzona tylko pomiarem momentu pojawienia się, nie na telefonie.
+
 **Co NIE było przyczyną (sprawdzone):** kompilacja shaderów na żądanie (`renderer.compileAsync` przed pokazaniem canvasu nie zmieniła zacięć po pojawieniu się spirali, wycofane), pozycja przewinięcia (zostaje na 0), zamiana canvasu na zdjęcie (różnica 0 pikseli), zwykła siatka zdjęć pod canvasem (jest ukryta do czasu włączenia spirali), wolne pobranie modułu three.js (ukrywanie wytrzymuje).
 
 **Gdyby wracało:** sprawdzić najpierw rozmiar tekstur (`getImage({ width: 1200 })` w `AwardsSpiral.astro`). Mniejsze zdjęcia (np. 800 px) to mniej pracy dla dekodera i GPU. Test: wyczyścić dane witryny w Safari i wejść na Awards po raz pierwszy.

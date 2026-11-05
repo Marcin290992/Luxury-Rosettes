@@ -81,6 +81,8 @@ const isCurrent = (href: string) =>
   import { getScrollY, onPageScroll, scrollBox } from '../scripts/scroller';
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
+  const AT_TOP = 40; // px: scrolled less than this counts as the top of the page
+
   mount(() => {
     const nav = document.getElementById('main-nav')!;
     const btn = nav.querySelector<HTMLElement>('#menu-btn')!;
@@ -138,8 +140,16 @@ const isCurrent = (href: string) =>
       }
     };
     // A link in the menu or the logo: the menu folds away first (its own animation, ~0.6s), and only then the page transition
-    // starts. A link to the page you are already on does no transition at all: it just scrolls back to the top.
+    // starts. A link to the page you are already on, from a scrolled page, plays the same transition (to a fresh copy of the page, at its
+    // top) instead of scrolling back: quicker and more of a gesture. From the top of the page it does nothing.
     let leaving = 0;
+    const leave = (href: string, wasOpen: boolean) => {
+      document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open: false, leaving: true } })); // stays held until the page is gone
+      window.clearTimeout(leaving);
+      // the menu's fold takes ~0.6s and must be finished before the transition starts: the nav pill is its own layer in the transition and
+      // freezes exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition)
+      leaving = window.setTimeout(() => navigate(href), wasOpen ? 650 : 0);
+    };
     const onLinkClick = (e: MouseEvent) => {
       const link = (e.target as Element).closest('a'); // a click on an icon inside a link counts as the link
       if (!link) return;
@@ -150,21 +160,23 @@ const isCurrent = (href: string) =>
       const wasOpen = nav.classList.contains('expanded');
       setOpen(false);
       if (!sameOrigin || !plain) return;
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (samePage) {
         if (url.hash) return; // an anchor on this page: the browser scrolls to it
         e.preventDefault();
-        const lenis = getLenis();
-        if (lenis) lenis.scrollTo(0);
-        else (scrollBox() ?? window).scrollTo({ top: 0, behavior: 'smooth' });
+        if (getScrollY() <= AT_TOP) return; // already at the top: nothing to do
+        if (reduced) {
+          const lenis = getLenis();
+          if (lenis) lenis.scrollTo(0, { immediate: true });
+          else (scrollBox() ?? window).scrollTo({ top: 0 });
+          return;
+        }
+        leave(url.href, wasOpen);
         return;
       }
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      if (reduced) return;
       e.preventDefault();
-      document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open: false, leaving: true } })); // stays held until the page is gone
-      window.clearTimeout(leaving);
-      // the menu's fold takes ~0.6s and must be finished before the transition starts: the nav pill is its own layer in the transition and
-      // freezes exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition)
-      leaving = window.setTimeout(() => navigate(url.href), wasOpen ? 650 : 0);
+      leave(url.href, wasOpen);
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {

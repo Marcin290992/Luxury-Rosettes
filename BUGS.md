@@ -171,6 +171,16 @@ Natywny snapshot WebKit nadal migał (pasek menu i treść), a na Chrome nie. Dl
 2. Canvas jest chowany (`opacity: 0`) dopiero w `loader`, po `img.decode()`, i jeszcze jedna klatka (`requestAnimationFrame`) czeka, żeby zamiana została namalowana przed zrzutem starej strony. Zdjęcie leży na canvasie, więc nigdy nie ma klatki bez obrazu.
 3. Renderer ma domyślne ustawienia (`preserveDrawingBuffer` nie jest potrzebne): `render` i `toDataURL` idą jedno po drugim w tym samym zadaniu, a wtedy bufor jeszcze trzyma klatkę. Sprawdzone pomiarem: zdjęcie zastępujące canvas różni się od canvasu o 0 pikseli na górze strony, w WebKit i Chromium.
 
+## Awards: podwójne, lekko przesunięte zdjęcia spirali przy cofaniu (raz, rzadko)
+
+**Objaw:** przy cofaniu albo przejściu z Awards na ułamek sekundy widać dwie kopie zdjęć spirali, lekko przesunięte względem siebie, które potem znikają, a przejście stron jest normalne. Zdarza się rzadko i tylko raz przy danym przejściu. iOS i Android.
+
+**Przyczyna:** przed przejściem canvas jest zamieniany na zdjęcie swojej ostatniej klatki (`freeze`). Zdjęcie leży NAD żywym canvasem, a canvas jest chowany dopiero po jego zdekodowaniu (żeby nie było klatki bez obrazu). Przez te kilka klatek pętla rysowania (`draw`) dalej działała i spirala pod spodem dojeżdżała do pozycji po przewinięciu (wygładzanie `shown` → `target`). Zdjęcie ma przezroczyste tło, więc przez nie prześwitywała druga, już inna klatka: podwójny, przesunięty obraz. Widać to tylko wtedy, gdy spirala w chwili nawigacji jeszcze się porusza (puszczone przewijanie), stąd "rzadko".
+
+**Poprawka (`awards-spiral.ts`):** od chwili zrobienia zdjęcia scena przestaje rysować (`frozen`), więc żywy canvas jest dokładnie tą samą klatką co zdjęcie. `thaw` (nawigacja się nie odbyła, po 5 s) wznawia rysowanie. Test w emulacji: scroll, potem zamrożenie w trakcie wygładzania. Różnica między klatką w oknie a samym zdjęciem: 9,1 → 0,05 (Edge) i 6,7 → 0,06 (WebKit); na zrzucie przed poprawką wyraźnie dwie kopie zdjęć, po niej jedna.
+
+**Co NIE pomogło (nie wracać do tego):** zwiększenie rozdzielczości canvasu do pełnego 3x na telefonach (ostrzejsze krawędzie, ale to nie było to; cofnięte), czekanie na koniec przejścia z odsłonięciem canvasu (zostaje, ale dotyczyło innego momentu: wejścia na stronę).
+
 **WebGL na telefonach: jak to działa na iOS i na Androidzie (podsumowanie):**
 - **Wspólna zasada (oba systemy):** canvas WebGL w zrzucie przejścia jest składany osobno i na telefonach wychodził z inną wysokością niż reszta strony. Dlatego tuż przed przejściem canvas jest zamieniany na zwykłe zdjęcie swojej ostatniej klatki (`freeze` w `awards-spiral.ts`). Zdjęcie jest częścią strony jak każdy inny element, a ucieka tylko obraz, bo strona i tak odchodzi. `thaw` przywraca canvas, gdyby nawigacja się nie odbyła (po 5 s).
 - **Android (Chrome):** działa natywne przejście przeglądarki i samo synchroniczne zamrożenie wystarcza. Dla zrzutu stosowane jest obejście wysokości (`::view-transition-group(root) { height: 100lvh }` i `object-fit: cover` w `Layout.astro`), bo zrzut ma rozmiar największego okna (pasek adresu schowany). Strona przewija się wewnątrz `#scroll-root`, więc dokument nie przewija się nigdy i zrzut nie "podskakuje".

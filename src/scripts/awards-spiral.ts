@@ -463,8 +463,9 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     };
     document.addEventListener('nav-menu', onMenu);
 
+    let frozen = false; // the still picture is on the canvas (see `freeze`): the scene stops, so the two are always the same picture
     const draw = () => {
-      if (!near || hold) return;
+      if (!near || hold || frozen) return;
       const dt = Math.min(gsap.ticker.deltaRatio(60) / 60, 0.05);
       const k = 1 - Math.pow(0.001, dt);
       shown += (target - shown) * k;
@@ -556,10 +557,13 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     // the page is leaving. The order matters (this was the iOS blink):
     //  1. all of it in the same task as the event, because the router reads `loader` right after it and the buffer still holds the frame;
     //  2. the picture goes OVER the canvas, and the canvas is hidden only once the picture is decoded, so no frame has neither;
-    //  3. one more frame, so that this is painted before the browser takes the picture of the old page.
+    //  3. one more frame, so that this is painted before the browser takes the picture of the old page;
+    //  4. the scene stops drawing from the moment of the picture. The picture lies over the live canvas for a few frames, and a scene that
+    //     went on easing towards the scroll position showed under it as a second, slightly shifted copy of the photos.
     let still: HTMLImageElement | undefined;
     let unfreeze = 0;
     const thaw = () => {
+      frozen = false;
       still?.remove();
       still = undefined;
       canvas.style.opacity = '1';
@@ -569,6 +573,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       if (!near || still) return;
       try {
         renderer.render(scene, camera);
+        frozen = true;
         const img = new Image();
         img.alt = '';
         img.src = canvas.toDataURL('image/webp', 0.92);

@@ -49,6 +49,8 @@ import hero from '../assets/img/hero_img.webp';
     const hero = document.getElementById('hero')!;
     const nav = document.getElementById('main-nav');
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // true when this page was reached by a page transition (set in Layout.astro): the nav must not hide and fade in again
+    const arrived = !!(window as unknown as { __lrSwapped?: boolean }).__lrSwapped;
     const media = hero.querySelector<HTMLElement>('.hero-media')!;
     const title = hero.querySelector<HTMLElement>('.hero-title')!;
     const rail = hero.querySelector<HTMLElement>('.hero-rail')!;
@@ -122,7 +124,7 @@ import hero from '../assets/img/hero_img.webp';
       gsap.set(rail, { y: HERO.railRise });
       // after the intro the photo is already on screen (the preloader's last frame): no second zoom on top of it
       gsap.set(media, { scale: document.documentElement.classList.contains('preloading') ? 1 : HERO.mediaZoom });
-      if (nav) gsap.set(nav, { autoAlpha: 0 });
+      if (nav && !arrived) gsap.set(nav, { autoAlpha: 0 });
     }
 
     // wait for the web font and the photo, but never longer than HERO.maxWait
@@ -151,8 +153,9 @@ import hero from '../assets/img/hero_img.webp';
         .timeline({ defaults: { ease: 'power3.out' } })
         .to(media, { scale: 1, duration: T.zoom }, 0)
         .to(chars, { yPercent: 0, duration: T.chars.dur, stagger: T.chars.stagger }, T.chars.at)
-        .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at)
-        .to(nav, { autoAlpha: 1, duration: T.nav.dur, clearProps: 'opacity,visibility' }, T.nav.at);
+        .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at);
+      // the nav only arrives with the very first intro; after a page transition it was already on screen
+      if (!arrived) opening.to(nav, { autoAlpha: 1, duration: T.nav.dur, clearProps: 'opacity,visibility' }, T.nav.at);
     });
 
     return () => {

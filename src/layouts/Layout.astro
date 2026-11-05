@@ -80,6 +80,12 @@ const {
   import { setupScrollRestore } from '../scripts/scroll-restore';
   import { settleLayout } from '../scripts/scroller';
 
+  // After a page transition the nav is already on screen: the home hero must not hide it and run its intro for it again
+  // (see Hero.astro). The router rewrites <html>'s classes on a swap, so `intro-ready` is put back at once.
+  document.addEventListener('astro:after-swap', () => {
+    (window as unknown as { __lrSwapped?: boolean }).__lrSwapped = true;
+    document.documentElement.classList.add('intro-ready');
+  });
   initDebug(); // only does anything when the page is opened with ?debug=1
   setupScrollRestore(); // going back puts the reader where they were (the router restores it while the page is still short)
   // touch devices: the own card transition is only an opt-in test (?vt=cards / ?vt=calm, see the head); by default the native one runs

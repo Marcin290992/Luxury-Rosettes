@@ -143,3 +143,17 @@ Lenis był na dotyku wyłączony (commity `cf632b9`, `1e68e90`, `cc3d8e1`), bo p
 ### Safari iOS: nadal migotanie przy natywnym VT
 
 Natywny snapshot WebKit nadal migał (pasek menu i treść), a na Chrome nie. Dlatego na iOS domyślnie działa własne przejście na kartach (touch-transition.ts, czysty DOM, bez snapshotu) - wykrywane w skrypcie w <head> Layout.astro. ?vt=native wyłącza to na czas sesji (do porównań); Chrome Android zostaje na natywnym.
+
+### Safari iOS: menu znikało i wczytywało się znowu przy przejściu (szczególnie przy cofaniu na Home)
+
+**Objaw:** na Safari mobile podczas przejścia pasek menu znikał i pojawiał się od nowa, najbardziej przy cofnięciu na stronę główną. Chrome Android działał dobrze.
+
+**Przyczyny (dwie):**
+1. Menu leży w `#scroll-root` (`position: fixed` = własny stacking context), więc karty z `touch-transition.ts` (z-index 900 na `<html>`) przykrywały je w całości, a reguła `html.pt-run > body > :not(#main-nav)` chowała cały `#scroll-root`, bo menu nie jest już dzieckiem `body`. Menu znikało na czas przejścia i wracało na końcu.
+2. `Hero.astro` przy każdym wejściu na Home chowało menu (`autoAlpha: 0`) i wsuwało je jako część intro, także po przejściu stron.
+
+**Poprawka:**
+1. `touch-transition.ts`: `makeNavCopy()` dokłada nieruchomą kopię menu na `<html>` (nad kartami, bez `id`, `inert`), a prawdziwe (stare) jest chowane, żeby półprzezroczyste szkła się nie sumowały. `syncNavCopy()` po swapie zgrywa `is-scrolled`. Kopia znika w `clean()`.
+2. `Layout.astro` po `astro:after-swap` ustawia `window.__lrSwapped` i `intro-ready`; `Hero.astro` przy `arrived` nie chowa i nie animuje menu.
+
+**Niezweryfikowane na prawdziwym iPhonie.** Miganie treści tuż przed przejściem (klon całego `body` na iOS) nie było ruszane - jeśli zostanie, podejrzewać `prepareCard` (dekodowanie zdjęć kopii, puste canvasy WebGL) i rozmiar klonowanej strony.

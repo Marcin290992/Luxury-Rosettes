@@ -171,6 +171,34 @@ function makeVeil(): HTMLElement {
   return veil;
 }
 
+/**
+ * The nav pill lives inside #scroll-root, which is position:fixed and so a stacking context of its own: the cards (z-index on <html>) cover
+ * it completely, and the pill used to vanish for the whole transition and pop back at the end ("the menu loads again"). So a still copy of
+ * it is put above the cards, and the real one (about to be replaced anyway) is hidden so the two glasses do not add up.
+ */
+function makeNavCopy(): HTMLElement | null {
+  const real = document.getElementById('main-nav');
+  if (!real) return null;
+  const copy = real.cloneNode(true) as HTMLElement;
+  copy.classList.add('pt-nav');
+  copy.removeAttribute('id');
+  copy.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+  copy.setAttribute('aria-hidden', 'true');
+  copy.setAttribute('inert', '');
+  copy.style.pointerEvents = 'none';
+  root().append(copy);
+  real.style.visibility = 'hidden';
+  return copy;
+}
+
+/** After the swap: the copy takes the look of the new page's pill (scrolled or not), so nothing changes when the real one shows. */
+function syncNavCopy() {
+  const copy = document.querySelector<HTMLElement>('.pt-nav');
+  const real = document.getElementById('main-nav');
+  if (!copy || !real) return;
+  copy.classList.toggle('is-scrolled', real.classList.contains('is-scrolled'));
+}
+
 /** True while the navigation in progress is played by the own cards (so the browser's View Transition must not run for it). */
 let ownNav = false;
 export const isOwnNavigation = () => ownNav;
@@ -187,7 +215,7 @@ export function setupTouchTransition(shouldRun: () => boolean = () => true) {
 
   const clean = () => {
     restoreNow(); // the live page under the cards is where the new card shows it
-    document.querySelectorAll('.pt-card, .pt-veil').forEach((c) => c.remove());
+    document.querySelectorAll('.pt-card, .pt-veil, .pt-nav').forEach((c) => c.remove());
     veil = null;
     root().classList.remove('pt-run');
     cardOld = null;
@@ -212,6 +240,7 @@ export function setupTouchTransition(shouldRun: () => boolean = () => true) {
           await original();
           try {
             const card = await ready;
+            makeNavCopy(); // above the card, in the same place as the real pill, which it replaces
             // it becomes opaque gradually over the identical page below: whatever the browser has not painted of it yet cannot show as a flash
             await card.animate([{ opacity: 0.01 }, { opacity: 1 }], { duration: 160, easing: 'linear', fill: 'forwards' }).finished.catch(() => {});
             card.style.opacity = '';
@@ -271,6 +300,7 @@ export function setupTouchTransition(shouldRun: () => boolean = () => true) {
     const oldCard = cardOld;
     // the router rewrites <html>'s attributes on a swap: the class that hides the live page is set again here
     root().classList.add('pt-run');
+    syncNavCopy();
     const safety = window.setTimeout(clean, DURATION + 4000);
     // the card of the new page is copied once the page has settled (the old card covers everything meanwhile)
     pageSettled().then(async () => {

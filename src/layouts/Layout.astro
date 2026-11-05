@@ -74,6 +74,7 @@ const {
   import { initDebug, dbg } from '../scripts/debug-log';
   import { setupTouchTransition, isOwnNavigation } from '../scripts/touch-transition';
   import { setupScrollRestore } from '../scripts/scroll-restore';
+  import { settleLayout } from '../scripts/scroller';
 
   initDebug(); // only does anything when the page is opened with ?debug=1
   setupScrollRestore(); // going back puts the reader where they were (the router restores it while the page is still short)
@@ -185,6 +186,17 @@ const {
       return nativeVT(cb);
     }) as typeof document.startViewTransition;
   }
+  // The picture of the NEW page is taken right after the swap callback returns, but the page is not built yet then: its pins and
+  // spacers appear a few hundred ms later (measured: 25002px at the snapshot, 45597px when settled), so at the end of the transition
+  // the picture was replaced by a different-looking live page (a blink). So the callback is not finished until the layout is measured.
+  if (typeof document.startViewTransition === 'function') {
+    const wrapped = document.startViewTransition.bind(document);
+    document.startViewTransition = ((cb?: () => void | Promise<void>) =>
+      wrapped(async () => {
+        await cb?.();
+        settleLayout();
+      })) as typeof document.startViewTransition;
+  }
   let scrollOld = 0;
   let scrollNew = 0;
   const setVar = (name: string, px: number) => document.documentElement.style.setProperty(name, `${px.toFixed(2)}px`);
@@ -202,19 +214,6 @@ const {
   document.addEventListener('astro:after-swap', () => {
     scrollNew = scrollY; // a back navigation lands on a scrolled page: its picture is drawn too high too
     applyLayers();
-  });
-  // The nav pill has a backdrop blur, and a blur has nothing to sample inside a transition layer (the pill is captured on its own): Safari
-  // drew the pill without it, flickering or fading faster than the page. So for the length of the transition the pill is a plain solid
-  // glass (html.vt-run, see NavPill.astro); the class is set before the capture and removed when the transition is over.
-  const endRun = () => document.documentElement.classList.remove('vt-run');
-  document.addEventListener('astro:after-preparation', () => {
-    document.documentElement.classList.add('vt-run');
-    window.setTimeout(endRun, 4000); // safety: a navigation that never reaches the swap
-  });
-  document.addEventListener('astro:before-swap', (e) => {
-    const vt = (e as Event & { viewTransition?: ViewTransition }).viewTransition;
-    if (vt) vt.finished.then(endRun, endRun);
-    else window.setTimeout(endRun, 50);
   });
   document.addEventListener('astro:before-swap', (e) => {
     const vt = (e as Event & { viewTransition?: ViewTransition }).viewTransition;

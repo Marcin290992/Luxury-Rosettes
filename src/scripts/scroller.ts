@@ -37,6 +37,17 @@ export function setScrollY(y: number) {
   else window.scrollTo(0, y);
 }
 
+/** Measures the page now (pins, spacers) and finishes the scrub tweens: the page is what it will be, not on its way there. */
+export function settleLayout() {
+  try {
+    ScrollTrigger.refresh(true);
+    ScrollTrigger.update();
+    ScrollTrigger.getAll().forEach((st) => st.getTween?.()?.progress(1));
+  } catch {
+    /* a page without scenes */
+  }
+}
+
 /** Calls `fn` whenever the page scrolls (a box's scroll event does not reach `window`, but it can be caught on the way down). */
 export function onPageScroll(fn: () => void) {
   window.addEventListener('scroll', fn, { passive: true, capture: true });

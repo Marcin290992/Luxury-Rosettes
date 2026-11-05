@@ -133,3 +133,9 @@ Lenis był na dotyku wyłączony (commity `cf632b9`, `1e68e90`, `cc3d8e1`), bo p
 - `51afbee` — wyjście z About na telefonie/tablecie przez czarną warstwę
 - `f9dba08` — rozmyta kopia portretu (zastąpiona w kolejnym commicie)
 - `d26577a` — prawdziwy blur na samym zdjęciu
+
+### Safari: menu ładuje się dwa razy i treść mignęła po przejściu
+
+- **Menu:** klasa `html.vt-run` była kasowana przez router przy podmianie `<html>`, więc stary pill był pełny, a nowy z blurem (dwie różne warstwy). Teraz na dotyku (`pointer: coarse`) pill ma zawsze pełne szkło bez `backdrop-filter` - wygląda tak samo przed, w trakcie i po przejściu. Mechanizm `vt-run` usunięty.
+- **Treść:** zdjęcie nowej strony było robione, gdy strona nie była jeszcze zbudowana (scrollHeight 25002px, po ~500ms 45597px), więc na końcu zdjęcie podmieniało się na inną żywą stronę. Callback `startViewTransition` (Layout.astro) po swapie wywołuje teraz `settleLayout()` (scroller.ts): `ScrollTrigger.refresh(true)` + dokończenie scrubów.
+- Niezweryfikowane na prawdziwym Safari iOS - do sprawdzenia przez użytkownika.

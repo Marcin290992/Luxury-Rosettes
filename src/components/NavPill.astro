@@ -238,11 +238,19 @@ const isCurrent = (href: string) =>
     --glass: rgba(24, 20, 16, 0.7);
   }
 
-  /* during a page transition: no blur (see Layout.astro), the same look as a solid glass */
-  :global(html.vt-run) .nav-pill {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    --glass: rgba(40, 35, 30, 0.9);
+  /* The pill is its own layer in a page transition, and a backdrop blur has nothing to sample there: the old pill and the new one
+     were drawn differently (the menu seemed to load twice, and Safari flickered it). On touch devices the glass is therefore solid,
+     and it is the same before, during and after a transition. */
+  @media (pointer: coarse) {
+    .nav-pill {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      --glass: rgba(34, 29, 25, 0.86);
+    }
+    .nav-pill.is-scrolled,
+    .nav-pill.expanded {
+      --glass: rgba(30, 26, 22, 0.92);
+    }
   }
 
   .nav-pill.expanded {

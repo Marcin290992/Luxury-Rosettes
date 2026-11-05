@@ -139,3 +139,7 @@ Lenis był na dotyku wyłączony (commity `cf632b9`, `1e68e90`, `cc3d8e1`), bo p
 - **Menu:** klasa `html.vt-run` była kasowana przez router przy podmianie `<html>`, więc stary pill był pełny, a nowy z blurem (dwie różne warstwy). Teraz na dotyku (`pointer: coarse`) pill ma zawsze pełne szkło bez `backdrop-filter` - wygląda tak samo przed, w trakcie i po przejściu. Mechanizm `vt-run` usunięty.
 - **Treść:** zdjęcie nowej strony było robione, gdy strona nie była jeszcze zbudowana (scrollHeight 25002px, po ~500ms 45597px), więc na końcu zdjęcie podmieniało się na inną żywą stronę. Callback `startViewTransition` (Layout.astro) po swapie wywołuje teraz `settleLayout()` (scroller.ts): `ScrollTrigger.refresh(true)` + dokończenie scrubów.
 - Niezweryfikowane na prawdziwym Safari iOS - do sprawdzenia przez użytkownika.
+
+### Safari iOS: nadal migotanie przy natywnym VT
+
+Natywny snapshot WebKit nadal migał (pasek menu i treść), a na Chrome nie. Dlatego na iOS domyślnie działa własne przejście na kartach (touch-transition.ts, czysty DOM, bez snapshotu) - wykrywane w skrypcie w <head> Layout.astro. ?vt=native wyłącza to na czas sesji (do porównań); Chrome Android zostaje na natywnym.

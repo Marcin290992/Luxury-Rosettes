@@ -53,6 +53,10 @@ const {
     <script is:inline>
       try {
         if (matchMedia('(pointer: coarse)').matches) {
+          // iOS (every browser there is WebKit): its native snapshot made the nav pill and the page flicker, so the own cards are the default
+          const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          if (/[?&]vt=native/.test(location.search)) sessionStorage.setItem('lr-vtnative', '1');
+          if (ios && sessionStorage.getItem('lr-vtnative') !== '1') sessionStorage.setItem('lr-vtown', '1');
           if (/[?&]vt=(own|cards|calm)/.test(location.search)) sessionStorage.setItem('lr-vtown', '1');
           if (/[?&]vt=native/.test(location.search)) sessionStorage.removeItem('lr-vtown');
           if (/[?&]vt=calm/.test(location.search)) sessionStorage.setItem('lr-vtcalm', '1');

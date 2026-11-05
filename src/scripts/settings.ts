@@ -3,7 +3,7 @@
 
 // TEMPORARY: false = the WebGL scenes (awards spiral, Why Bengals burn) are off and their plain fallbacks show. Used to test whether
 // WebGL causes the flicker at the start of the page transition on iPhone. Set back to true to turn them on.
-export const WEBGL_ENABLED = false;
+export const WEBGL_ENABLED = true;
 
 // ---- shared ----------------------------------------------------------------------------------------------------------
 export const MEDIA = {

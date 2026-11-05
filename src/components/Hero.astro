@@ -43,7 +43,6 @@ import hero from '../assets/img/hero_img.webp';
   import { clamp } from '../scripts/math';
   import { HERO, WORD_HIDDEN } from '../scripts/settings';
   import { mount } from '../scripts/lifecycle';
-  import { dbg } from '../scripts/debug-log';
 
   mount(() => {
     // Opening sequence: the photo settles from a slow zoom, the name rises letter by letter across the bottom edge,
@@ -103,7 +102,6 @@ import hero from '../assets/img/hero_img.webp';
       const eyeY = EYE.y * sH - py * (sH - H);
       // w = width of the eye in px (see HERO.eyeWidth): lets the scroll zoom pick a scale that fits the screen
       photo.dataset.eye = JSON.stringify({ ox: (eyeX / W) * 100, oy: (eyeY / H) * 100, w: HERO.eyeWidth * sW });
-      dbg(`placeCat W${W} H${H} iw${iw} ih${ih} sW${Math.round(sW)} px${px.toFixed(2)} eyeX${Math.round(eyeX)} ox${((eyeX / W) * 100).toFixed(1)}`);
     };
     placeCat();
 

@@ -53,10 +53,8 @@ const {
     <script is:inline>
       try {
         if (matchMedia('(pointer: coarse)').matches) {
-          // iOS (every browser there is WebKit): its native snapshot made the nav pill and the page flicker, so the own cards are the default
-          const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
           if (/[?&]vt=native/.test(location.search)) sessionStorage.setItem('lr-vtnative', '1');
-          if (ios && sessionStorage.getItem('lr-vtnative') !== '1') sessionStorage.setItem('lr-vtown', '1');
+          // iOS now uses the native transition too (the nav pill no longer has a layer of its own, which is what flickered in WebKit); the own cards stay as ?vt=cards
           if (/[?&]vt=(own|cards|calm)/.test(location.search)) sessionStorage.setItem('lr-vtown', '1');
           if (/[?&]vt=native/.test(location.search)) sessionStorage.removeItem('lr-vtown');
           if (/[?&]vt=calm/.test(location.search)) sessionStorage.setItem('lr-vtcalm', '1');
@@ -408,6 +406,19 @@ const {
     height: 100%;
     object-fit: cover;
     object-position: top;
+  }
+  /* iOS Safari only (-webkit-touch-callout exists nowhere else): the 100lvh / cover trick above is for Chrome Android. On iOS the picture
+     is not that tall, so `cover` stretched it a little and the live page, a moment later, was smaller than the picture (the page seemed
+     to scale at the end of the transition). Here the picture keeps its own size: nothing is stretched. */
+  @supports (-webkit-touch-callout: none) {
+    ::view-transition-group(root) {
+      height: 100%;
+    }
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      height: auto;
+      object-fit: initial;
+    }
   }
   /* On a phone the browser's address bar moves the page a little while it slides in or out, and the strip that shows is whatever is
      behind the page: it used to be the page's cream and ended up as a pale gap on the cards. So the page is dark behind its content, always

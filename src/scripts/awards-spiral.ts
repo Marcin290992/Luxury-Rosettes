@@ -124,16 +124,10 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     }, 3000);
 
     // ---- three.js ----
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, 0);
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 500);
-    // The canvas is drawn at the screen's own resolution, otherwise the browser enlarges it and the edges of the photos go soft (it used to be
-    // capped at 2x, and phones have 3x: the canvas was enlarged by half). Up to 2x it is exactly the screen's; above that it is the full
-    // resolution as long as the canvas stays under about 5 million pixels (memory), and never less than 2x.
-    const pixelRatio = (w: number, h: number) => {
-      const dpr = window.devicePixelRatio || 1;
-      return dpr <= 2 ? dpr : Math.max(2, Math.min(dpr, 3, Math.sqrt(5e6 / (w * h))));
-    };
     const fit = () => {
       const w = scene3.clientWidth;
       const h = scene3.clientHeight;
@@ -144,7 +138,6 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       camera.lookAt(0, 0, 0);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setPixelRatio(pixelRatio(w, h));
       renderer.setSize(w, h, false);
     };
     fit();

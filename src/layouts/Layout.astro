@@ -46,14 +46,10 @@ const {
         }
       } catch (e) {}
     </script>
-    <!-- The page transition is the browser's own (native View Transitions) everywhere. The own DOM versions for touch devices
+    <!-- On touch devices the page transition is the browser's own too: the page scrolls inside #scroll-root (see scripts/scroller.ts), the
+         document never scrolls and the address bar never moves, so the browser's snapshot has nothing to jump against. The own DOM versions
          (scripts/touch-transition.ts) are only switched on by hand: ?vt=cards (the card swing), ?vt=calm (a dark veil with the logo);
          ?vt=native switches them off again. Without document.startViewTransition the router just swaps the pages (fallback="swap"). -->
-    <!-- PAGE TRANSITION OFF (for now): the browser's View Transitions are removed before the router loads, so with fallback="swap" the
-         pages just change. To switch the transition back on, delete the next script (and the PT_OFF check in the script below). -->
-    <script is:inline>
-      document.startViewTransition = undefined;
-    </script>
     <script is:inline>
       try {
         if (matchMedia('(pointer: coarse)').matches) {
@@ -68,7 +64,7 @@ const {
     <ClientRouter fallback="swap" />
   </head>
   <body>
-    <slot />
+    <div id="scroll-root"><slot /></div>
   </body>
 </html>
 
@@ -81,14 +77,20 @@ const {
 
   initDebug(); // only does anything when the page is opened with ?debug=1
   setupScrollRestore(); // going back puts the reader where they were (the router restores it while the page is still short)
-  // touch devices: the own card transition (the native one is switched off in the head, see above)
-  // On a phone the own card transition plays (a) always, when the native one is switched off (?vt=cards), and (b) for the one
-  // navigation where the native snapshot jumps: the page is scrolled and the address bar is visible (see nativeVT below).
-  const PT_OFF = true; // the page transition is switched off for now (see the head); false + deleting that head script brings it back
-  if (!PT_OFF && matchMedia('(pointer: coarse)').matches) {
-    setupTouchTransition(() => typeof nativeVT !== 'function' || (window.scrollY > 1 && barShown() > 0.02));
+  // touch devices: the own card transition is only an opt-in test (?vt=cards / ?vt=calm, see the head); by default the native one runs
+  const ownTransition = () => {
+    try {
+      return sessionStorage.getItem('lr-vtown') === '1';
+    } catch {
+      return false;
+    }
+  };
+  if (matchMedia('(pointer: coarse)').matches && ownTransition()) {
+    setupTouchTransition();
   }
 
+  // The offset code below is a leftover from the time the document itself scrolled on a phone: it only ever moves a layer whose page was
+  // scrolled (scrollY), and on touch devices scrollY is now always 0 (the page scrolls inside #scroll-root), so it moves nothing.
   // The page transition is drawn in the browser's "snapshot" space, not in the window you see. On a phone that space also covers the
   // area behind the address bar, so its top edge sits ABOVE the top of the visible page by the height of the bar (measured on a Pixel:
   // 56.19px; the nav pill is at 20px in the window but at 76.19px in the snapshot space).
@@ -212,24 +214,6 @@ const {
       })
       .catch(() => {});
   });
-  // A fresh visit has no measurement yet, and the first transition would start with the card too high for a moment. So once the page has
-  // settled, a transition that changes nothing is started and skipped on the spot, only to read the offset (the picture is the same
-  // before and after, so nothing shows). Phones only, and only while the bar is fully shown (that is when the full offset can be read).
-  if (!scbMax && matchMedia('(pointer: coarse)').matches && typeof document.startViewTransition === 'function') {
-    const probeScb = () => {
-      if (scbMax || !compOn()) return;
-      if (barShown() < 0.98 || document.documentElement.classList.contains('preloading')) return setTimeout(probeScb, 2500);
-      const vt = document.startViewTransition(() => {});
-      vt.ready
-        .then(() => {
-          const d = measureScb();
-          if (d !== null) remember(d);
-          vt.skipTransition();
-        })
-        .catch(() => {});
-    };
-    window.addEventListener('load', () => setTimeout(probeScb, 3000), { once: true });
-  }
 
   // The smooth scroll (the "weight" of the page) belongs to every page, so it lives here and is rebuilt after each page swap
   // (?nolenis=1 turns it off for the visit, ?nolenis=0 on again: a test switch, to tell whether the page transition problem on a phone comes from it)
@@ -331,6 +315,35 @@ const {
     font-family: var(--font-body);
     background: var(--paper);
     color: var(--ink);
+  }
+  /* On a laptop or a desktop the box is invisible: the window scrolls. On a phone or a tablet the document stays still and the page
+     scrolls inside the box (scripts/scroller.ts): no address-bar movement, so no height jumps in the page transition. */
+  #scroll-root {
+    display: contents;
+  }
+  @media (pointer: coarse) {
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+    #scroll-root {
+      display: block;
+      position: fixed;
+      inset: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    #scroll-root::-webkit-scrollbar {
+      display: none;
+    }
+    html.preloading #scroll-root {
+      overflow: hidden;
+    }
   }
 </style>
 

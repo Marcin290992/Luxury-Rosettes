@@ -19,6 +19,7 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { getLenis } from './lenis';
+import { setScrollY } from './scroller';
 import { smoothstep } from './math';
 import { AWARD_ORBIT } from './settings';
 
@@ -249,7 +250,7 @@ export function initAwardOrbit(root: HTMLElement, o = AWARD_ORBIT) {
     render();
     const lenis = getLenis();
     if (lenis) lenis.scrollTo(y, { immediate: true, force: true });
-    else window.scrollTo(0, y);
+    else setScrollY(y);
   };
 
   renderAll();

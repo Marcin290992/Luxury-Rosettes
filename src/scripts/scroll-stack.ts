@@ -12,6 +12,8 @@
 // first is in front, 1 = the second, ...); every card is posed from `progress - its index`. The shown value follows the real
 // one with a little damping, in a requestAnimationFrame loop that goes to sleep when it has caught up.
 
+import { onPageScroll } from './scroller';
+
 export type StackVariant = 'stack' | 'deck' | 'fade' | 'flip' | 'zoom' | 'reveal';
 
 export interface StackOptions {
@@ -242,7 +244,7 @@ export function initScrollStack(root: HTMLElement, options: StackOptions): () =>
   shown = measure();
   paint(shown);
 
-  window.addEventListener('scroll', wake, { passive: true });
+  const offScroll = onPageScroll(wake);
   window.addEventListener('resize', onResize);
   const observer = new ResizeObserver(onResize);
   observer.observe(root);
@@ -250,7 +252,7 @@ export function initScrollStack(root: HTMLElement, options: StackOptions): () =>
   return () => {
     cancelAnimationFrame(spin);
     live = false;
-    window.removeEventListener('scroll', wake);
+    offScroll();
     window.removeEventListener('resize', onResize);
     observer.disconnect();
     slots.forEach((slot) => slot.removeAttribute('style'));

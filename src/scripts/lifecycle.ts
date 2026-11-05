@@ -3,6 +3,7 @@
 // listeners and animations would stay alive. Without the router the swap events never fire and this is just `init()`.
 
 type Destroy = () => void;
+import './scroller'; // on touch devices ScrollTrigger must know the scroll box before any component creates a trigger
 
 // `only`: a selector of the element the setup is for; on a page without it the setup is skipped (a swap to another page, e.g. the awards,
 // used to run every component of the home page there and throw)

@@ -8,6 +8,7 @@
 
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { getLenis } from './lenis';
+import { getScrollY, setScrollY } from './scroller';
 
 let target = 0;
 let watching = false;
@@ -37,10 +38,10 @@ export function settleScrubs() {
 
 /** Puts the page at the wanted position now (the top, see below) if it is somewhere else. */
 export function restoreNow() {
-  if (!watching || Math.abs(window.scrollY - target) < 2) return;
+  if (!watching || Math.abs(getScrollY() - target) < 2) return;
   const lenis = getLenis();
   if (lenis) lenis.scrollTo(target, { immediate: true, force: true });
-  else window.scrollTo(0, target);
+  else setScrollY(target);
   settleScrubs();
 }
 

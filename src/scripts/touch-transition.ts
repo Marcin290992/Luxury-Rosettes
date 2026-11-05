@@ -41,6 +41,7 @@ const inFrames = (d: number): Keyframe[] => [
 ];
 
 import { restoreTarget, restoreNow, settleScrubs } from './scroll-restore';
+import { getScrollY, scrollBox } from './scroller';
 
 const root = () => document.documentElement;
 
@@ -62,7 +63,7 @@ function collectCss(): string {
  * `isolate`: the copy lives in a shadow root with its own copy of the page's CSS. The router replaces the old page's style sheets on a
  * swap, and a card that is still playing would lose its look; and the old copy must not be found by the new page's scripts either.
  */
-function makeCard(isolate: boolean, y = window.scrollY): HTMLElement {
+function makeCard(isolate: boolean, y = getScrollY()): HTMLElement {
   const card = document.createElement('div');
   card.className = 'pt-card';
   card.setAttribute('aria-hidden', 'true');
@@ -88,6 +89,9 @@ function makeCard(isolate: boolean, y = window.scrollY): HTMLElement {
   }
   root().append(card);
   card.scrollTop = y;
+  // on touch devices the page scrolls inside #scroll-root: its copy is scrolled the same
+  const box = (card.shadowRoot ?? card).querySelector<HTMLElement>('#scroll-root');
+  if (box && scrollBox()) box.scrollTop = y;
   return card;
 }
 
@@ -126,7 +130,7 @@ function pageSettled(): Promise<void> {
     let same = 0;
     const tick = () => {
       restoreNow(); // while it settles, the page is kept at the position it is going to show
-      const h = document.documentElement.scrollHeight;
+      const h = scrollBox()?.scrollHeight ?? document.documentElement.scrollHeight;
       same = h === last ? same + 1 : 0;
       last = h;
       const age = performance.now() - t0;
@@ -271,7 +275,7 @@ export function setupTouchTransition(shouldRun: () => boolean = () => true) {
     // the card of the new page is copied once the page has settled (the old card covers everything meanwhile)
     pageSettled().then(async () => {
       try {
-        const newCard = await prepareCard(false, restoreTarget() || window.scrollY);
+        const newCard = await prepareCard(false, restoreTarget() || getScrollY());
         newCard.style.opacity = '';
         const out = oldCard.animate(outFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });
         const into = newCard.animate(inFrames(dir), { duration: DURATION, easing: LINEAR, fill: 'both' });

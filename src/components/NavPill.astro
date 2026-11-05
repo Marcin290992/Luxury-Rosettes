@@ -78,6 +78,7 @@ const isCurrent = (href: string) =>
   import { prefetch } from 'astro:prefetch';
   import { mount } from '../scripts/lifecycle';
   import { getLenis } from '../scripts/lenis';
+  import { getScrollY, onPageScroll, scrollBox } from '../scripts/scroller';
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
   mount(() => {
@@ -154,7 +155,7 @@ const isCurrent = (href: string) =>
         e.preventDefault();
         const lenis = getLenis();
         if (lenis) lenis.scrollTo(0);
-        else window.scrollTo({ top: 0, behavior: 'smooth' });
+        else (scrollBox() ?? window).scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -172,7 +173,7 @@ const isCurrent = (href: string) =>
       document.dispatchEvent(new CustomEvent('open-contact-modal'));
     };
     // Stronger glass once the page scrolls (readability over light sections)
-    const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > SCROLLED_AT);
+    const onScroll = () => nav.classList.toggle('is-scrolled', getScrollY() > SCROLLED_AT);
 
     btn.addEventListener('click', onToggle);
     document.addEventListener('click', onOutsideClick);
@@ -180,7 +181,7 @@ const isCurrent = (href: string) =>
     panel.addEventListener('click', onLinkClick);
     logo.addEventListener('click', onLinkClick);
     nav.addEventListener('click', onNavClick);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    const offScroll = onPageScroll(onScroll);
     onScroll();
 
     return () => {
@@ -192,7 +193,7 @@ const isCurrent = (href: string) =>
       window.clearTimeout(leaving);
       window.clearTimeout(warmTimer);
       nav.removeEventListener('click', onNavClick);
-      window.removeEventListener('scroll', onScroll);
+      offScroll();
     };
   });
 </script>

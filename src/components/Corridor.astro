@@ -80,6 +80,7 @@ const items = [
   import { createDolly, type Dolly } from '../scripts/dolly-gallery';
   import { clamp, smoothstep as smooth } from '../scripts/math';
   import { mount } from '../scripts/lifecycle';
+  import { onPageScroll } from '../scripts/scroller';
   import { CORRIDOR_SPACING, CORRIDOR_LEAD, CORRIDOR_PX_PER_STEP, CORRIDOR as C } from '../scripts/settings';
 
 
@@ -102,6 +103,7 @@ const items = [
 
     let dolly: Dolly | undefined;
     let onScroll: (() => void) | undefined;
+    let offScroll: (() => void) | undefined;
 
     // Plain sticky pin: the section is taller than the screen and the stage sticks while the page scrolls past.
     // The scroll position only sets the camera target; the dolly eases towards it.
@@ -179,14 +181,15 @@ const items = [
         const covered = clamp((-rect.top - travel) / window.innerHeight, 0, 1);
         stage.style.transform = covered > 0 ? `translate3d(0, ${(-covered * window.innerHeight * 0.18).toFixed(1)}px, 0)` : '';
       };
-      window.addEventListener('scroll', onScroll, { passive: true });
+      offScroll = onPageScroll(onScroll);
       window.addEventListener('resize', onScroll);
       onScroll();
     };
 
     const stop = () => {
       if (onScroll) {
-        window.removeEventListener('scroll', onScroll);
+        offScroll?.();
+        offScroll = undefined;
         window.removeEventListener('resize', onScroll);
       }
       dolly?.destroy();

@@ -54,6 +54,20 @@
 
 **Gdyby wracało:** to ten sam mechanizm, co przy WhyBengals: trigger zależny od pozycji elementu pod pinem musi mieć niższy `refreshPriority` niż pin, od którego zależy. Sprawdzić `ScrollTrigger.getAll()` po zmianie rozmiaru: start i koniec triggera nie mogą być ujemne.
 
+## Page transition na telefonie: skoki wysokości przy przewiniętej stronie
+
+**Objaw:** na Chrome Androidzie przy przejściu między stronami przewinięta strona „podskakiwała” o wysokość paska adresu zanim ruszyła animacja (karta rysowana za wysoko). Dlatego przejście było wyłączone.
+
+**Przyczyna:** natywny View Transition rysuje zrzut strony w przestrzeni największego okna (pasek adresu schowany), a ekran pokazuje okno z paskiem. Różnica pojawia się tylko wtedy, gdy przewija się cały dokument, bo to on chowa i pokazuje pasek.
+
+**Poprawka:** na urządzeniach dotykowych (`pointer: coarse`) dokument się nie przewija, tylko pełnoekranowy kontener `#scroll-root` (tak jak `.projects` w demo codegrid). Pasek adresu się nie rusza, okno ma stałą wysokość, więc zrzut nie ma czego przesuwać. ScrollTrigger dostaje ten kontener jako `scroller` (piny `fixed`), a odczyt i ustawianie scrolla idzie przez `scripts/scroller.ts`. Na laptopie nic się nie zmienia (`#scroll-root` ma tam `display: contents`, przewija okno i Lenis).
+
+**Pliki:** `src/scripts/scroller.ts`, `src/layouts/Layout.astro` (`#scroll-root`, CSS pod `@media (pointer: coarse)`), `src/scripts/lifecycle.ts` (import ustawiający domyślny scroller przed komponentami).
+
+**Pamiętaj przy nowym kodzie:** nie czytaj `window.scrollY` ani nie wołaj `window.scrollTo` — użyj `getScrollY` / `setScrollY` / `onPageScroll` ze `scripts/scroller.ts` (zdarzenie `scroll` kontenera nie dochodzi do `window` bez fazy przechwytywania). Przy `gsap.context()` selektor `scroller` nie działa (szuka tylko w zakresie kontekstu), dlatego domyślny scroller jest elementem, ustawianym po każdym swapie.
+
+**Skutek uboczny:** na telefonie pasek adresu nie chowa się już przy przewijaniu.
+
 ## Commity
 
 - `51afbee` — wyjście z About na telefonie/tablecie przez czarną warstwę

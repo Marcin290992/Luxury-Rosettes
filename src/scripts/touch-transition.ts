@@ -101,7 +101,7 @@ const frames = (n: number) =>
  * (black or white) before the copy filled in, which is exactly what made it look like a screenshot. The card is on the page from the start,
  * but practically transparent (so it is really painted), and only when it is ready it becomes opaque.
  */
-async function prepareCard(isolate: boolean, y?: number, wait = 150, settle = 2): Promise<HTMLElement> {
+async function prepareCard(isolate: boolean, y?: number, wait = 500, settle = 3): Promise<HTMLElement> {
   const card = makeCard(isolate, y);
   card.style.opacity = '0.01';
   const scope: ParentNode = card.shadowRoot ?? card;
@@ -128,7 +128,7 @@ function pageSettled(): Promise<void> {
       same = h === last ? same + 1 : 0;
       last = h;
       const age = performance.now() - t0;
-      if ((same >= 2 && age > 60) || age > 450) {
+      if ((same >= 4 && age > 150) || age > 900) {
         settleScrubs(); // the sections stand where this scroll position puts them, not on their way there
         resolve();
       }
@@ -225,7 +225,7 @@ export function setupTouchTransition(shouldRun: () => boolean = () => true) {
       // cards: the card of the old page is made and made ready while the next page is fetched; the router waits for both (its loader is
       // awaited), and the old page stays on screen, untouched, until the card is ready to take its place
       try {
-        const ready = prepareCard(true, undefined, 150, 1);
+        const ready = prepareCard(true);
         const ev = e as Event & { loader: () => Promise<void> };
         const original = ev.loader;
         ev.loader = async () => {
@@ -234,7 +234,7 @@ export function setupTouchTransition(shouldRun: () => boolean = () => true) {
             const card = await ready;
             makeNavCopy(); // above the card, in the same place as the real pill, which it replaces
             // it becomes opaque gradually over the identical page below: whatever the browser has not painted of it yet cannot show as a flash
-            await card.animate([{ opacity: 0.01 }, { opacity: 1 }], { duration: 80, easing: 'linear', fill: 'forwards' }).finished.catch(() => {});
+            await card.animate([{ opacity: 0.01 }, { opacity: 1 }], { duration: 160, easing: 'linear', fill: 'forwards' }).finished.catch(() => {});
             card.style.opacity = '';
             cardOld = card;
             running = true;
@@ -297,7 +297,7 @@ export function setupTouchTransition(shouldRun: () => boolean = () => true) {
     // the card of the new page is copied once the page has settled (the old card covers everything meanwhile)
     pageSettled().then(async () => {
       try {
-        const newCard = await prepareCard(false, restoreTarget() || getScrollY(), 150, 1);
+        const newCard = await prepareCard(false, restoreTarget() || getScrollY());
         newCard.style.opacity = '';
         const out = oldCard.animate(outFrames(), { duration: OLD_DURATION, easing: LINEAR, fill: 'both' });
         const into = newCard.animate(inFrames(), { duration: NEW_DURATION, easing: LINEAR, fill: 'both' });

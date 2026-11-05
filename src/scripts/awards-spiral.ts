@@ -14,7 +14,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import * as THREE from 'three';
-import { AWARDS_SPIRAL } from './settings';
+import { AWARDS_SPIRAL, WEBGL_ENABLED } from './settings';
 import { dbg, debugOn } from './debug-log';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
@@ -71,6 +71,7 @@ function up(t: number) {
 }
 
 export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
+  if (!WEBGL_ENABLED) return; // WebGL is switched off (settings.ts): the plain words, line and grid stay
   const mm = gsap.matchMedia();
 
   mm.add('(prefers-reduced-motion: no-preference)', () => {

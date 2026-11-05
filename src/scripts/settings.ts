@@ -1,6 +1,10 @@
 // Every tunable number of the scroll sequences, in one place. Times are in timeline seconds (one unit of a
 // scrubbed timeline is "one beat" of scrolling), distances in px / vw / screens as named.
 
+// TEMPORARY: false = the WebGL scenes (awards spiral, Why Bengals burn) are off and their plain fallbacks show. Used to test whether
+// WebGL causes the flicker at the start of the page transition on iPhone. Set back to true to turn them on.
+export const WEBGL_ENABLED = false;
+
 // ---- shared ----------------------------------------------------------------------------------------------------------
 export const MEDIA = {
   laptop: '(min-width: 1024px) and (prefers-reduced-motion: no-preference)',

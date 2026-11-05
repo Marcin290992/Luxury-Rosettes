@@ -112,7 +112,7 @@ const scenes = [
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { mount } from '../scripts/lifecycle';
-  import { EMBER } from '../scripts/settings';
+  import { EMBER, WEBGL_ENABLED } from '../scripts/settings';
   import type { EmberBurn } from '../scripts/ember-burn';
 
   gsap.registerPlugin(ScrollTrigger);
@@ -243,6 +243,7 @@ const scenes = [
       };
 
       const load = async () => {
+        if (!WEBGL_ENABLED) return; // WebGL is switched off (settings.ts): the fade-in fallback in apply() stays
         try {
           const module = await import('../scripts/ember-burn');
           photo.loading = 'eager';

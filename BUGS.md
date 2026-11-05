@@ -201,11 +201,11 @@ Natywny snapshot WebKit nadal migał (pasek menu i treść), a na Chrome nie. Dl
 1. Canvas jest niewidoczny (`opacity: 0`), dopóki wszystkie zdjęcia nie są załadowane, zdekodowane i wgrane na GPU. Potem wchodzi łagodnym przenikaniem (0,3 s).
 2. Każde zdjęcie jest dekodowane poza głównym wątkiem (`img.decode()`).
 3. Wgrywanie na GPU idzie po jednej teksturze na klatkę (`renderer.initTexture`), a nie wszystkie naraz.
-4. Bezpiecznik: po 1,5 s canvas pokazuje się w każdym razie, żeby zdjęcie, które się nie załaduje, nie trzymało spirali w ukryciu.
+4. Bezpiecznik, po którym canvas pokazuje się w każdym razie (żeby zdjęcie, które się nie załaduje, nie trzymało spirali w ukryciu), ma **10 s**. Pierwsza wersja miała 1,5 s i to był błąd: na pierwszej wizycie przez sieć komórkową dziewięć zdjęć po ok. 150 KB nie zdąża się pobrać w 1,5 s, więc canvas wchodził bez zdjęć i bez kadrowania, a zdjęcia wskakiwały później jedno na drugie. Problem wrócił właśnie dlatego ("raz na sesję", potem dobrze, bo zdjęcia są już w pamięci podręcznej). Test: symulacja opóźnienia 2,5 s na każde zdjęcie, canvas wchodzi dopiero po ich załadowaniu (ok. 3,8 s).
 
 Cena: na zimnej pamięci spirala pojawia się ok. 0,5 s później niż wcześniej (zmierzone w emulacji).
 
-**Co NIE było przyczyną (sprawdzone):** pozycja przewinięcia (zostaje na 0), zamiana canvasu na zdjęcie (różnica 0 pikseli), zwykła siatka zdjęć pod canvasem (jest ukryta do czasu włączenia spirali), wolne pobranie modułu three.js (ukrywanie wytrzymuje).
+**Co NIE było przyczyną (sprawdzone):** kompilacja shaderów na żądanie (`renderer.compileAsync` przed pokazaniem canvasu nie zmieniła zacięć po pojawieniu się spirali, wycofane), pozycja przewinięcia (zostaje na 0), zamiana canvasu na zdjęcie (różnica 0 pikseli), zwykła siatka zdjęć pod canvasem (jest ukryta do czasu włączenia spirali), wolne pobranie modułu three.js (ukrywanie wytrzymuje).
 
 **Gdyby wracało:** sprawdzić najpierw rozmiar tekstur (`getImage({ width: 1200 })` w `AwardsSpiral.astro`). Mniejsze zdjęcia (np. 800 px) to mniej pracy dla dekodera i GPU. Test: wyczyścić dane witryny w Safari i wejść na Awards po raz pierwszy.
 

@@ -167,7 +167,9 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         }),
       );
     };
-    const revealTimer = window.setTimeout(reveal, 1500); // safety: a photo that never loads must not keep the spiral away
+    // Safety only, for a request that never finishes: it must be much longer than the photos can take on a slow mobile connection (nine photos of
+    // ~150 KB on a first visit). With 1.5 s here the canvas came up on a phone before the photos had arrived, and they popped in over each other.
+    const revealTimer = window.setTimeout(reveal, 10000);
     const upload = (list: THREE.Texture[]) => {
       let i = 0;
       const step = () => {

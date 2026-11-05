@@ -115,8 +115,35 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       const offset = k === 2 ? 0 : k === 1 ? splits[0].chars.length : 0;
       parts.forEach((el, i) => (el.style.transitionDelay = `${(offset + i) * 0.05}s`));
     });
-    const watch = new IntersectionObserver(([entry]) => root.classList.toggle('is-in', entry.isIntersecting), { rootMargin: '-30% 0px' });
+    // `is-in` (the blur-in of the big words) starts only when the section is in view AND the page transition is over, so it does not run
+    // while the page is still sliding in at a reduced size. Astro keeps data-astro-transition on <html> for the length of the transition.
+    let seen = false;
+    let settled = !document.documentElement.hasAttribute('data-astro-transition');
+    const showWords = () => root.classList.toggle('is-in', seen && settled);
+    const watch = new IntersectionObserver(
+      ([entry]) => {
+        seen = entry.isIntersecting;
+        showWords();
+      },
+      { rootMargin: '-30% 0px' },
+    );
     watch.observe(root);
+    let settleTimer = 0;
+    let transitionWatch: MutationObserver | undefined;
+    if (!settled) {
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        transitionWatch?.disconnect();
+        window.clearTimeout(settleTimer);
+        showWords();
+      };
+      transitionWatch = new MutationObserver(() => {
+        if (!document.documentElement.hasAttribute('data-astro-transition')) done();
+      });
+      transitionWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-astro-transition'] });
+      settleTimer = window.setTimeout(done, 3000); // safety: never hold the words back longer than this
+    }
 
     // ---- three.js ----
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -501,7 +528,9 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
 
       // the words slide in from the sides, the line fades out as the grid arrives
       const px = whole * vh * total; // px scrolled in the track
-      const slide = clamp01((px + vh / 2) / (vh * 3.2));
+      // the big words slide in from the sides with the scroll; at the very top they are fully out of the screen (before, they started a
+      // sixth of the way in, so the first screen showed only the tail of the top word and the head of the bottom one)
+      const slide = clamp01(px / (vh * 3.2));
       top.style.transform = `translateX(calc(-100% + ${slide * 100}vw))`;
       bottom.style.transform = `translateX(calc(100% - ${slide * 100}vw))`;
       line.style.opacity = String(Math.max(0, 1 - 4 * H));
@@ -603,6 +632,8 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       scene3.removeEventListener('pointerleave', onLeave);
       trigger.kill();
       watch.disconnect();
+      transitionWatch?.disconnect();
+      window.clearTimeout(settleTimer);
       range.disconnect();
       splits.forEach((s) => s.revert());
       dropGrid();

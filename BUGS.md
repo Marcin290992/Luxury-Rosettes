@@ -171,6 +171,13 @@ Natywny snapshot WebKit nadal migał (pasek menu i treść), a na Chrome nie. Dl
 2. Canvas jest chowany (`opacity: 0`) dopiero w `loader`, po `img.decode()`, i jeszcze jedna klatka (`requestAnimationFrame`) czeka, żeby zamiana została namalowana przed zrzutem starej strony. Zdjęcie leży na canvasie, więc nigdy nie ma klatki bez obrazu.
 3. Renderer ma `preserveDrawingBuffer: true`, żeby bufor trzymał ostatnią klatkę do zrzutu.
 
+**WebGL na telefonach: jak to działa na iOS i na Androidzie (podsumowanie):**
+- **Wspólna zasada (oba systemy):** canvas WebGL w zrzucie przejścia jest składany osobno i na telefonach wychodził z inną wysokością niż reszta strony. Dlatego tuż przed przejściem canvas jest zamieniany na zwykłe zdjęcie swojej ostatniej klatki (`freeze` w `awards-spiral.ts`). Zdjęcie jest częścią strony jak każdy inny element, a ucieka tylko obraz, bo strona i tak odchodzi. `thaw` przywraca canvas, gdyby nawigacja się nie odbyła (po 5 s).
+- **Android (Chrome):** działa natywne przejście przeglądarki i samo synchroniczne zamrożenie wystarcza. Dla zrzutu stosowane jest obejście wysokości (`::view-transition-group(root) { height: 100lvh }` i `object-fit: cover` w `Layout.astro`), bo zrzut ma rozmiar największego okna (pasek adresu schowany). Strona przewija się wewnątrz `#scroll-root`, więc dokument nie przewija się nigdy i zrzut nie "podskakuje".
+- **iOS (Safari):** też natywne przejście (własne karty z `touch-transition.ts` zostały tylko jako test `?vt=cards`). Potrzebne było: (1) kolejność zamrożenia z wpisu wyżej (zdjęcie na wierzchu, canvas chowany po `decode()`), (2) `preserveDrawingBuffer: true`, (3) w `Layout.astro` blok `@supports (-webkit-touch-callout: none)`, który wyłącza obejście `100lvh` / `cover` tylko na iOS (zrzut nie jest tam tak wysoki, więc `cover` go rozciągał i strona na końcu przejścia "skakała" w rozmiarze), (4) menu bez własnej warstwy w przejściu (`view-transition-name: navbar` usunięte), bo osobna warstwa z `backdrop-filter` migała w WebKit.
+- **Przełącznik diagnostyczny:** `WEBGL_ENABLED` w `src/scripts/settings.ts` wyłącza obie sceny WebGL (spiralę Awards i palenie w Why Bengals) na czas testów; obie mają zapasową wersję bez WebGL. Domyślnie `true`.
+- **Why Bengals (palenie, `ember-burn.ts`):** też WebGL, ale nie było z nim problemu przy przejściu strony; tej sceny to nie dotyczyło.
+
 **Co NIE pomogło (nie wracać do tego):**
 - Czekanie przejścia na załadowanie tekstur spirali (`holdTransition` / `awaitHeld` w osobnym pliku): psuło przejście przy cofaniu na iOS, cofnięte.
 - Samo `preserveDrawingBuffer` oraz `visibilitychange` / wymuszony render po `astro:after-swap`: bez zmiany.

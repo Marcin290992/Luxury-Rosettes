@@ -498,66 +498,46 @@ const {
       clip-path: inset(0% round 0px);
     }
   }
-  /* Every device: the same swing, but cheaper. Animating clip-path (the rounded corners) cannot run on the GPU: every frame
-     the browser re-cuts a full-screen picture on the main thread, which is where the stutter came from (first seen on phones, then
-     on a desktop too). Transforms alone stay on the GPU, so the corners are not rounded; phones get a shorter animation (below,
-     laptops keep 1100ms). The page-out / page-in keyframes above (with clip-path) are no longer used. */
-  @media all {
-    ::view-transition-old(root) {
-      animation-name: page-out-lite;
-      animation-duration: 800ms;
+  /* The page change, ported from codegrid's View Transition demo (see src/codegrid-view-page-transition). The same timeline as its
+     playPageTransition(), written as CSS keyframes so Astro's router plays it by itself:
+       old page: shrinks to 85% (0 - 600ms), then slides up and out (600 - 1200ms)
+       new page: waits below the screen (0 - 600ms), slides up at 85% (600 - 1200ms), then grows back to 100% (1200 - 1800ms)
+     The dark ::view-transition background (#0d0b09) is the frame seen around the shrunken pages. Transforms only (GPU, no clip-path). */
+  ::view-transition-old(root) {
+    animation: 1200ms linear both page-out-lite;
+  }
+  ::view-transition-new(root) {
+    animation: 1800ms linear both page-in-lite;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    will-change: transform;
+  }
+  @keyframes page-out-lite {
+    0% {
+      transform: scale(1);
+      animation-timing-function: cubic-bezier(0.86, 0, 0.07, 1);
     }
-    ::view-transition-new(root) {
-      animation-name: page-in-lite;
-      animation-duration: 800ms;
+    50% {
+      transform: scale(0.85);
+      animation-timing-function: cubic-bezier(0.86, 0, 0.07, 1);
     }
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      will-change: transform;
-    }
-    @keyframes page-out-lite {
-      0% {
-        transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
-        animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
-      }
-      25% {
-        transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-        animation-timing-function: cubic-bezier(0.65, 0, 1, 1);
-      }
-      40% {
-        transform: translateX(calc(var(--vt-dir) * -45%)) translateY(8%) rotate(calc(var(--vt-dir) * -14deg)) scale(0.6);
-        animation-timing-function: linear;
-      }
-      55%,
-      100% {
-        transform: translateX(calc(var(--vt-dir) * -115%)) translateY(40%) rotate(calc(var(--vt-dir) * -30deg)) scale(0.6);
-      }
-    }
-    @keyframes page-in-lite {
-      0%,
-      25% {
-        transform: translateX(calc(var(--vt-dir) * 115%)) translateY(40%) rotate(calc(var(--vt-dir) * 30deg)) scale(0.6);
-        animation-timing-function: linear;
-      }
-      40% {
-        transform: translateX(calc(var(--vt-dir) * 45%)) translateY(8%) rotate(calc(var(--vt-dir) * 14deg)) scale(0.6);
-        animation-timing-function: cubic-bezier(0, 0, 0.35, 1);
-      }
-      55%,
-      66% {
-        transform: translateX(0%) translateY(0%) rotate(0deg) scale(0.6);
-        animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
-      }
-      100% {
-        transform: translateX(0%) translateY(0%) rotate(0deg) scale(1);
-      }
+    100% {
+      transform: translateY(-100%) scale(0.85);
     }
   }
-  /* a laptop / desktop keeps a slower tempo of the swing (1100ms), now also transform-only */
-  @media (pointer: fine) and (min-width: 1025px) {
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      animation-duration: 1100ms;
+  @keyframes page-in-lite {
+    0%,
+    33.333% {
+      transform: translateY(100%) scale(0.85);
+      animation-timing-function: cubic-bezier(0.86, 0, 0.07, 1);
+    }
+    66.667% {
+      transform: translateY(0) scale(0.85);
+      animation-timing-function: cubic-bezier(0.86, 0, 0.07, 1);
+    }
+    100% {
+      transform: translateY(0) scale(1);
     }
   }
   /* ---- the own card transition on touch devices (scripts/touch-transition.ts) ---- */

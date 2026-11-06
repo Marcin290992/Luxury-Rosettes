@@ -16,7 +16,7 @@ import type * as ThreeNS from 'three';
 
 export interface CloudRevealOptions {
   paper: HTMLCanvasElement; // the sheet that dissolves, drawn at the size of the host
-  origin?: { x: number; y: number }; // where it starts, 0..1 (default: the middle)
+  origin?: { x: number; y: number }; // where it starts, 0..1 (default: the middle); it may lie off the screen (y > 1 = below it): the cloud then rises as a dome
   color?: string; // the colour of the page under the sheet, as '#rrggbb': the fringe takes it
   softness?: number; // half the width of the feathered edge, in screen heights
   billow?: number; // how far the edge puffs in and out, in screen heights
@@ -180,6 +180,7 @@ export async function createCloudReveal(host: HTMLElement, options: CloudRevealO
   let raf = 0;
   let progress = 0;
   let reach = 1;
+  let startRadius = 0;
   let paperTexture: ThreeNS.CanvasTexture | null = null;
 
   const aspectVector = (width: number, height: number) => {
@@ -201,10 +202,18 @@ export async function createCloudReveal(host: HTMLElement, options: CloudRevealO
     return best + soft * 2 + billow * 1.1 + 0.02;
   };
 
+  // the radius at which the first pixel of the sheet is touched: the distance from the origin to the nearest point of the screen, less the
+  // feathered band and the puffs (before that nothing shows, and the scroll would be spent on nothing)
+  const nearest = (aspect: ThreeNS.Vector2) => {
+    const dx = (clamp(origin.x, 0, 1) - origin.x) * aspect.x;
+    const dy = (clamp(origin.y, 0, 1) - origin.y) * aspect.y;
+    return Math.max(0, Math.hypot(dx, dy) - soft - billow);
+  };
+
   const draw = () => {
     raf = 0;
     if (destroyed) return;
-    material.uniforms.uRadius.value = progress > 0.0005 ? progress * reach : 0;
+    material.uniforms.uRadius.value = progress > 0.0005 ? startRadius + progress * (reach - startRadius) : 0;
     renderer.render(scene, camera);
   };
   const schedule = () => {
@@ -230,6 +239,7 @@ export async function createCloudReveal(host: HTMLElement, options: CloudRevealO
     const aspect = aspectVector(width, height);
     material.uniforms.uAspect.value.copy(aspect);
     reach = farthest(aspect);
+    startRadius = nearest(aspect);
     schedule();
   };
 

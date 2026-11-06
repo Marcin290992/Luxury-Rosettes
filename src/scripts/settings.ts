@@ -271,10 +271,10 @@ export const CORRIDOR = {
 // Sizes are in screen heights. For a thicker, softer edge: raise softness; for a more ragged one: raise billow; for bigger clouds: lower scale.
 // The fringe takes the colour of the page under the sheet (the section's own --ink-warm, read in WhyBengals.astro).
 export const CLOUDS = {
-  origin: { x: 0.5, y: 0.5 }, // where it starts dissolving (the middle of the word)
-  softness: 0.05, // the width of the feathered edge (the fringe is about three times this)
-  billow: 0.1, // how far the edge puffs in and out
-  scale: 3, // how many puffs fit in a screen height
+  origin: { x: 0.5, y: 1.4 }, // where it starts, as shares of the screen: below the bottom edge, so that a low mound rises first and grows into a dome
+  softness: 0.13, // the width of the feathered edge (the fringe is about three times this)
+  billow: 0.2, // how far the edge puffs in and out
+  scale: 2.2, // how many puffs fit in a screen height
   maxPixelRatio: 1, // the canvas never renders sharper than this: it is a full-screen shader, and a soft edge needs no more
   loadAhead: 'top 150%', // the three.js chunk is fetched when the section is this close
 };

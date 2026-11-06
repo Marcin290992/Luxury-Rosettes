@@ -82,6 +82,7 @@ const isCurrent = (href: string) =>
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
   const AT_TOP = 40; // px: scrolled less than this counts as the top of the page
+  const FOLD_MS = 340; // the menu folds in 0.3s (see .nav-content below); the page transition starts right after
 
   mount(() => {
     const nav = document.getElementById('main-nav')!;
@@ -124,9 +125,9 @@ const isCurrent = (href: string) =>
     const onToggle = () => {
       const open = !nav.classList.contains('expanded');
       setOpen(open);
-      // the pages are fetched once the menu has finished opening (~1s), not while it animates: the downloads competed with the animation on a phone
+      // the pages are fetched once the menu has nearly finished opening, not while it animates: the downloads competed with the animation on a phone
       window.clearTimeout(warmTimer);
-      if (open) warmTimer = window.setTimeout(warm, 1100);
+      if (open) warmTimer = window.setTimeout(warm, 800);
     };
     // Close on outside click, Escape, or after choosing a link
     const onOutsideClick = (e: MouseEvent) => {
@@ -139,16 +140,16 @@ const isCurrent = (href: string) =>
         btn.focus();
       }
     };
-    // A link in the menu or the logo: the menu folds away first (its own animation, ~0.6s), and only then the page transition
+    // A link in the menu or the logo: the menu folds away first (its own animation, ~0.3s), and only then the page transition
     // starts. A link to the page you are already on, from a scrolled page, plays the same transition (to a fresh copy of the page, at its
     // top) instead of scrolling back: quicker and more of a gesture. From the top of the page it does nothing.
     let leaving = 0;
     const leave = (href: string, wasOpen: boolean) => {
       document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open: false, leaving: true } })); // stays held until the page is gone
       window.clearTimeout(leaving);
-      // the menu's fold takes ~0.6s and must be finished before the transition starts: the nav pill is its own layer in the transition and
-      // freezes exactly as it is at that moment (a shorter wait left the panel hanging half-open under the pill for the whole transition)
-      leaving = window.setTimeout(() => navigate(href), wasOpen ? 650 : 0);
+      // the menu folds first (0.3s, quicker than it opens): the transition shows the page as it is when it starts, so a half-open panel would
+      // shrink away with it
+      leaving = window.setTimeout(() => navigate(href), wasOpen ? FOLD_MS : 0);
     };
     const onLinkClick = (e: MouseEvent) => {
       const link = (e.target as Element).closest('a'); // a click on an icon inside a link counts as the link
@@ -191,6 +192,14 @@ const isCurrent = (href: string) =>
     document.addEventListener('click', onOutsideClick);
     document.addEventListener('keydown', onKeydown);
     panel.addEventListener('click', onLinkClick);
+    // the page of a link is fetched the moment the finger is on it, ~100ms before the click: if it was not fetched yet, the transition waits for it
+    const onLinkDown = (e: Event) => {
+      const a = (e.target as Element).closest<HTMLAnchorElement>('a[href]');
+      if (!a) return;
+      const u = new URL(a.href, location.href);
+      if (u.origin === location.origin && u.pathname !== location.pathname) prefetch(u.pathname + u.search, { ignoreSlowConnection: true });
+    };
+    panel.addEventListener('pointerdown', onLinkDown);
     logo.addEventListener('click', onLinkClick);
     nav.addEventListener('click', onNavClick);
     const offScroll = onPageScroll(onScroll);
@@ -201,6 +210,7 @@ const isCurrent = (href: string) =>
       document.removeEventListener('click', onOutsideClick);
       document.removeEventListener('keydown', onKeydown);
       panel.removeEventListener('click', onLinkClick);
+      panel.removeEventListener('pointerdown', onLinkDown);
       logo.removeEventListener('click', onLinkClick);
       window.clearTimeout(leaving);
       window.clearTimeout(warmTimer);
@@ -228,7 +238,7 @@ const isCurrent = (href: string) =>
     border: 1px solid var(--border);
     border-radius: 34px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
-    transition: background 0.4s ease, border-radius 0.5s var(--ease);
+    transition: background 0.25s ease, border-radius 0.3s var(--ease); /* closing: quick (the opening has its own, below) */
   }
 
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
@@ -267,6 +277,7 @@ const isCurrent = (href: string) =>
 
   .nav-pill.expanded {
     border-radius: 28px;
+    transition: background 0.4s ease, border-radius 0.5s var(--ease); /* opening */
   }
 
   .nav-header {
@@ -342,9 +353,12 @@ const isCurrent = (href: string) =>
   .nav-content {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 0.6s var(--ease);
+    transition: grid-template-rows 0.3s var(--ease); /* closing: quick, so that a chosen link starts its page transition soon */
   }
-  .expanded .nav-content { grid-template-rows: 1fr; }
+  .expanded .nav-content {
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.6s var(--ease); /* opening */
+  }
 
   .nav-body::-webkit-scrollbar { display: none; }
 

@@ -127,6 +127,10 @@ const {
       linear-gradient(to bottom, rgba(8, 7, 6, 0.55) 0%, rgba(8, 7, 6, 0.2) 35%, rgba(8, 7, 6, 0.65) 100%),
       rgba(8, 7, 6, 0.3);
 
+    /* the space between one section and the next (a section's padding, top and bottom): one value for the whole page, tighter on a phone and
+       a tablet, where 12vh of a tall screen was a very wide gap */
+    --space: clamp(4rem, 12vh, 9rem);
+
     /* hover: how fast every button and link answers the pointer; a word's letters slide one after another (menu, LetterButton) */
     --hover-time: 0.32s;
     --hover-stagger: 0.012s;
@@ -144,6 +148,11 @@ const {
     margin: 0;
     border: 0;
     border-top: 1px dashed rgba(26, 26, 26, 0.4);
+  }
+  @media (max-width: 1023px) {
+    :root {
+      --space: clamp(3rem, 8vh, 5rem);
+    }
   }
   /* Lenis's recommended base styles: native smooth-scroll must not fight the JS one */
   html.lenis,

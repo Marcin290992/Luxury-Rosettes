@@ -257,7 +257,7 @@ const scenes = [
 
   /* ---- plain stack: photo, heading, scenes (no script / reduced motion) ---- */
   .why-track {
-    padding: clamp(4rem, 12vh, 9rem) 1.5rem 0;
+    padding: var(--space) 1.5rem 0;
   }
   .why-stage {
     max-width: 72rem;
@@ -332,13 +332,13 @@ const scenes = [
   .why-more {
     background: var(--ink-warm);
     color: var(--cream);
-    padding: clamp(3rem, 8vh, 6rem) 1.5rem clamp(5rem, 14vh, 10rem);
+    padding: var(--space) 1.5rem;
     overflow-x: clip; /* the rings around the spots reach past the edge of a narrow screen; clip, so nothing is made to scroll */
   }
   .why-scene {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    padding: clamp(2rem, 8vh, 5rem) 0;
+    padding: calc(var(--space) / 2) 0; /* two scenes are one space apart */
   }
   /* the cell the spot lives in: the photo fills it, the ring is a little larger */
   .why-spot {
@@ -547,8 +547,11 @@ const scenes = [
   .why[data-live] .eyebrow {
     margin-bottom: 0.8rem;
   }
+  .why[data-live] {
+    --why-h2: clamp(3.4rem, 12vw, 11rem); /* the size of the big heading (its place is needed below) */
+  }
   .why[data-live] h2 {
-    font-size: clamp(3.4rem, 12vw, 11rem);
+    font-size: var(--why-h2);
     line-height: 0.9;
     letter-spacing: -0.01em;
     text-transform: uppercase;
@@ -572,6 +575,17 @@ const scenes = [
     margin-top: -30vh;
     margin-top: -30lvh;
     padding-top: 0;
+  }
+  /* On a phone and a tablet the heading is at the top of the screen and the rest of the screen is empty: the first photo is pulled up to
+     one space under the heading (the heading's top padding, its eyebrow and its two lines are added up here), and the pinned part is shorter. */
+  @media (max-width: 1023px) {
+    .why[data-live] .why-more {
+      margin-top: calc(var(--space) + max(6.5rem, 14vh) + 1.7rem + 1.8 * var(--why-h2) - 100vh);
+      margin-top: calc(var(--space) + max(6.5rem, 14vh) + 1.7rem + 1.8 * var(--why-h2) - 100lvh);
+    }
+    .why[data-live] .why-track {
+      --screens: 6.5;
+    }
   }
   .why[data-live] .why-scene:first-child {
     padding-top: 0;

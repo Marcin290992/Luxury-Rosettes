@@ -82,6 +82,7 @@ const isCurrent = (href: string) =>
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
   const AT_TOP = 40; // px: scrolled less than this counts as the top of the page
+  const TAP_MS = 440; // on a touch screen (no hover) the chosen link plays its hover (see .chosen below) before the page transition starts
 
   mount(() => {
     const nav = document.getElementById('main-nav')!;
@@ -93,20 +94,42 @@ const isCurrent = (href: string) =>
     // one span per letter, like the server-rendered label, so the hover effect works on both words
     // (cloned, so the letters keep Astro's scoped-style attribute)
     const proto = word.firstElementChild!.cloneNode(false) as HTMLElement;
-    const setLabel = (label: string) => {
-      word.replaceChildren(...[...label].map((ch, n) => {
-        const el = proto.cloneNode(false) as HTMLElement;
-        el.style.setProperty('--n', String(n));
-        el.dataset.ch = ch;
-        el.textContent = ch;
-        return el;
-      }));
+    // a letter shows `ch`; its gold copy (the one that slides in from below on a hover) is `copy`
+    const letter = (ch: string, copy: string, n: number) => {
+      const el = proto.cloneNode(false) as HTMLElement;
+      el.style.setProperty('--n', String(n));
+      el.dataset.ch = copy;
+      el.textContent = ch;
+      return el;
+    };
+    let label = word.textContent ?? 'Menu'; // the label that is shown, or that the running roll is going to
+    let rollTimer = 0;
+    const setLabel = (next: string) => {
+      window.clearTimeout(rollTimer);
+      label = next;
+      word.classList.remove('rolling', 'reset');
+      word.replaceChildren(...[...next].map((ch, n) => letter(ch, ch, n)));
+    };
+    // Menu <-> Close uses the animation of a hover: the old letters slide up one after another and the new word comes in from below, as the
+    // gold copy of each letter does on a hover. At the end the plain letters of the new label are put in the same place.
+    const rollLabel = (next: string) => {
+      if (next === label) return;
+      setLabel(label); // a roll that is still running is finished first
+      const from = [...label.padEnd(next.length, ' ')];
+      const to = [...next.padEnd(label.length, ' ')];
+      word.classList.add('reset'); // every letter starts at its resting place, even if the pointer is on the button (a hover has them up already)
+      word.replaceChildren(...from.map((ch, n) => letter(ch, to[n], n)));
+      void word.offsetWidth;
+      word.classList.remove('reset');
+      word.classList.add('rolling');
+      label = next;
+      rollTimer = window.setTimeout(() => setLabel(next), 600 + from.length * 30 + 60); // the letter transition (0.6s) and the last letter's delay
     };
 
     const setOpen = (open: boolean) => {
       nav.classList.toggle('expanded', open);
       btn.setAttribute('aria-expanded', String(open));
-      setLabel(open ? 'Close' : 'Menu');
+      rollLabel(open ? 'Close' : 'Menu');
       panel.toggleAttribute('inert', !open);
       // the scenes that follow the scroll hold still while the menu is open (see `nav-menu` in awards-spiral.ts)
       document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open, leaving: false } }));
@@ -144,6 +167,7 @@ const isCurrent = (href: string) =>
     // picture of the old page, which is taken a moment later). A link to the page you are already on, from a scrolled page, plays the same
     // transition (to a fresh copy of the page, at its top) instead of scrolling back; from the top of the page it does nothing.
     let giveUp = 0;
+    let go = 0;
     const leave = (href: string, link: HTMLElement) => {
       // everything that is still animating in the menu (the letters of a hover, the links coming in one after another) finishes at once, in
       // its final state, so that the picture of the old page is never taken with a half-done animation; the chosen link shows its finished hover
@@ -157,7 +181,10 @@ const isCurrent = (href: string) =>
         link.classList.remove('chosen');
         setOpen(false);
       }, 6000);
-      navigate(href);
+      // a touch screen has no hover to have been seen: the chosen link plays it now (the letters slide up, the gold copy comes in), and the page
+      // transition starts when it has finished. With a mouse the hover has been on the link already, so the transition starts at once.
+      const plays = !window.matchMedia('(hover: hover)').matches && link.querySelector('.nav-char');
+      go = window.setTimeout(() => navigate(href), plays ? TAP_MS : 0);
     };
     const onLinkClick = (e: MouseEvent) => {
       const link = (e.target as Element).closest('a'); // a click on an icon inside a link counts as the link
@@ -217,7 +244,9 @@ const isCurrent = (href: string) =>
       panel.removeEventListener('click', onLinkClick);
       panel.removeEventListener('pointerdown', onLinkDown);
       logo.removeEventListener('click', onLinkClick);
+      window.clearTimeout(rollTimer);
       window.clearTimeout(giveUp);
+      window.clearTimeout(go);
       window.clearTimeout(warmTimer);
       nav.removeEventListener('click', onNavClick);
       offScroll();
@@ -450,6 +479,12 @@ const isCurrent = (href: string) =>
     text-decoration: none;
   }
   .nav-word { display: block; white-space: pre; }
+  /* Menu <-> Close: the same slide as a hover, whatever the pointer is doing (see rollLabel in the script) */
+  .nav-word.reset .nav-char { transition: none !important; transform: translateY(0) !important; }
+  .nav-word.rolling .nav-char { transform: translateY(-100%); }
+  @media (hover: none) {
+    .nav-word.rolling .nav-char::after { color: var(--text); } /* a touch screen has no hover to end in gold: the new word comes in plain */
+  }
   .nav-char {
     display: inline-block;
     position: relative;
@@ -482,6 +517,13 @@ const isCurrent = (href: string) =>
     pointer-events: none;
   }
   .nav-pill.leaving .chosen .nav-char { transform: translateY(-100%); }
+  /* ...except that on a touch screen it is not finished yet but plays, quicker than a real hover (0.35s, 12ms between letters) */
+  @media (hover: none) {
+    .nav-pill.leaving .chosen .nav-char {
+      transition: transform 0.35s var(--ease) !important;
+      transition-delay: calc(var(--n) * 0.012s) !important;
+    }
+  }
 
   .nav-footer {
     margin: 0;

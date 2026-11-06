@@ -38,7 +38,7 @@
 2. Linia bazowa napisu w canvasie liczona z metryk fontu (`fontBoundingBoxAscent` i `fontBoundingBoxDescent`), tekst z `textBaseline='alphabetic'`.
 3. `show(true)` rysuje canvas natychmiast, zanim zniknie prawdziwe zdjęcie.
 
-**Pliki:** `src/scripts/ember-burn.ts` (`FIELD_FRAGMENT`, `show`), `src/components/WhyBengals.astro` (`bake`, ease palenia).
+**Pliki:** `src/scripts/ember-burn.ts` (`FIELD_FRAGMENT`, `show`), `src/components/WhyBengals.astro` (`bake`, ease palenia). (Palenie zostało potem zastąpione miękkimi chmurami, `src/scripts/cloud-reveal.ts`; opis wyżej dotyczy poprzedniej wersji, a `bake` i `show` zostały.)
 
 **Gdyby wracało:** przyspieszony start → `power2.in` zamiast `power1.in`. Skok zdjęcia w literach → sprawdzić zgodność kadru (`object-position` w CSS i `0.35` w `drawImage`).
 
@@ -186,7 +186,7 @@ Natywny snapshot WebKit nadal migał (pasek menu i treść), a na Chrome nie. Dl
 - **Android (Chrome):** działa natywne przejście przeglądarki i samo synchroniczne zamrożenie wystarcza. Dla zrzutu stosowane jest obejście wysokości (`::view-transition-group(root) { height: 100lvh }` i `object-fit: cover` w `Layout.astro`), bo zrzut ma rozmiar największego okna (pasek adresu schowany). Strona przewija się wewnątrz `#scroll-root`, więc dokument nie przewija się nigdy i zrzut nie "podskakuje".
 - **iOS (Safari):** też natywne przejście (własne karty z `touch-transition.ts` zostały tylko jako test `?vt=cards`). Potrzebne było: (1) kolejność zamrożenia z wpisu wyżej (zdjęcie na wierzchu, canvas chowany po `decode()`), (2) w `Layout.astro` blok `@supports (-webkit-touch-callout: none)`, który wyłącza obejście `100lvh` / `cover` tylko na iOS (zrzut nie jest tam tak wysoki, więc `cover` go rozciągał i strona na końcu przejścia "skakała" w rozmiarze), (3) menu bez własnej warstwy w przejściu (`view-transition-name: navbar` usunięte), bo osobna warstwa z `backdrop-filter` migała w WebKit.
 - **Przełącznik diagnostyczny:** `WEBGL_ENABLED` w `src/scripts/settings.ts` wyłącza obie sceny WebGL (spiralę Awards i palenie w Why Bengals) na czas testów; obie mają zapasową wersję bez WebGL. Domyślnie `true`.
-- **Why Bengals (palenie, `ember-burn.ts`):** też WebGL, ale nie było z nim problemu przy przejściu strony; tej sceny to nie dotyczyło.
+- **Why Bengals (palenie, wtedy `ember-burn.ts`, teraz chmury w `cloud-reveal.ts`):** też WebGL, ale nie było z nim problemu przy przejściu strony; tej sceny to nie dotyczyło.
 
 **Co NIE pomogło (nie wracać do tego):**
 - Czekanie przejścia na załadowanie tekstur spirali (`holdTransition` / `awaitHeld` w osobnym pliku): psuło przejście przy cofaniu na iOS, cofnięte.

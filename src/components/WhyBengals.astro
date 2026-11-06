@@ -22,7 +22,7 @@ const scenes = [
   Pinned sequence, then a long scroll. The photo starts as two tiles, the left one lower and the right one higher, a small
   gap between them. First the tiles level out, then the gap closes and they are one photo, which grows to fill the whole
   screen, and then the paper closes in around the word BENGALS (the letters shrink from huge), leaving the photo only
-  inside the letters. The paper burns away from the middle and shows the dark page with the big heading; the pin ends
+  inside the letters. The paper dissolves into soft clouds from the middle and shows the dark page with the big heading; the pin ends
   and the page goes on scrolling down: framed photos drift in parallax and open with a clip-path as they arrive, each
   beside one of the four traits.
   Without the script (or with reduced motion): the photo is whole and everything just stacks.
@@ -54,8 +54,8 @@ const scenes = [
         <rect class="why-knock-paper" width="100%" height="100%" mask="url(#why-knock-mask)"></rect>
       </svg>
 
-      <!-- What the burn reveals: the first screen of the dark page. In the pinned chapter it sits under the photo and under
-           the ember canvas; without the script it is simply the heading that follows the photo. -->
+      <!-- What the clouds reveal: the first screen of the dark page. In the pinned chapter it sits under the photo and under
+           the clouds canvas; without the script it is simply the heading that follows the photo. -->
       <div class="why-copy">
         <header class="why-head">
           <p class="eyebrow">Bengal excellence</p>
@@ -112,8 +112,8 @@ const scenes = [
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { mount } from '../scripts/lifecycle';
-  import { EMBER, WEBGL_ENABLED } from '../scripts/settings';
-  import type { EmberBurn } from '../scripts/ember-burn';
+  import { CLOUDS, WEBGL_ENABLED } from '../scripts/settings';
+  import type { CloudReveal } from '../scripts/cloud-reveal';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -172,17 +172,17 @@ const scenes = [
 
       gsap.set(knock, { opacity: 0 });
 
-      // 5. the ember. When the word has settled the paper catches fire in the middle and burns away, and the dark page under
-      //    it (the heading) shows through the hole. The burn is the scroll position: scrub it back and the paper grows
-      //    back. three.js and the burn shader are fetched shortly before the section arrives.
+      // 5. the clouds. When the word has settled the paper starts to dissolve in the middle into soft clouds, and the dark page under
+      //    it (the heading) shows through. The dissolve is the scroll position: scrub it back and the paper comes back.
+      //    three.js and the shader are fetched shortly before the section arrives.
       const copy = section.querySelector<HTMLElement>('.why-copy')!;
       const eyebrow = copy.querySelector<HTMLElement>('.eyebrow')!;
       const headLines = gsap.utils.toArray<HTMLElement>('.why-line > span', copy);
       const photo = halfL.querySelector<HTMLImageElement>('img')!;
-      let ember: EmberBurn | null = null;
+      let clouds: CloudReveal | null = null;
       let disposed = false;
       const swap = { v: 0 }; // 0 = the real photo and word are on screen, 1 = the canvas has taken over
-      const burn = { p: 0 }; // 0 = untouched, 1 = burnt away
+      const dissolve = { p: 0 }; // 0 = untouched, 1 = gone
 
       gsap.set(eyebrow, { autoAlpha: 0, y: 12 });
       gsap.set(headLines, { yPercent: 115 }); // each line waits below its own window
@@ -191,14 +191,14 @@ const scenes = [
       const apply = () => {
         const swapped = swap.v > 0.5;
         copy.style.visibility = swapped ? 'visible' : 'hidden';
-        if (ember) {
+        if (clouds) {
           copy.style.opacity = '1';
-          // the canvas shows the finished picture, so the real photo and word step aside; the canvas hides itself when burnt
+          // the canvas shows the finished picture, so the real photo and word step aside; the canvas hides itself when it is gone
           img.style.visibility = swapped ? 'hidden' : '';
           knock.style.visibility = swapped ? 'hidden' : '';
-          ember.show(swapped && burn.p < 0.999);
+          clouds.show(swapped && dissolve.p < 0.999);
         } else {
-          copy.style.opacity = String(burn.p); // no WebGL (or not loaded yet): the page simply fades in over the word
+          copy.style.opacity = String(dissolve.p); // no WebGL (or not loaded yet): the page simply fades in over the word
         }
       };
 
@@ -206,7 +206,7 @@ const scenes = [
       const bake = (): HTMLCanvasElement => {
         const w = stage.clientWidth;
         const h = stage.clientHeight;
-        const r = Math.min(window.devicePixelRatio || 1, EMBER.maxPixelRatio);
+        const r = Math.min(window.devicePixelRatio || 1, CLOUDS.maxPixelRatio);
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(w * r);
         canvas.height = Math.round(h * r);
@@ -245,46 +245,37 @@ const scenes = [
       const load = async () => {
         if (!WEBGL_ENABLED) return; // WebGL is switched off (settings.ts): the fade-in fallback in apply() stays
         try {
-          const module = await import('../scripts/ember-burn');
+          const module = await import('../scripts/cloud-reveal');
           photo.loading = 'eager';
           await Promise.all([photo.decode().catch(() => undefined), document.fonts.ready]);
           if (disposed) return;
-          const created = await module.createEmberBurn(stage, {
+          const created = await module.createCloudReveal(stage, {
             paper: bake(),
-            origin: EMBER.origin,
-            emberColor: EMBER.color,
-            charColor: EMBER.char,
-            glow: EMBER.glow,
-            edge: EMBER.edge,
-            roughness: EMBER.roughness,
-            detail: EMBER.detail,
-            scorch: EMBER.scorch,
-            gold: EMBER.gold,
-            lobes: EMBER.lobes,
-            charWidth: EMBER.charWidth,
-            speckle: EMBER.speckle,
-            flicker: EMBER.flicker,
-            sparks: EMBER.sparks,
-            maxPixelRatio: EMBER.maxPixelRatio,
+            origin: CLOUDS.origin,
+            color: getComputedStyle(section).getPropertyValue('--ink-warm').trim() || '#1a1410', // the page under the sheet
+            softness: CLOUDS.softness,
+            billow: CLOUDS.billow,
+            scale: CLOUDS.scale,
+            maxPixelRatio: CLOUDS.maxPixelRatio,
           });
           if (disposed) {
             created?.destroy();
             return;
           }
-          ember = created;
-          ember?.setProgress(burn.p);
+          clouds = created;
+          clouds?.setProgress(dissolve.p);
           apply();
         } catch {
-          ember = null; // the fade-in fallback in apply() takes over
+          clouds = null; // the fade-in fallback in apply() takes over
         }
       };
-      ScrollTrigger.create({ trigger: section, start: EMBER.loadAhead, once: true, refreshPriority: -1, onEnter: () => void load() });
+      ScrollTrigger.create({ trigger: section, start: CLOUDS.loadAhead, once: true, refreshPriority: -1, onEnter: () => void load() });
 
       // sizes can change: the canvas and the flat picture are made again
       const onRefresh = () => {
-        if (!ember) return;
-        ember.resize();
-        ember.setPaper(bake());
+        if (!clouds) return;
+        clouds.resize();
+        clouds.setPaper(bake());
       };
       ScrollTrigger.addEventListener('refresh', onRefresh);
 
@@ -293,11 +284,11 @@ const scenes = [
       tl.to(zoom, { s: 1, duration: 1.5, ease: 'power3.inOut', onUpdate: place, immediateRender: false }, '<');
       tl.to({}, { duration: 0.4 }); // a beat on the finished word
       tl.to(swap, { v: 1, duration: 0.02, onUpdate: apply }, '>');
-      tl.addLabel('burn');
-      tl.to(burn, { p: 1, duration: 2, ease: 'power1.in', onUpdate: () => { ember?.setProgress(burn.p); apply(); } }, 'burn');
-      // the heading waits until the burn has opened most of the screen, then rises into its lines one after the other
-      tl.to(eyebrow, { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, 'burn+=1.5');
-      tl.to(headLines, { yPercent: 0, duration: 1.5, stagger: 0.3, ease: 'power3.out' }, 'burn+=1.7');
+      tl.addLabel('dissolve');
+      tl.to(dissolve, { p: 1, duration: 2, ease: 'power1.in', onUpdate: () => { clouds?.setProgress(dissolve.p); apply(); } }, 'dissolve');
+      // the heading waits until the clouds have opened most of the screen, then rises into its lines one after the other
+      tl.to(eyebrow, { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, 'dissolve+=1.5');
+      tl.to(headLines, { yPercent: 0, duration: 1.5, stagger: 0.3, ease: 'power3.out' }, 'dissolve+=1.7');
       tl.to({}, { duration: 0.9 }); // a rest on the heading before the pin lets go and the page scrolls on
 
       // 6. the long scroll. Each scene is a photo cut to the shape of a spot of the coat, beside one trait. A clip-path opens the
@@ -342,8 +333,8 @@ const scenes = [
       });
       return () => {
         disposed = true;
-        ember?.destroy();
-        ember = null;
+        clouds?.destroy();
+        clouds = null;
         ScrollTrigger.removeEventListener('refresh', place);
         ScrollTrigger.removeEventListener('refresh', onRefresh);
         copy.style.visibility = '';
@@ -621,7 +612,7 @@ const scenes = [
     letter-spacing: -0.02em;
   }
 
-  /* What the burn reveals: the first screen of the dark page, under the photo and the ember canvas (hidden until the
+  /* What the clouds reveal: the first screen of the dark page, under the photo and the clouds canvas (hidden until the
      script lets the photo give way, so it never shows around the small tiles). A huge heading at the top left. */
   .why[data-live] .why-copy {
     position: absolute;

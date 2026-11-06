@@ -1,7 +1,7 @@
 // Every tunable number of the scroll sequences, in one place. Times are in timeline seconds (one unit of a
 // scrubbed timeline is "one beat" of scrolling), distances in px / vw / screens as named.
 
-// TEMPORARY: false = the WebGL scenes (awards spiral, Why Bengals burn) are off and their plain fallbacks show. Used to test whether
+// TEMPORARY: false = the WebGL scenes (awards spiral, Why Bengals clouds) are off and their plain fallbacks show. Used to test whether
 // WebGL causes the flicker at the start of the page transition on iPhone. Set back to true to turn them on.
 export const WEBGL_ENABLED = true;
 
@@ -267,26 +267,15 @@ export const CORRIDOR = {
   },
 };
 
-// ---- ember burn (Why Bengals: the paper burns away and the traits show through) ---------------------------------------
-// The look is gold leaf rather than flame: a thin steady line of the site's gold that eats the paper away along a soft,
-// slightly wavy edge, with a narrow dark seam behind it. To turn it back into a fire: color '#e3a130', roughness 0.5,
-// scorch 0.7, charWidth 1, speckle 1, flicker 1, sparks 0.6.
-export const EMBER = {
-  color: '#d4af37', // the glowing edge: the site's gold
-  char: '#1a1410', // the seam behind it (the page's warm ink)
-  gold: 1, // 1 = gold leaf (gold core, a faint gold wash), 0 = fire (white-hot core, rust-red halo)
-  lobes: 0.5, // how far the whole shape wanders from a circle: large and slow, so it is a tear and not a spotlight
-  glow: 0.75,
-  edge: 0.65, // thinner line
-  roughness: 0.2, // how ragged the edge itself is: a soft wave, not a tear
-  detail: 3, // scale of the wave: larger and calmer
-  scorch: 0.12, // the paper barely browns ahead of the edge
-  charWidth: 0.3, // a narrow seam, not a burnt strip
-  speckle: 0, // no glowing specks in the seam
-  flicker: 0.15, // a steady line of light, with only a slight breathing
-  sparks: 0, // no flying sparks
-  maxPixelRatio: 1.5, // the canvas never renders sharper than this: it is a full-screen shader
-  origin: { x: 0.5, y: 0.5 }, // where it starts burning (the middle of the word)
+// ---- cloud reveal (Why Bengals: the paper dissolves into soft clouds and the traits show through) ----------------------
+// Sizes are in screen heights. For a thicker, softer edge: raise softness; for a more ragged one: raise billow; for bigger clouds: lower scale.
+// The fringe takes the colour of the page under the sheet (the section's own --ink-warm, read in WhyBengals.astro).
+export const CLOUDS = {
+  origin: { x: 0.5, y: 0.5 }, // where it starts dissolving (the middle of the word)
+  softness: 0.05, // the width of the feathered edge (the fringe is about three times this)
+  billow: 0.1, // how far the edge puffs in and out
+  scale: 3, // how many puffs fit in a screen height
+  maxPixelRatio: 1, // the canvas never renders sharper than this: it is a full-screen shader, and a soft edge needs no more
   loadAhead: 'top 150%', // the three.js chunk is fetched when the section is this close
 };
 

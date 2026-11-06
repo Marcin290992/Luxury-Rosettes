@@ -251,7 +251,8 @@ const scenes = [
           if (disposed) return;
           const created = await module.createCloudReveal(stage, {
             paper: bake(),
-            origin: CLOUDS.origin,
+            centreX: CLOUDS.centreX,
+            centreBelow: CLOUDS.centreBelow,
             color: getComputedStyle(section).getPropertyValue('--ink-warm').trim() || '#1a1410', // the page under the sheet
             softness: CLOUDS.softness,
             billow: CLOUDS.billow,

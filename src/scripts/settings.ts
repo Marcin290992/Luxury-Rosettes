@@ -268,14 +268,15 @@ export const CORRIDOR = {
 };
 
 // ---- cloud reveal (Why Bengals: the paper dissolves into soft clouds and the traits show through) ----------------------
-// Sizes are in screen heights. For a thicker, softer edge: raise softness; for a more ragged one: raise billow; for bigger clouds: lower scale.
+// Sizes are in units of the shorter side of the screen. For a thicker, softer edge: raise softness; for a more ragged one: raise billow; for bigger clouds: lower scale.
 // The fringe takes the colour of the page under the sheet (the section's own --ink-warm, read in WhyBengals.astro).
 export const CLOUDS = {
-  origin: { x: 0.5, y: 1.4 }, // where it starts, as shares of the screen: below the bottom edge, so that a low mound rises first and grows into a dome
+  centreX: 0.5, // where the cloud starts across the screen (the middle)
+  centreBelow: 0.2, // how far below the bottom edge its centre lies, as a share of the screen's width: a low mound rises first and grows into a dome (the same shape on a wide screen and on a tall one)
   softness: 0.13, // the width of the feathered edge (the fringe is about three times this)
   billow: 0.2, // how far the edge puffs in and out
   scale: 2.2, // how many puffs fit in a screen height
-  maxPixelRatio: 1, // the canvas never renders sharper than this: it is a full-screen shader, and a soft edge needs no more
+  maxPixelRatio: 1.5, // the canvas never renders sharper than this (the baked word is as sharp as this; the shader is light, the noise is drawn once)
   loadAhead: 'top 150%', // the three.js chunk is fetched when the section is this close
 };
 

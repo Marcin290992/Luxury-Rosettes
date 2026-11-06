@@ -367,19 +367,24 @@ const isCurrent = (href: string) =>
   }
 
   /* The pill is its own layer in a page transition, and a backdrop blur has nothing to sample there: the old pill and the new one
-     were drawn differently (the menu seemed to load twice, and Safari flickered it). On touch devices the glass is therefore solid,
-     and it is the same before, during and after a transition. */
+     were drawn differently (the menu seemed to load twice, and Safari flickered it). On touch devices there is no glass at all: the
+     pill has a plain background of its own (no separate layer, no clip-path, which flickered in the picture of the old page), and the
+     open menu is opaque, so the page does not show through it. It is the same before, during and after a transition. */
   @media (pointer: coarse) {
     .nav-glass {
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
+      display: none;
     }
     .nav-pill {
       --glass: rgba(34, 29, 25, 0.86);
+      background: var(--glass);
+      transition: border-radius 0.3s var(--ease), background 0.25s ease;
     }
-    .nav-pill.is-scrolled,
-    .nav-pill.expanded {
+    .nav-pill.is-scrolled {
       --glass: rgba(30, 26, 22, 0.92);
+    }
+    .nav-pill.expanded {
+      --glass: rgb(30, 26, 22);
+      transition: border-radius 0.6s var(--ease), background 0.4s ease;
     }
   }
 

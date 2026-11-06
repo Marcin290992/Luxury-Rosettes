@@ -1,5 +1,17 @@
 # Błędy i poprawki
 
+## Przewijanie na telefonie i tablecie było toporne
+
+**Objaw:** palcem strona przewijała się ciężko i gumowo. Podążała za palcem z opóźnieniem i przesuwała się mniej niż on. Natywne przewijanie telefonu (bez Lenis) było za to za szybkie przy tylu długich scenach: jedno machnięcie przelatywało przez zbyt dużo animacji.
+
+**Przyczyna:** dla dotyku (`SMOOTH_TOUCH`) były ustawione te same „ciężkie” wartości co dla kółka myszy: `touchMultiplier: 0.8` i `syncTouchLerp: 0.05`. W emulacji palec 400 px przesuwał stronę o około 320 px, a wygładzanie 0,05 jest bardzo ciężkie. Dla kółka to daje „kinowy” ciężar, a pod palcem sztywność.
+
+**Poprawka:** zostaje Lenis z `syncTouch: true` (kontrola nad wybiegiem, której natywne przewijanie nie daje), ale lżejszy: `syncTouchLerp: 0.12` i `touchMultiplier: 1`. Strona idzie za palcem 1:1 (400 px → 402 px) i ma tylko lekkie wygładzenie. Dla porównania był chwilowy przełącznik `?scroll=normalize|native` (GSAP `normalizeScroll` na pudełku `#scroll-root` i przewijanie natywne). Wybrany został Lenis, przełącznik usunięto.
+
+**Plik:** `src/scripts/settings.ts` (`SMOOTH_TOUCH`). Przełącznik testowy jest w historii Gita, commit `841edd1`, w `src/scripts/lenis.ts`.
+
+**Gdyby wracało:** za ciężko → `syncTouchLerp` wyżej (np. 0,2). Za daleko po machnięciu → `touchInertiaExponent` niżej niż domyślne 1,7 (Lenis). Chcesz natywne przewijanie telefonu → `syncTouch: false`. Jeśli kiedyś trzeba GSAP-owego sterowania wybiegiem: `ScrollTrigger.normalizeScroll({ target: box, type: 'touch', momentum })` działa na `#scroll-root`, ale wyłącza Lenis na dotyku (oba przechwytują dotyk).
+
 ## About na mobile/tablecie: cofanie bez przejścia i ucięcie w połowie
 
 **Objaw:** po cofnięciu z podstrony About na telefonie lub tablecie nie było przejścia między stronami. W połowie strona ucinała się twardo. Na innych podstronach działało poprawnie. Występowało tylko na mobile i tablecie, przy dużym portrecie ze zdjęciem.

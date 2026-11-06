@@ -6,20 +6,6 @@ import { scrollBox } from './scroller';
 
 let lenis: Lenis | undefined;
 let tick: ((time: number) => void) | undefined;
-let normalizer: { kill: () => void } | undefined;
-
-// TEST SWITCH for the way a finger scrolls (phones, tablets), to compare them on a real device; open any page with ?scroll=...
-// and the choice stays for the rest of the visit (sessionStorage); ?scroll=reset puts it back. Remove it once one way is chosen.
-//   (none)     Lenis follows the finger (syncTouch, SMOOTH_TOUCH in settings.ts)
-//   native     the phone's own scrolling, no smoothing at all
-//   normalize  GSAP's normalizeScroll on the scroll box: the page is scrolled by script with a momentum of its own (TOUCH_MOMENTUM)
-const TOUCH_MOMENTUM = (self: { velocityY: number }) => Math.min(1.4, Math.abs(self.velocityY) / 2000); // seconds the page glides after the finger lifts (GSAP's default is 2.8)
-const touchMode = () => {
-  const param = new URLSearchParams(location.search).get('scroll');
-  if (param === 'reset') sessionStorage.removeItem('lr-scroll');
-  else if (param) sessionStorage.setItem('lr-scroll', param);
-  return sessionStorage.getItem('lr-scroll');
-};
 
 export function getLenis() {
   return lenis;
@@ -27,7 +13,7 @@ export function getLenis() {
 
 // Smooth scroll is driven by GSAP's ticker so ScrollTrigger pins/scrubs stay in sync.
 export function initLenis() {
-  if (lenis || normalizer || typeof window === 'undefined') return lenis;
+  if (lenis || typeof window === 'undefined') return lenis;
 
   gsap.registerPlugin(ScrollTrigger);
   // the mobile address bar sliding in or out changes only the window's height: that must not re-measure every pin and scrub
@@ -35,15 +21,6 @@ export function initLenis() {
 
   // on touch devices the page scrolls inside #scroll-root (scripts/scroller.ts): Lenis smooths that box instead of the window
   const box = scrollBox();
-
-  if (box) {
-    const mode = touchMode();
-    if (mode === 'native') return lenis; // nothing smooths the finger
-    if (mode === 'normalize') {
-      normalizer = ScrollTrigger.normalizeScroll({ target: box, type: 'touch', momentum: TOUCH_MOMENTUM, allowNestedScroll: true });
-      return lenis;
-    }
-  }
 
   lenis = new Lenis({
     ...SMOOTH_WHEEL,
@@ -67,7 +44,5 @@ export function destroyLenis() {
   lenis?.destroy();
   lenis = undefined;
   tick = undefined;
-  normalizer?.kill();
-  normalizer = undefined;
 }
 

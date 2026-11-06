@@ -82,7 +82,6 @@ const isCurrent = (href: string) =>
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
   const AT_TOP = 40; // px: scrolled less than this counts as the top of the page
-  const FOLD_MS = 340; // the menu folds in 0.3s (see .nav-content below); the page transition starts right after
 
   mount(() => {
     const nav = document.getElementById('main-nav')!;
@@ -140,16 +139,17 @@ const isCurrent = (href: string) =>
         btn.focus();
       }
     };
-    // A link in the menu or the logo: the menu folds away first (its own animation, ~0.3s), and only then the page transition
-    // starts. A link to the page you are already on, from a scrolled page, plays the same transition (to a fresh copy of the page, at its
-    // top) instead of scrolling back: quicker and more of a gesture. From the top of the page it does nothing.
-    let leaving = 0;
-    const leave = (href: string, wasOpen: boolean) => {
+    // A link in the menu or the logo starts the page transition at once, with the menu as it is. It is not folded first: the new page builds
+    // its own menu, closed, and the old one leaves with the old page (a menu that started to fold at the tap would be caught half-folded in the
+    // picture of the old page, which is taken a moment later). A link to the page you are already on, from a scrolled page, plays the same
+    // transition (to a fresh copy of the page, at its top) instead of scrolling back; from the top of the page it does nothing.
+    let giveUp = 0;
+    const leave = (href: string) => {
       document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open: false, leaving: true } })); // stays held until the page is gone
-      window.clearTimeout(leaving);
-      // the menu folds first (0.3s, quicker than it opens): the transition shows the page as it is when it starts, so a half-open panel would
-      // shrink away with it
-      leaving = window.setTimeout(() => navigate(href), wasOpen ? FOLD_MS : 0);
+      // if the page never changes (no connection), the menu closes after all
+      window.clearTimeout(giveUp);
+      giveUp = window.setTimeout(() => setOpen(false), 6000);
+      navigate(href);
     };
     const onLinkClick = (e: MouseEvent) => {
       const link = (e.target as Element).closest('a'); // a click on an icon inside a link counts as the link
@@ -158,26 +158,23 @@ const isCurrent = (href: string) =>
       const sameOrigin = url.origin === location.origin && !link.target && !link.hasAttribute('download');
       const samePage = url.pathname === location.pathname && url.search === location.search;
       const plain = !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
-      const wasOpen = nav.classList.contains('expanded');
-      setOpen(false);
-      if (!sameOrigin || !plain) return;
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (samePage) {
-        if (url.hash) return; // an anchor on this page: the browser scrolls to it
+      const transition = sameOrigin && plain && !reduced && (samePage ? !url.hash && getScrollY() > AT_TOP : true);
+      if (transition) {
         e.preventDefault();
-        if (getScrollY() <= AT_TOP) return; // already at the top: nothing to do
-        if (reduced) {
-          const lenis = getLenis();
-          if (lenis) lenis.scrollTo(0, { immediate: true });
-          else (scrollBox() ?? window).scrollTo({ top: 0 });
-          return;
-        }
-        leave(url.href, wasOpen);
+        leave(url.href);
         return;
       }
-      if (reduced) return;
+      // everything else: the menu simply folds
+      setOpen(false);
+      if (!sameOrigin || !plain || !samePage) return; // another page with reduced motion (the router goes there itself), an external link, a new tab
+      if (url.hash) return; // an anchor on this page: the browser scrolls to it
       e.preventDefault();
-      leave(url.href, wasOpen);
+      if (reduced && getScrollY() > AT_TOP) {
+        const lenis = getLenis();
+        if (lenis) lenis.scrollTo(0, { immediate: true });
+        else (scrollBox() ?? window).scrollTo({ top: 0 });
+      }
     };
     // Inquire: close menu, let the contact modal (when added) listen for this event
     const onNavClick = (e: MouseEvent) => {
@@ -212,7 +209,7 @@ const isCurrent = (href: string) =>
       panel.removeEventListener('click', onLinkClick);
       panel.removeEventListener('pointerdown', onLinkDown);
       logo.removeEventListener('click', onLinkClick);
-      window.clearTimeout(leaving);
+      window.clearTimeout(giveUp);
       window.clearTimeout(warmTimer);
       nav.removeEventListener('click', onNavClick);
       offScroll();

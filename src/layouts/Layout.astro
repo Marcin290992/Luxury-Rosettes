@@ -62,6 +62,15 @@ const {
 
   // After a page transition the nav is already on screen: the home hero must not hide it and run its intro for it again (see Hero.astro).
   // The router rewrites <html>'s classes on a swap, so `intro-ready` is put back at once.
+  document.addEventListener('astro:before-swap', () => {
+    const curtain = document.querySelector('.hero-curtain') as HTMLElement;
+    if (curtain) {
+      curtain.style.opacity = '0';
+      curtain.style.visibility = 'hidden';
+      curtain.style.animation = 'none';
+    }
+  });
+
   document.addEventListener('astro:after-swap', () => {
     (window as unknown as { __lrSwapped?: boolean }).__lrSwapped = true;
     document.documentElement.classList.add('intro-ready');
@@ -111,6 +120,16 @@ const {
     --cream: #efe9dc; /* text on the dark closing sections */
     --ink-warm: #1a1410; /* text on gold */
     --placeholder: #e9e4d9; /* what a photo frame shows before its image loads */
+
+    /* the dark layer over every full-screen photo of the home page (the hero and the intro's photos): an even tint, heavier at the top (the
+       nav) and at the bottom. It is there from the first frame: nothing darkens afterwards. */
+    --photo-dim:
+      linear-gradient(to bottom, rgba(8, 7, 6, 0.55) 0%, rgba(8, 7, 6, 0.2) 35%, rgba(8, 7, 6, 0.65) 100%),
+      rgba(8, 7, 6, 0.3);
+
+    /* hover: how fast every button and link answers the pointer; a word's letters slide one after another (menu, LetterButton) */
+    --hover-time: 0.32s;
+    --hover-stagger: 0.012s;
 
     /* the dashed rule, in the three strengths the page uses */
     --dash-track: 1px dashed rgba(26, 26, 26, 0.28); /* the light track behind a progress line */

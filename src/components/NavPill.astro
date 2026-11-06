@@ -18,6 +18,7 @@ const isCurrent = (href: string) =>
 ---
 
 <nav id="main-nav" class="nav-pill" aria-label="Main">
+  <span class="nav-glass" aria-hidden="true"></span>
   <div class="nav-header">
     <button
       id="menu-btn"
@@ -77,12 +78,14 @@ const isCurrent = (href: string) =>
   import { navigate } from 'astro:transitions/client';
   import { prefetch } from 'astro:prefetch';
   import { mount } from '../scripts/lifecycle';
+  import { glassSurface } from '../scripts/glass-surface';
   import { getLenis } from '../scripts/lenis';
   import { getScrollY, onPageScroll, scrollBox } from '../scripts/scroller';
   import { NAV_SCROLLED_AT as SCROLLED_AT } from '../scripts/settings';
 
+  const BORDERS = 2; // px: the pill's top and bottom border
   const AT_TOP = 40; // px: scrolled less than this counts as the top of the page
-  const TAP_MS = 440; // on a touch screen (no hover) the chosen link plays its hover (see .chosen below) before the page transition starts
+  const TAP_MS = 440; // on a touch screen (no hover) the chosen link plays its hover (see .chosen below) before the page transition starts: a letter's slide plus the longest stagger
 
   mount(() => {
     const nav = document.getElementById('main-nav')!;
@@ -90,44 +93,80 @@ const isCurrent = (href: string) =>
     const word = nav.querySelector<HTMLElement>('#menu-text .nav-word')!;
     const panel = nav.querySelector<HTMLElement>('#nav-panel')!;
     const logo = nav.querySelector<HTMLElement>('.nav-logo')!;
+    const header = nav.querySelector<HTMLElement>('.nav-header')!;
+
+    // The glass layer (see .nav-glass) is as tall as the open pill and only revealed down to the pill's height. The refraction at its edge
+    // (Chromium only, see glass-surface.ts) follows the shape that is revealed now: the closed pill or the open one.
+    const glass = glassSurface(nav.querySelector<HTMLElement>('.nav-glass')!);
+    let openHeight = 0;
+    const shapeGlass = () => {
+      const closedHeight = header.offsetHeight + BORDERS;
+      const radius = parseFloat(getComputedStyle(nav).getPropertyValue('--radius')); // the target one: a custom property does not animate
+      glass.shape(nav.classList.contains('expanded') ? openHeight : closedHeight, radius);
+    };
+    // the open pill: header + panel (its content, at most its max-height) + the borders
+    const measureOpen = () => {
+      const max = parseFloat(getComputedStyle(panel).maxHeight);
+      const body = Number.isFinite(max) ? Math.min(panel.scrollHeight, max) : panel.scrollHeight;
+      openHeight = header.offsetHeight + BORDERS + body;
+      nav.style.setProperty('--open-h', `${openHeight}px`);
+      shapeGlass();
+    };
+    measureOpen();
+    window.addEventListener('resize', measureOpen);
+    document.fonts?.ready.then(measureOpen);
+
+    // the letters' timing is a global CSS token (--hover-time, --hover-stagger, see Layout.astro); the script only needs it in ms
+    const cssMs = (name: string) => {
+      const v = getComputedStyle(nav).getPropertyValue(name).trim();
+      return parseFloat(v) * (v.endsWith('ms') ? 1 : 1000);
+    };
+    const letterMs = cssMs('--hover-time');
+    const staggerMs = cssMs('--hover-stagger');
 
     // one span per letter, like the server-rendered label, so the hover effect works on both words
     // (cloned, so the letters keep Astro's scoped-style attribute)
     const proto = word.firstElementChild!.cloneNode(false) as HTMLElement;
-    // a letter shows `ch`; its gold copy (the one that slides in from below on a hover) is `copy`
-    const letter = (ch: string, copy: string, n: number) => {
+    const letter = (ch: string, n: number) => {
       const el = proto.cloneNode(false) as HTMLElement;
       el.style.setProperty('--n', String(n));
-      el.dataset.ch = copy;
+      el.dataset.ch = ch; // the gold copy that slides in from below on a hover
       el.textContent = ch;
       return el;
     };
+    const letters = (text: string) => [...text].map((ch, n) => letter(ch, n));
+    const labelBox = word.parentElement!; // clips the words that slide in and out
     let label = word.textContent ?? 'Menu'; // the label that is shown, or that the running roll is going to
     let rollTimer = 0;
     const setLabel = (next: string) => {
       window.clearTimeout(rollTimer);
       label = next;
-      word.classList.remove('rolling', 'reset');
-      word.replaceChildren(...[...next].map((ch, n) => letter(ch, ch, n)));
+      labelBox.querySelectorAll('.nav-word.out').forEach((old) => old.remove());
+      labelBox.style.minWidth = '';
+      word.classList.remove('enter', 'settle');
+      word.replaceChildren(...letters(next));
     };
-    // Menu <-> Close uses the animation of a hover: the old letters slide up one after another and the new word comes in from below, as the
-    // gold copy of each letter does on a hover. At the end the plain letters of the new label are put in the same place.
+    // Menu <-> Close: the old word slides up and out, the new one comes in from below, letter after letter like a hover. Each is a whole word
+    // with its own letter widths: if the new letters sat in the old word's places, the spacing would jump when the plain word replaces them.
     const rollLabel = (next: string) => {
       if (next === label) return;
       setLabel(label); // a roll that is still running is finished first
-      const from = [...label.padEnd(next.length, ' ')];
-      const to = [...next.padEnd(label.length, ' ')];
-      word.classList.add('reset'); // every letter starts at its resting place, even if the pointer is on the button (a hover has them up already)
-      word.replaceChildren(...from.map((ch, n) => letter(ch, to[n], n)));
+      const out = word.cloneNode(true) as HTMLElement;
+      out.classList.add('out');
+      labelBox.style.minWidth = `${labelBox.offsetWidth}px`; // the old word keeps its room until it has left
+      labelBox.append(out);
+      word.replaceChildren(...letters(next));
+      word.classList.add('enter'); // below its place, whatever the pointer does to the letters
       void word.offsetWidth;
-      word.classList.remove('reset');
-      word.classList.add('rolling');
+      word.classList.replace('enter', 'settle');
+      out.classList.add('go');
+      rollTimer = window.setTimeout(() => setLabel(next), letterMs + Math.max(label.length, next.length) * staggerMs + 60);
       label = next;
-      rollTimer = window.setTimeout(() => setLabel(next), 600 + from.length * 30 + 60); // the letter transition (0.6s) and the last letter's delay
     };
 
     const setOpen = (open: boolean) => {
       nav.classList.toggle('expanded', open);
+      shapeGlass();
       btn.setAttribute('aria-expanded', String(open));
       rollLabel(open ? 'Close' : 'Menu');
       panel.toggleAttribute('inert', !open);
@@ -238,6 +277,8 @@ const isCurrent = (href: string) =>
     onScroll();
 
     return () => {
+      window.removeEventListener('resize', measureOpen);
+      glass.destroy();
       btn.removeEventListener('click', onToggle);
       document.removeEventListener('click', onOutsideClick);
       document.removeEventListener('keydown', onKeydown);
@@ -255,11 +296,18 @@ const isCurrent = (href: string) =>
 </script>
 
 <style>
+  /* The pill paints no background of its own: the glass is a layer behind its content. The layer has the size of the OPEN pill all the time
+     and is only revealed down to the pill's height (clip-path), so the element with the backdrop blur never changes size. */
   .nav-pill {
     --text: #f3efe4;
     --glass: rgba(24, 20, 16, 0.5);
     --border: rgba(255, 255, 255, 0.2);
     --ease: cubic-bezier(0.65, 0, 0.35, 1);
+    --head: 58px; /* the header's height */
+    --radius: 34px;
+    --blur: 10px;
+    --intro: 1; /* 0-1: how much of the pill is shown while it arrives with the home page's intro (see Hero.astro) */
+    --open-h: calc(var(--head) + 2px + min(100dvh - 7rem, 700px)); /* the pill's height when open (the script puts the measured one here) */
 
     position: fixed;
     top: 1.25rem;
@@ -268,39 +316,65 @@ const isCurrent = (href: string) =>
     width: min(94vw, 660px);
     z-index: 1000;
     color: var(--text);
+    border: 1px solid color-mix(in srgb, var(--border) calc(var(--intro) * 100%), transparent);
+    border-radius: var(--radius);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, calc(0.22 * var(--intro))); /* drawn outside the box only, so it never shows through the glass */
+    transition: border-radius 0.3s var(--ease); /* closing: quick, so that a chosen link starts its page transition soon */
+  }
+  .nav-pill.expanded {
+    --radius: 28px;
+    transition: border-radius 0.6s var(--ease); /* opening */
+  }
+  /* stronger glass once the page scrolls (readability over light sections) and while the menu is open */
+  .nav-pill.is-scrolled,
+  .nav-pill.expanded {
+    --glass: rgba(24, 20, 16, 0.7);
+  }
+
+  .nav-glass {
+    position: absolute;
+    top: -1px; /* the glass covers the pill's border box */
+    left: -1px;
+    right: -1px;
+    height: var(--open-h);
+    z-index: -1;
+    pointer-events: none;
+    opacity: var(--intro); /* the glass's own opacity: unlike the pill's, it leaves the blur its view of the page */
     background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 34px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
-    transition: background 0.25s ease, border-radius 0.3s var(--ease); /* closing: quick (the opening has its own, below) */
+    clip-path: inset(0 0 calc(var(--open-h) - var(--head) - 2px) 0 round var(--radius));
+    transition: background 0.25s ease, clip-path 0.3s var(--ease);
+  }
+  .nav-pill.expanded .nav-glass {
+    clip-path: inset(0 0 0 0 round var(--radius));
+    transition: background 0.4s ease, clip-path 0.6s var(--ease);
   }
 
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .nav-pill {
-      -webkit-backdrop-filter: blur(16px) saturate(140%);
-      backdrop-filter: blur(16px) saturate(140%);
+    .nav-glass {
+      -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
+      backdrop-filter: blur(var(--blur)) saturate(140%);
+    }
+    /* Chromium: the same blur, and the edge bends the light (glass-surface.ts adds the class and the filter) */
+    .nav-glass.glass-refract {
+      backdrop-filter: blur(var(--blur)) var(--glass-filter) saturate(140%);
     }
   }
-
-  /* Without blur support, fall back to a solid-enough background */
+  /* without blur support: a solid-enough background */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .nav-pill {
       --glass: rgba(24, 20, 16, 0.92);
     }
   }
 
-  .nav-pill.is-scrolled,
-  .nav-pill.expanded {
-    --glass: rgba(24, 20, 16, 0.7);
-  }
-
   /* The pill is its own layer in a page transition, and a backdrop blur has nothing to sample there: the old pill and the new one
      were drawn differently (the menu seemed to load twice, and Safari flickered it). On touch devices the glass is therefore solid,
      and it is the same before, during and after a transition. */
   @media (pointer: coarse) {
-    .nav-pill {
+    .nav-glass {
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
+    }
+    .nav-pill {
       --glass: rgba(34, 29, 25, 0.86);
     }
     .nav-pill.is-scrolled,
@@ -309,17 +383,13 @@ const isCurrent = (href: string) =>
     }
   }
 
-  .nav-pill.expanded {
-    border-radius: 28px;
-    transition: background 0.4s ease, border-radius 0.5s var(--ease); /* opening */
-  }
-
   .nav-header {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    height: 58px;
+    height: var(--head);
     padding: 0 1.25rem 0 1.5rem;
+    opacity: var(--intro);
   }
 
   .nav-btn {
@@ -354,7 +424,7 @@ const isCurrent = (href: string) =>
     height: 0;
     /* a border, not a background: borders snap to whole device pixels, so both lines stay equally thick at 125%/150% zoom */
     border-top: 1px solid currentColor;
-    transition: transform 0.4s var(--ease), border-color 0.6s var(--ease);
+    transition: transform 0.4s var(--ease), border-color var(--hover-time) var(--ease);
   }
   #menu-btn:hover .menu-lines span,
   #menu-btn:focus-visible .menu-lines span { border-color: var(--gold); }
@@ -379,7 +449,7 @@ const isCurrent = (href: string) =>
   /* same hover as the menu links: the letters slide up, a gold copy slides in from below */
   .inquire-btn:hover { color: var(--text); }
   .inquire-label { display: block; overflow: hidden; line-height: 1.35; }
-  .arrow-icon { width: 30px; height: 12px; transition: color 0.6s var(--ease); }
+  .arrow-icon { width: 30px; height: 12px; transition: color var(--hover-time) var(--ease); }
   .inquire-btn:hover .arrow-icon,
   .inquire-btn:focus-visible .arrow-icon { color: var(--gold); }
 
@@ -424,23 +494,25 @@ const isCurrent = (href: string) =>
   .expanded .nav-brand { transition-delay: 0.8s; }
   .expanded .nav-footer { transition-delay: 0.95s; }
 
-  /* Open panel fills (almost) the whole screen: brand top, links centred, footer pinned bottom */
+  /* Open panel fills (almost) the whole screen: brand top, links centred, footer pinned bottom. Everything in it is sized by the window's
+     height as well (the dvh values below), so the whole panel, footer included, fits on a low screen without scrolling. */
   .nav-inner {
+    box-sizing: border-box; /* the padding is part of the height, or the panel would be taller than the space it gets */
     min-height: min(calc(100dvh - 7rem), 700px);
-    padding: 0.75rem 1.5rem 1.5rem;
+    padding: 0.75rem 1.5rem min(1.5rem, 2.4dvh);
     display: flex;
     flex-direction: column;
     align-items: center;
   }
 
   .nav-brand {
-    margin: 0 0 1.75rem;
+    margin: 0 0 min(1.75rem, 3dvh);
     text-align: center;
   }
   .nav-title {
     margin: 0;
     font-family: var(--font-logo, 'Cinzel Decorative', serif);
-    font-size: clamp(1.15rem, 5.2vw, 2rem);
+    font-size: min(clamp(1.15rem, 5.2vw, 2rem), 4.6dvh);
     font-weight: 400;
     letter-spacing: 0.06em;
     line-height: 1.2;
@@ -448,9 +520,9 @@ const isCurrent = (href: string) =>
     color: #ba8e47; /* gold from the logo */
   }
   .nav-subtitle {
-    margin: 0.6rem 0 0;
+    margin: min(0.6rem, 1dvh) 0 0;
     font-family: var(--font-heading, 'Cormorant Garamond', serif);
-    font-size: clamp(0.75rem, 2.8vw, 1rem);
+    font-size: min(clamp(0.75rem, 2.8vw, 1rem), 2.6dvh);
     font-weight: 300;
     letter-spacing: 0.75em;
     padding-left: 0.75em; /* balances trailing letter-spacing so it centres */
@@ -461,35 +533,38 @@ const isCurrent = (href: string) =>
   .nav-links {
     list-style: none;
     margin: auto 0; /* centres the list between brand and footer */
-    padding: 1.5rem 0;
+    padding: min(1.5rem, 2.5dvh) 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem; /* space between the menu options */
+    gap: min(1rem, 1.4dvh); /* space between the menu options */
   }
   .nav-links a {
     display: inline-block;
     overflow: hidden; /* the word slides up out of this window, a gold copy slides in from below */
     padding: 0 0.75rem;
     font-family: var(--font-heading, 'Cormorant Garamond', serif);
-    font-size: clamp(1.7rem, 6vw, 2.1rem);
+    font-size: min(clamp(1.7rem, 6vw, 2.1rem), 4.5dvh);
     line-height: 1.35;
     font-weight: 400;
     color: var(--text);
     text-decoration: none;
   }
   .nav-word { display: block; white-space: pre; }
-  /* Menu <-> Close: the same slide as a hover, whatever the pointer is doing (see rollLabel in the script) */
-  .nav-word.reset .nav-char { transition: none !important; transform: translateY(0) !important; }
-  .nav-word.rolling .nav-char { transform: translateY(-100%); }
-  @media (hover: none) {
-    .nav-word.rolling .nav-char::after { color: var(--text); } /* a touch screen has no hover to end in gold: the new word comes in plain */
-  }
+  /* Menu <-> Close (see rollLabel in the script): the old word slides up and out, the new one comes in from below. They are whole words
+     with their own letter widths, so the plain word that replaces the new one at the end looks exactly the same. */
+  #menu-text { position: relative; }
+  .nav-word.out { position: absolute; top: 0; left: 0; }
+  .nav-word.out .nav-char { transform: none !important; } /* starts where it was seen, whatever the pointer does to the letters */
+  .nav-word.out .nav-char::after { content: none; }
+  .nav-word.out.go .nav-char { transform: translateY(-100%) !important; }
+  .nav-word.enter .nav-char { transition: none !important; transform: translateY(100%) !important; }
+  .nav-word.settle .nav-char { transform: translateY(0) !important; }
   .nav-char {
     display: inline-block;
     position: relative;
-    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-    transition-delay: calc(var(--n) * 0.03s); /* letters leave one after another */
+    transition: transform var(--hover-time) var(--ease);
+    transition-delay: calc(var(--n) * var(--hover-stagger)); /* letters leave one after another */
   }
   .nav-char::after {
     content: attr(data-ch);
@@ -505,8 +580,12 @@ const isCurrent = (href: string) =>
     #menu-btn:focus-visible .nav-char,
     .inquire-btn:hover .nav-char,
     .inquire-btn:focus-visible .nav-char { transform: translateY(-100%); }
+    /* with the pointer on the Menu button its label rests in gold (the letters' gold copies): the words that roll are gold too */
+    #menu-btn:hover .nav-word.out .nav-char,
+    #menu-btn:focus-visible .nav-word.out .nav-char,
+    #menu-btn:hover .nav-word.settle .nav-char,
+    #menu-btn:focus-visible .nav-word.settle .nav-char { color: var(--gold); }
   }
-  .nav-links a[aria-current='page'] { color: var(--gold); font-style: italic; }
 
   /* A link was chosen (see `leave` in the script): the animations of the menu end here and now, in their final state, and nothing reacts to
      the pointer any more. The chosen link keeps the look of a finished hover (the letters slid up, the gold copy in place). */
@@ -517,17 +596,17 @@ const isCurrent = (href: string) =>
     pointer-events: none;
   }
   .nav-pill.leaving .chosen .nav-char { transform: translateY(-100%); }
-  /* ...except that on a touch screen it is not finished yet but plays, quicker than a real hover (0.35s, 12ms between letters) */
+  /* ...except that on a touch screen it is not finished yet but plays, like a real hover */
   @media (hover: none) {
     .nav-pill.leaving .chosen .nav-char {
-      transition: transform 0.35s var(--ease) !important;
-      transition-delay: calc(var(--n) * 0.012s) !important;
+      transition: transform var(--hover-time) var(--ease) !important;
+      transition-delay: calc(var(--n) * var(--hover-stagger)) !important;
     }
   }
 
   .nav-footer {
     margin: 0;
-    padding-top: 1.25rem;
+    padding-top: min(1.25rem, 2dvh);
     width: 100%;
     text-align: center;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -542,8 +621,8 @@ const isCurrent = (href: string) =>
      gap menu to logo equals the gap logo to Inquire, and the pill's left and right padding are equal. */
   @media (max-width: 1023px) {
     .nav-pill { --nb: 6.9rem; }
+    .nav-pill { --head: 64px; }
     .nav-header {
-      height: 64px;
       grid-template-columns: var(--nb) 1fr var(--nb);
       padding: 0 1.15rem;
     }
@@ -565,6 +644,6 @@ const isCurrent = (href: string) =>
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .nav-pill, .nav-content, .nav-links li, .nav-brand, .nav-footer, .menu-lines span, .nav-char, .inquire-btn, .arrow-icon { transition-duration: 0.01ms !important; transition-delay: 0s !important; }
+    .nav-pill, .nav-glass, .nav-content, .nav-links li, .nav-brand, .nav-footer, .menu-lines span, .nav-char, .inquire-btn, .arrow-icon { transition-duration: 0.01ms !important; transition-delay: 0s !important; }
   }
 </style>

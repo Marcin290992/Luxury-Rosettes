@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import LetterButton from './LetterButton.astro';
 import draco from '../assets/img/cats/draco.webp';
 import kita from '../assets/img/cats/kita.webp';
 import candy from '../assets/img/cats/candy.webp';
@@ -73,8 +74,8 @@ const pillars = [
           }
         </ul>
         <div class="fin-foot">
-          <a class="cta" href="#">Join the waiting list</a>
-          <a class="fin-link" href="#kittens">Meet the kittens</a>
+          <LetterButton label="Join the waiting list" href="#" light />
+          <LetterButton label="Meet the kittens" href="#kittens" link light />
         </div>
       </div>
       <div class="cats-end" aria-hidden="true"></div>

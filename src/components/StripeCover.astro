@@ -34,6 +34,7 @@ const { stripes = 5, pin = 0.6, from = 0 } = Astro.props;
   mount(() => {
     const root = document.querySelector<HTMLElement>('[data-stripe-cover]');
     if (!root) return;
+    
     const stripes = Array.from(root.querySelectorAll<HTMLElement>('.sc-stripe'));
     const from = parseFloat(root.dataset.from ?? '0');
     const mm = gsap.matchMedia();
@@ -60,12 +61,16 @@ const { stripes = 5, pin = 0.6, from = 0 } = Astro.props;
       return () => {
         trigger.kill();
         stripes.forEach((s) => s.removeAttribute('style'));
+        gsap.set(root, { clearProps: 'all' });
         delete root.dataset.live;
       };
     });
 
-    return () => mm.revert();
-  });
+    return () => {
+      mm.revert();
+      delete root.dataset.live;
+    };
+  }, '[data-stripe-cover]');
 </script>
 
 <style>

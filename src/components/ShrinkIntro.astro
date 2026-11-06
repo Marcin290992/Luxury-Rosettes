@@ -174,12 +174,12 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
     display: block;
   }
   .si-hero[data-live] .si-img {
-    inset: auto;
-    top: 50%;
-    left: 50%;
+    /* centred by auto margins, not by translate(-50%, -50%): on a window with an odd width or height the translate is a half pixel,
+       which the layout does not round, so the photo sat half a pixel off and a hairline of the paper showed along one edge */
+    inset: 0;
+    margin: auto;
     width: 100%;
     height: 100%;
-    transform: translate(-50%, -50%);
     will-change: width, height;
   }
   .si-hero[data-live] .si-header,

@@ -75,7 +75,7 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
 
     const progress = { n: 0 };
     const wallpaper = photos[photos.length - 1];
-    const wall = el.querySelector<HTMLElement>('.pl-wall')!; // the window is cut out of this (photo and tint together)
+    const wall = el.querySelector<HTMLElement>('.pl-wall')!; // the window is cut out of this (the photo and its dark layer)
     // the four sides of the window (px from each edge); animated as numbers, because the browser shortens the written clip-path and a tween of that string goes wrong
     const win = { t: 0, r: 0, b: 0, l: 0 };
     const applyWindow = () => {
@@ -132,7 +132,6 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     tl.to(texts, { opacity: 0, duration: 0.3 }, `+=${P.holdBefore}`);
     // the window opens onto the wallpaper (the photo does not scale: only more of it is shown)
     tl.add(() => {
-      // (the photo opens undimmed: the hero darkens it only at the very end of its own opening, see Hero.astro)
       gsap.to(win, { t: 0, r: 0, b: 0, l: 0, duration: P.open, ease: 'hop', onUpdate: applyWindow });
     });
     // the hero starts its own opening while the preloader melts away over it
@@ -280,6 +279,19 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     inset: 0;
     z-index: 1;
     pointer-events: none;
+    clip-path: inset(50%); /* nothing of it shows (its dark layer included) until the script cuts the window of the frame out of it */
+  }
+  /* every photo of the intro has the hero's dark layer on it from the start (see --photo-dim in Layout.astro), the wallpaper too (it is the
+     last photo in the frame): so when the window opens onto the hero nothing changes, and nothing has to darken afterwards. The wallpaper
+     and its layer show only inside the window, never over the rest of the screen. */
+  .pl-frame::after,
+  .pl-wall::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: var(--photo-dim);
   }
   .pl-head,
   .pl-foot {

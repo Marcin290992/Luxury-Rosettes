@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import LetterButton from './LetterButton.astro';
 import candy from '../assets/img/cats/candy.webp';
 import cosmo from '../assets/img/cats/cosmo.webp';
 import charlie from '../assets/img/cats/charlie.webp';
@@ -43,7 +44,7 @@ const next = nextLitter(getLitters());
             </article>
           ))}
         </div>
-        <p class="kit-more" data-reveal><a href="/available-kittens">View all kittens</a></p>
+        <p class="kit-more" data-reveal><LetterButton label="View all kittens" href="/available-kittens" link light /></p>
       </>
     ) : (
       <div class="kit-empty">
@@ -55,8 +56,8 @@ const next = nextLitter(getLitters());
             : 'No litters are planned at the moment. Join the waiting list and you will hear from us before anyone else.'}
         </p>
         <p class="kit-empty-actions" data-reveal>
-          <a class="kit-pill" href="#">Join the waiting list</a>
-          <a class="kit-more-link" href="#cats">Meet the parents</a>
+          <LetterButton label="Join the waiting list" href="#" solid light />
+          <LetterButton label="Meet the parents" href="#cats" link light />
         </p>
       </div>
     )
@@ -216,32 +217,6 @@ const next = nextLitter(getLitters());
     justify-content: center;
     gap: 1.75rem;
   }
-  .kit-pill {
-    font-family: var(--font-body);
-    font-size: 0.78rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--paper);
-    background: var(--ink);
-    text-decoration: none;
-    border: 1px solid var(--ink);
-    border-radius: 999px;
-    padding: 1rem 1.75rem;
-    transition: background 0.4s, color 0.4s;
-  }
-  .kit-pill:hover { background: transparent; color: var(--ink); }
-  .kit-more-link {
-    font-family: var(--font-body);
-    font-size: 0.78rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink);
-    text-decoration: none;
-    border-bottom: 1px solid rgba(26, 26, 26, 0.4);
-    padding-bottom: 0.4rem;
-    transition: color 0.4s, border-color 0.4s;
-  }
-  .kit-more-link:hover { color: var(--gold-deep); border-color: var(--gold-deep); }
   .kit-text {
     font-family: var(--font-body);
     font-size: 0.85rem;
@@ -252,20 +227,5 @@ const next = nextLitter(getLitters());
   .kit-more {
     margin: 3rem 0 0;
     text-align: center;
-  }
-  .kit-more a {
-    font-family: var(--font-body);
-    font-size: 0.78rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink);
-    text-decoration: none;
-    border-bottom: 1px solid rgba(26, 26, 26, 0.4);
-    padding-bottom: 0.4rem;
-    transition: color 0.4s, border-color 0.4s;
-  }
-  .kit-more a:hover {
-    color: var(--gold-deep);
-    border-color: var(--gold-deep);
   }
 </style>

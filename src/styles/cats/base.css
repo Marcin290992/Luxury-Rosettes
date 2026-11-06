@@ -136,38 +136,6 @@
   align-items: center;
   gap: 1.75rem;
 }
-.cats-cover .fin .cta {
-  display: inline-block;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: inherit;
-  text-decoration: none;
-  border: 1px solid rgba(26, 26, 26, 0.45);
-  border-radius: 999px;
-  padding: 1rem 1.75rem;
-  transition: background 0.3s, color 0.3s;
-}
-.cats-cover .fin .cta:hover {
-  background: var(--ink);
-  color: var(--paper);
-}
-.cats-cover .fin-link {
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(26, 26, 26, 0.4);
-  padding-bottom: 0.4rem;
-  transition: color 0.4s, border-color 0.4s;
-}
-.cats-cover .fin-link:hover {
-  color: var(--gold-deep);
-  border-color: var(--gold-deep);
-}
 .cats-cover .cats-count {
   display: none;
 }

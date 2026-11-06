@@ -62,8 +62,8 @@ const total = String(items.length).padStart(2, '0');
 <style>
   .al {
     position: relative;
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--ink-warm); /* the colour of the spiral's stripes (see AwardsSpiral): the list is what is left when they have covered the scene */
+    color: var(--cream);
   }
 
   /* ---- without the script: the photos in a grid, the awards written out under them ---- */
@@ -105,7 +105,7 @@ const total = String(items.length).padStart(2, '0');
     font-size: 0.72rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--gold-deep);
+    color: var(--gold);
     margin: 0 0 0.8rem;
   }
   .al-detail h3 {
@@ -125,6 +125,14 @@ const total = String(items.length).padStart(2, '0');
   /* ---- with the script: one pinned screen in a tall track ---- */
   .al[data-live] {
     height: calc((1 + var(--al-length)) * 100svh);
+  }
+  /* The list comes up while the stripes of the spiral are still rising, not after them (that was a long empty dark stretch of scrolling):
+     it is pulled up by one screen over the end of the spiral's pin, so it reaches the top of the screen exactly when the pin ends. Its own
+     background is the stripes' colour, so it is what is left of them. */
+  :global(.sp[data-live]) ~ .al[data-live] {
+    position: relative;
+    z-index: 1;
+    margin-top: -100svh;
   }
   .al[data-live] .al-pin {
     position: sticky;
@@ -199,12 +207,12 @@ const total = String(items.length).padStart(2, '0');
     font-family: var(--font-heading);
     font-size: clamp(1.2rem, 1.75vw, 1.8rem);
     line-height: 1.25;
-    color: rgba(26, 26, 26, 0.3);
+    color: rgba(239, 233, 220, 0.3);
     transition: color 0.3s ease;
     will-change: transform;
   }
   .al[data-live] .al-names li.is-current {
-    color: var(--gold-deep);
+    color: var(--gold);
   }
   /* the words of the current award: on the left, level with the middle of its photo (the middle line of the screen), well clear of it */
   .al[data-live] .al-details {

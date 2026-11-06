@@ -35,7 +35,7 @@ import hero from '../assets/img/hero_img.webp';
   <div class="hero-curtain" aria-hidden="true"></div>
 </header>
 
-<noscript><style>[data-intro] { opacity: 1 !important; } #main-nav { opacity: 1 !important; }</style></noscript>
+<noscript><style>[data-intro] { opacity: 1 !important; } #main-nav { --intro: 1 !important; }</style></noscript>
 
 <script>
   import gsap from 'gsap';
@@ -52,9 +52,6 @@ import hero from '../assets/img/hero_img.webp';
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     // true when this page was reached by a page transition (set in Layout.astro): the nav must not hide and fade in again
     const arrived = !!(window as unknown as { __lrSwapped?: boolean }).__lrSwapped;
-    // true only on a real load of the home page, when the intro (Preloader.astro) plays: only then does the photo start undimmed and darken at
-    // the end of the opening. Any other arrival (back to the hero, a click through) has the dark overlay from the first frame, always.
-    const introPlays = document.documentElement.classList.contains('preloading');
     const media = hero.querySelector<HTMLElement>('.hero-media')!;
     const title = hero.querySelector<HTMLElement>('.hero-title')!;
     const rail = hero.querySelector<HTMLElement>('.hero-rail')!;
@@ -146,8 +143,7 @@ import hero from '../assets/img/hero_img.webp';
       gsap.set(rail, { y: HERO.railRise });
       // after the intro the photo is already on screen (the preloader's last frame): no second zoom on top of it
       gsap.set(media, { scale: document.documentElement.classList.contains('preloading') ? 1 : HERO.mediaZoom });
-      if (introPlays) gsap.set(hero, { '--tint': 0 }); // the photo starts undimmed; the darkening arrives at the end of the opening
-      if (nav && !arrived) gsap.set(nav, { autoAlpha: 0 });
+      if (nav && !arrived) gsap.set(nav, { '--intro': 0, visibility: 'hidden' });
     }
 
     // wait for the web font and the photo, but never longer than HERO.maxWait
@@ -178,9 +174,7 @@ import hero from '../assets/img/hero_img.webp';
         .to(chars, { yPercent: 0, duration: T.chars.dur, stagger: T.chars.stagger }, T.chars.at)
         .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at);
       // the nav only arrives with the very first intro; after a page transition it was already on screen
-      if (!arrived) opening.to(nav, { autoAlpha: 1, duration: T.nav.dur, clearProps: 'opacity,visibility' }, T.nav.at);
-      // the very last thing: the photo darkens under the text and the nav (the end of the longest part of the timeline)
-      if (introPlays) opening.to(hero, { '--tint': 1, duration: T.tint.dur, ease: 'power1.inOut' }, `>${T.tint.overlap}`);
+      if (!arrived) opening.to(nav, { '--intro': 1, visibility: 'visible', duration: T.nav.dur, clearProps: '--intro,visibility' }, T.nav.at);
     });
 
     return () => {
@@ -190,6 +184,8 @@ import hero from '../assets/img/hero_img.webp';
       cancelAnimationFrame(roRaf);
       cancelAnimationFrame(raf);
       opening?.kill();
+      const curtain = hero.querySelector('.hero-curtain') as HTMLElement;
+      if (curtain) gsap.set(curtain, { opacity: 1, visibility: 'visible', clearProps: 'animation' });
     };
   }, '#hero');
 </script>
@@ -220,17 +216,13 @@ import hero from '../assets/img/hero_img.webp';
     display: block;
     will-change: transform;
   }
-  /* Dark overlay: even tint + heavier top (nav) and bottom edges. --tint is 1 (fully on) except during the opening sequence, which
-     brings it in last (see the script), once the photo, the name, the rail and the nav are all there. */
+  /* The dark overlay (see --photo-dim in Layout.astro): on from the first frame, like on the intro's photos before it. */
   .hero::after {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: var(--tint, 1);
-    background:
-      linear-gradient(to bottom, rgba(8, 7, 6, 0.55) 0%, rgba(8, 7, 6, 0.2) 35%, rgba(8, 7, 6, 0.65) 100%),
-      rgba(8, 7, 6, 0.3);
+    background: var(--photo-dim);
   }
 
   .hero-content {
@@ -310,15 +302,23 @@ import hero from '../assets/img/hero_img.webp';
     z-index: 3;
     background: #000;
     pointer-events: none;
+    view-transition-name: none;
     /* stays black until the script has set the page up (data-ready); the long delay is only a safety net */
     animation: curtain 1.6s 6s ease-out forwards;
   }
   .hero[data-ready] .hero-curtain {
     animation: curtain 1.6s 0.15s ease-out forwards;
   }
-  /* the nav arrives with the intro (the script fades it in, then hands control back to this rule) */
+  /* during view transition, reset curtain to fully opaque */
+  .hero:not([data-ready]) .hero-curtain {
+    opacity: 1 !important;
+    visibility: visible !important;
+    animation: none !important;
+  }
+  /* the nav arrives with the intro (the script raises --intro from 0 to 1, then hands control back to this rule). It is not faded with
+     `opacity`: an element with opacity < 1 hides the page from the backdrop blur of the glass inside it, so the glass would only light up at the end. */
   :global(html:not(.intro-ready) #main-nav) {
-    opacity: 0;
+    --intro: 0;
   }
   @keyframes curtain {
     to {

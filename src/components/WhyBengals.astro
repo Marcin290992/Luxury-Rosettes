@@ -54,8 +54,14 @@ const scenes = [
         <rect class="why-knock-paper" width="100%" height="100%" mask="url(#why-knock-mask)"></rect>
       </svg>
 
-      <!-- What the clouds reveal: the first screen of the dark page. In the pinned chapter it sits under the photo and under
-           the clouds canvas; without the script it is simply the heading that follows the photo. -->
+      <!-- Stripes in the colour of the dark page rise from the bottom and cover the word (the script draws them; without it they are
+           not shown). -->
+      <div class="why-stripes" aria-hidden="true">
+        <div></div><div></div><div></div><div></div><div></div>
+      </div>
+
+      <!-- The first screen of the dark page. In the pinned chapter it lies on top of the stripes and its heading rises on them; without
+           the script it is simply the heading that follows the photo. -->
       <div class="why-copy">
         <header class="why-head">
           <p class="eyebrow">Bengal excellence</p>
@@ -112,8 +118,7 @@ const scenes = [
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { mount } from '../scripts/lifecycle';
-  import { CLOUDS, WEBGL_ENABLED } from '../scripts/settings';
-  import type { CloudReveal } from '../scripts/cloud-reveal';
+  import { drawStripes } from '../scripts/stripes';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -172,124 +177,27 @@ const scenes = [
 
       gsap.set(knock, { opacity: 0 });
 
-      // 5. the clouds. When the word has settled the paper starts to dissolve in the middle into soft clouds, and the dark page under
-      //    it (the heading) shows through. The dissolve is the scroll position: scrub it back and the paper comes back.
-      //    three.js and the shader are fetched shortly before the section arrives.
+      // 5. the stripes. When the word has settled, five stripes in the colour of the dark page rise from the bottom one after another
+      //    and cover it, like the stripes of the awards page, and the heading of the dark page rises on top of them. They are the scroll
+      //    position: scrub back and they go down again.
       const copy = section.querySelector<HTMLElement>('.why-copy')!;
       const eyebrow = copy.querySelector<HTMLElement>('.eyebrow')!;
       const headLines = gsap.utils.toArray<HTMLElement>('.why-line > span', copy);
-      const photo = halfL.querySelector<HTMLImageElement>('img')!;
-      let clouds: CloudReveal | null = null;
-      let disposed = false;
-      const swap = { v: 0 }; // 0 = the real photo and word are on screen, 1 = the canvas has taken over
-      const dissolve = { p: 0 }; // 0 = untouched, 1 = gone
+      const stripes = gsap.utils.toArray<HTMLElement>('.why-stripes > div', stage);
+      const cover = { p: 0 }; // 0 = no stripe, 1 = all of them closed
 
       gsap.set(eyebrow, { autoAlpha: 0, y: 12 });
       gsap.set(headLines, { yPercent: 115 }); // each line waits below its own window
-      copy.style.visibility = 'hidden';
-
-      const apply = () => {
-        const swapped = swap.v > 0.5;
-        copy.style.visibility = swapped ? 'visible' : 'hidden';
-        if (clouds) {
-          copy.style.opacity = '1';
-          // the canvas shows the finished picture, so the real photo and word step aside; the canvas hides itself when it is gone
-          img.style.visibility = swapped ? 'hidden' : '';
-          knock.style.visibility = swapped ? 'hidden' : '';
-          clouds.show(swapped && dissolve.p < 0.999);
-        } else {
-          copy.style.opacity = String(dissolve.p); // no WebGL (or not loaded yet): the page simply fades in over the word
-        }
-      };
-
-      // the finished picture as a flat image for the shader: paper, with the photo showing through the word
-      const bake = (): HTMLCanvasElement => {
-        const w = stage.clientWidth;
-        const h = stage.clientHeight;
-        const r = Math.min(window.devicePixelRatio || 1, CLOUDS.maxPixelRatio);
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(w * r);
-        canvas.height = Math.round(h * r);
-        const ctx = canvas.getContext('2d')!;
-        ctx.scale(r, r);
-        ctx.fillStyle = getComputedStyle(section).getPropertyValue('--paper').trim() || '#faf8f3';
-        ctx.fillRect(0, 0, w, h);
-        const iw = photo.naturalWidth;
-        const ih = photo.naturalHeight;
-        if (!iw || !ih) return canvas;
-        const layer = document.createElement('canvas');
-        layer.width = canvas.width;
-        layer.height = canvas.height;
-        const lctx = layer.getContext('2d')!;
-        lctx.scale(r, r);
-        // the photo, covering the stage with the same focal point as the tiles (50% 35%)
-        const s = Math.max(w / iw, h / ih);
-        lctx.drawImage(photo, (w - iw * s) * 0.5, (h - ih * s) * 0.35, iw * s, ih * s);
-        // keep it only inside the letters, set exactly like the SVG word
-        const style = getComputedStyle(text);
-        lctx.globalCompositeOperation = 'destination-in';
-        lctx.font = `${parseFloat(style.fontSize)}px ${style.fontFamily}`;
-        if ('letterSpacing' in lctx && style.letterSpacing !== 'normal') (lctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = style.letterSpacing;
-        lctx.textAlign = 'center';
-        // the SVG word is set with dominant-baseline: central (the middle of the font's ascent and descent), which is not
-        // the canvas 'middle'; place the baseline by the font metrics so the baked word sits exactly where the SVG one did
-        lctx.textBaseline = 'alphabetic';
-        const metrics = lctx.measureText('BENGALS');
-        const lift = ((metrics.fontBoundingBoxAscent ?? 0) - (metrics.fontBoundingBoxDescent ?? 0)) / 2;
-        lctx.fillStyle = '#000';
-        lctx.fillText(text.textContent ?? '', w / 2, h / 2 + lift);
-        ctx.drawImage(layer, 0, 0, w, h);
-        return canvas;
-      };
-
-      const load = async () => {
-        if (!WEBGL_ENABLED) return; // WebGL is switched off (settings.ts): the fade-in fallback in apply() stays
-        try {
-          const module = await import('../scripts/cloud-reveal');
-          photo.loading = 'eager';
-          await Promise.all([photo.decode().catch(() => undefined), document.fonts.ready]);
-          if (disposed) return;
-          const created = await module.createCloudReveal(stage, {
-            paper: bake(),
-            centreX: CLOUDS.centreX,
-            centreBelow: CLOUDS.centreBelow,
-            color: getComputedStyle(section).getPropertyValue('--ink-warm').trim() || '#1a1410', // the page under the sheet
-            softness: CLOUDS.softness,
-            billow: CLOUDS.billow,
-            scale: CLOUDS.scale,
-            maxPixelRatio: CLOUDS.maxPixelRatio,
-          });
-          if (disposed) {
-            created?.destroy();
-            return;
-          }
-          clouds = created;
-          clouds?.setProgress(dissolve.p);
-          apply();
-        } catch {
-          clouds = null; // the fade-in fallback in apply() takes over
-        }
-      };
-      ScrollTrigger.create({ trigger: section, start: CLOUDS.loadAhead, once: true, refreshPriority: -1, onEnter: () => void load() });
-
-      // sizes can change: the canvas and the flat picture are made again
-      const onRefresh = () => {
-        if (!clouds) return;
-        clouds.resize();
-        clouds.setPaper(bake());
-      };
-      ScrollTrigger.addEventListener('refresh', onRefresh);
 
       tl.to({}, { duration: 0.3 }); // a beat on the full-screen photo
       tl.to(knock, { opacity: 1, duration: 0.6 }, '>');
       tl.to(zoom, { s: 1, duration: 1.5, ease: 'power3.inOut', onUpdate: place, immediateRender: false }, '<');
       tl.to({}, { duration: 0.4 }); // a beat on the finished word
-      tl.to(swap, { v: 1, duration: 0.02, onUpdate: apply }, '>');
-      tl.addLabel('dissolve');
-      tl.to(dissolve, { p: 1, duration: 2, ease: 'power1.in', onUpdate: () => { clouds?.setProgress(dissolve.p); apply(); } }, 'dissolve');
-      // the heading waits until the clouds have opened most of the screen, then rises into its lines one after the other
-      tl.to(eyebrow, { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, 'dissolve+=1.5');
-      tl.to(headLines, { yPercent: 0, duration: 1.5, stagger: 0.3, ease: 'power3.out' }, 'dissolve+=1.7');
+      tl.addLabel('cover');
+      tl.to(cover, { p: 1, duration: 2, onUpdate: () => drawStripes(stripes, cover.p) }, 'cover');
+      // the heading waits until the last stripe has nearly closed, then rises into its lines one after the other
+      tl.to(eyebrow, { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, 'cover+=1.7');
+      tl.to(headLines, { yPercent: 0, duration: 1.5, stagger: 0.3, ease: 'power3.out' }, 'cover+=1.9');
       tl.to({}, { duration: 0.9 }); // a rest on the heading before the pin lets go and the page scrolls on
 
       // 6. the long scroll. Each scene is a photo cut to the shape of a spot of the coat, beside one trait. A clip-path opens the
@@ -333,15 +241,7 @@ const scenes = [
         gsap.to(line, { clipPath: OPEN, duration: 1.1, ease: 'power3.inOut', scrollTrigger: arrive });
       });
       return () => {
-        disposed = true;
-        clouds?.destroy();
-        clouds = null;
         ScrollTrigger.removeEventListener('refresh', place);
-        ScrollTrigger.removeEventListener('refresh', onRefresh);
-        copy.style.visibility = '';
-        copy.style.opacity = '';
-        img.style.visibility = '';
-        knock.style.visibility = '';
         delete section.dataset.live;
       };
     });
@@ -384,7 +284,8 @@ const scenes = [
     width: calc(50% + 0.5px);
     margin-left: -0.5px;
   }
-  .why-knock {
+  .why-knock,
+  .why-stripes {
     display: none;
   }
   /* each tile shows its side of the same photo: the image is twice as wide as the tile */
@@ -613,16 +514,32 @@ const scenes = [
     letter-spacing: -0.02em;
   }
 
-  /* What the clouds reveal: the first screen of the dark page, under the photo and the clouds canvas (hidden until the
-     script lets the photo give way, so it never shows around the small tiles). A huge heading at the top left. */
+  /* The stripes in the colour of the dark page, over the word: they rise from the bottom (see stripes.ts) */
+  .why[data-live] .why-stripes {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .why[data-live] .why-stripes div {
+    flex: 1;
+    margin-top: -1px;
+    background: var(--ink-warm);
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+
+  /* The first screen of the dark page, on top of the stripes (it has no background of its own: nothing shows of it until its heading
+     rises). A huge heading at the top left. */
   .why[data-live] .why-copy {
     position: absolute;
     inset: 0;
-    z-index: 0;
+    z-index: 4;
     padding: max(6.5rem, 14vh) 6vw 0;
-    background: var(--ink-warm);
     color: var(--cream);
-    visibility: hidden;
+    pointer-events: none;
   }
   .why[data-live] .why-head {
     text-align: left;

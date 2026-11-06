@@ -1,7 +1,7 @@
 // Every tunable number of the scroll sequences, in one place. Times are in timeline seconds (one unit of a
 // scrubbed timeline is "one beat" of scrolling), distances in px / vw / screens as named.
 
-// TEMPORARY: false = the WebGL scenes (awards spiral, Why Bengals clouds) are off and their plain fallbacks show. Used to test whether
+// TEMPORARY: false = the WebGL scenes (awards spiral) are off and their plain fallbacks show. Used to test whether
 // WebGL causes the flicker at the start of the page transition on iPhone. Set back to true to turn them on.
 export const WEBGL_ENABLED = true;
 
@@ -265,19 +265,6 @@ export const CORRIDOR = {
     laptop: { maxWidth: 380, height: 0.42, spread: 1.75, scatter: 0.12, revealRange: 3, passRange: 0.35, passHold: 0 },
     phone: { width: 0.5, height: 0.3, aspectRatio: 0.56, perspective: 900, spread: 0.62, scatter: 0.05, revealRange: 3.6, passRange: 0.8, passHold: 0.15 },
   },
-};
-
-// ---- cloud reveal (Why Bengals: the paper dissolves into soft clouds and the traits show through) ----------------------
-// Sizes are in units of the shorter side of the screen. For a thicker, softer edge: raise softness; for a more ragged one: raise billow; for bigger clouds: lower scale.
-// The fringe takes the colour of the page under the sheet (the section's own --ink-warm, read in WhyBengals.astro).
-export const CLOUDS = {
-  centreX: 0.5, // where the cloud starts across the screen (the middle)
-  centreBelow: 0.2, // how far below the bottom edge its centre lies, as a share of the screen's width: a low mound rises first and grows into a dome (the same shape on a wide screen and on a tall one)
-  softness: 0.13, // the width of the feathered edge (the fringe is about three times this)
-  billow: 0.2, // how far the edge puffs in and out
-  scale: 2.2, // how many puffs fit in a screen height
-  maxPixelRatio: 1.5, // the canvas never renders sharper than this (the baked word is as sharp as this; the shader is light, the noise is drawn once)
-  loadAhead: 'top 150%', // the three.js chunk is fetched when the section is this close
 };
 
 // ---- scroll stack (the "Before you decide" steps: cards that arrive over each other) -----------------------------------------

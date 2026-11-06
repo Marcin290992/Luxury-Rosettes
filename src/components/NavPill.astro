@@ -144,11 +144,19 @@ const isCurrent = (href: string) =>
     // picture of the old page, which is taken a moment later). A link to the page you are already on, from a scrolled page, plays the same
     // transition (to a fresh copy of the page, at its top) instead of scrolling back; from the top of the page it does nothing.
     let giveUp = 0;
-    const leave = (href: string) => {
+    const leave = (href: string, link: HTMLElement) => {
+      // everything that is still animating in the menu (the letters of a hover, the links coming in one after another) finishes at once, in
+      // its final state, so that the picture of the old page is never taken with a half-done animation; the chosen link shows its finished hover
+      nav.classList.add('leaving');
+      link.classList.add('chosen');
       document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open: false, leaving: true } })); // stays held until the page is gone
       // if the page never changes (no connection), the menu closes after all
       window.clearTimeout(giveUp);
-      giveUp = window.setTimeout(() => setOpen(false), 6000);
+      giveUp = window.setTimeout(() => {
+        nav.classList.remove('leaving');
+        link.classList.remove('chosen');
+        setOpen(false);
+      }, 6000);
       navigate(href);
     };
     const onLinkClick = (e: MouseEvent) => {
@@ -162,7 +170,7 @@ const isCurrent = (href: string) =>
       const transition = sameOrigin && plain && !reduced && (samePage ? !url.hash && getScrollY() > AT_TOP : true);
       if (transition) {
         e.preventDefault();
-        leave(url.href);
+        leave(url.href, link);
         return;
       }
       // everything else: the menu simply folds
@@ -464,6 +472,16 @@ const isCurrent = (href: string) =>
     .inquire-btn:focus-visible .nav-char { transform: translateY(-100%); }
   }
   .nav-links a[aria-current='page'] { color: var(--gold); font-style: italic; }
+
+  /* A link was chosen (see `leave` in the script): the animations of the menu end here and now, in their final state, and nothing reacts to
+     the pointer any more. The chosen link keeps the look of a finished hover (the letters slid up, the gold copy in place). */
+  .nav-pill.leaving,
+  .nav-pill.leaving * {
+    transition: none !important;
+    transition-delay: 0s !important;
+    pointer-events: none;
+  }
+  .nav-pill.leaving .chosen .nav-char { transform: translateY(-100%); }
 
   .nav-footer {
     margin: 0;

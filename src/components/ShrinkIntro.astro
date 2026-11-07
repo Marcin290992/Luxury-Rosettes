@@ -50,7 +50,13 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
       }
     </div>
     <div class="si-about-text"><h3>{collection}</h3></div>
+    <!-- stripes in the colour of the dark page: they rise from the bottom one after another and cover the held screen, and the next section follows
+         (the script draws them; without it they are not shown) -->
+    <div class="si-stripes" aria-hidden="true">
+      <div></div><div></div><div></div><div></div><div></div>
+    </div>
   </section>
+  <div class="si-hold" aria-hidden="true"></div>
 
   {
     closing && (
@@ -75,6 +81,7 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
   .si {
     background: var(--paper);
     color: var(--ink);
+    display: flow-root; /* the margin under the held section stays inside, so there is room for it to stay put */
   }
   .si h1,
   .si h3 {
@@ -197,8 +204,38 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
   }
 
   /* the next section rises under the last part of the pin (the tile is still on the screen), over the shrinking photo */
+  /* The section stays put on the screen (sticky) for two more screens of scrolling while the tiles drift up and out of it; the next section is
+     pulled up over its end (see the `pull` of CatStack on the page) and slides up over it. The hold is a block of that length after it: a sticky
+     box can only stay within its parent, and a margin is part of the box, so it would give it no room. */
+  .si-stripes {
+    display: none;
+  }
+  .si-hero[data-live] + .si-about .si-stripes {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .si-hero[data-live] + .si-about .si-stripes div {
+    flex: 1;
+    margin-top: -1px;
+    background: var(--ink-warm, #1a1410);
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  .si-hold {
+    display: none;
+  }
+  .si-hero[data-live] ~ .si-hold {
+    display: block;
+    height: 220vh;
+    height: 220svh;
+  }
   .si-hero[data-live] + .si-about {
-    position: relative;
+    position: sticky;
+    top: 0;
     z-index: 1;
     height: 100svh;
     margin-top: calc(var(--si-overlap) * -100svh);

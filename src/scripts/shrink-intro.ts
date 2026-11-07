@@ -15,6 +15,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { SHRINK_INTRO, WORD_HIDDEN, HERO } from './settings';
+import { drawStripes } from './stripes';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -90,6 +91,31 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
         { y: c.to, ease: 'none', scrollTrigger: { trigger: about, start: 'top bottom', end: 'bottom top', scrub: true } },
       );
     });
+
+    // The line of text in the middle fades out while the tiles are on their way out (over the second half of the hold).
+    const aboutText = about.querySelector<HTMLElement>('.si-about-text');
+    if (aboutText) {
+      gsap.fromTo(
+        aboutText,
+        { opacity: 1 },
+        { opacity: 0, ease: 'none', immediateRender: false, scrollTrigger: { trigger: about, start: 'top top-=45%', end: 'top top-=100%', scrub: true } },
+      );
+    }
+    // Then the stripes (the site's transition, the same as in the Why Bengals chapter and the stripe cover): in the last screen of the hold they rise
+    // from the bottom one after another and cover the screen in the colour of the dark page; the photo of the next section comes up while they close,
+    // so there is no empty dark screen between them.
+    const stripes = Array.from(about.querySelectorAll<HTMLElement>('.si-stripes > div'));
+    if (stripes.length) {
+      const draw = (p: number) => drawStripes(stripes, p);
+      draw(0);
+      ScrollTrigger.create({
+        trigger: about,
+        start: 'top top-=100%',
+        end: 'top top-=160%', // the photo of the next section starts to unfold where they end (see `pull` and `lead` of CatStack on the page)
+        onUpdate: (self) => draw(self.progress),
+        onRefresh: (self) => draw(self.progress),
+      });
+    }
 
     return () => {
       opening?.kill();

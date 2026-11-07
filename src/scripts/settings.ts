@@ -332,12 +332,13 @@ export const SHRINK_INTRO = {
   tile: { wide: 150, narrow: 100 }, // px, the side of the tile
   radius: 10, // px, the rounding the tile ends with
   scrub: 1, // seconds the picture takes to catch up with the scroll
-  // the four columns of photos: where each starts and ends (px), so they drift at different speeds
+  // the four columns of photos: where each starts and ends (px), so they drift at different speeds. They end above the top of the screen: the
+  // section is held still while they drift, and the next one only comes in once they have gone.
   columns: [
-    { x: 0, from: 1000, to: -500 },
-    { x: -225, from: 500, to: -250 },
-    { x: 225, from: 500, to: -250 },
-    { x: 0, from: 1000, to: -500 },
+    { x: 0, from: 1000, to: -950 },
+    { x: -225, from: 500, to: -850 },
+    { x: 225, from: 500, to: -850 },
+    { x: 0, from: 1000, to: -950 },
   ],
 };
 

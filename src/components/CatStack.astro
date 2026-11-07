@@ -19,14 +19,20 @@ interface Card {
 }
 interface Props {
   cards: Card[];
+  // For a stack that follows a section which is held still (sticky): `pull` (negative) pulls the stack up over its end, so the first card sits on the
+  // screen from the moment the stripes have covered it; `lead` is the scrolling that first card is given to unfold, from the right to the left, in place
+  // (it does not come up from below), before the next card slides over it. Both are lengths, e.g. "-160svh" and "60svh".
+  pull?: string;
+  lead?: string;
 }
-const { cards } = Astro.props;
+const { cards, pull, lead } = Astro.props;
 ---
 
-<section class="cs" data-cat-stack>
+<section class="cs" data-cat-stack data-pulled={pull ? "" : undefined} data-lead={lead ? "" : undefined} style={`${pull ? `--cs-pull:${pull};` : ""}${lead ? `--cs-lead:${lead};` : ""}` || undefined}>
   {
     cards.map((c) => (
       <div class="cs-item" data-cs-item>
+        <div class="cs-reveal" data-cs-reveal>
         <div class="cs-card" data-cs-card>
           <Image src={c.image} alt={c.name} widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" style={`object-position:${c.position ?? '50% 35%'}`} />
           <span class="cs-shade" aria-hidden="true"></span>
@@ -36,6 +42,7 @@ const { cards } = Astro.props;
             <h2 class="cs-name">{c.name}</h2>
             <p class="cs-line">{c.line}</p>
           </div>
+        </div>
         </div>
       </div>
     ))
@@ -55,6 +62,9 @@ const { cards } = Astro.props;
     const mm = gsap.matchMedia();
     const splits: SplitText[] = [];
 
+    // the scrolling the first card is given to unfold in place (0 if it just comes up like the others)
+    const leadOf = (items: HTMLElement[]) => (items[0].closest('[data-cat-stack]')?.hasAttribute('data-lead') ? Math.max(0, items[0].offsetHeight - window.innerHeight) : 0);
+
     // what both versions share: the words rise out of their windows when a card arrives; returns each card's words (for the way out)
     const prepare = (root: HTMLElement, items: HTMLElement[]) =>
       items.map((item, i) => {
@@ -68,7 +78,7 @@ const { cards } = Astro.props;
           duration: 1.1,
           stagger: 0.05,
           ease: 'power3.out',
-          scrollTrigger: { trigger: item, start: i === 0 ? 'top 75%' : 'top 55%', toggleActions: 'play none none reverse' },
+          scrollTrigger: { trigger: item, start: i === 0 && leadOf(items) ? () => `top top-=${Math.round(leadOf(items) * 0.7)}` : i === 0 ? 'top 75%' : 'top 55%', toggleActions: 'play none none reverse' },
         });
         return words;
       });
@@ -84,6 +94,17 @@ const { cards } = Astro.props;
       tl.fromTo(words, { yPercent: 0 }, { yPercent: -WORD_HIDDEN, stagger: 0.01, ease: 'none', immediateRender: false }, 0);
     };
 
+    // the first card unfolds from the right to the left, in place, while the section under it stands still (it does not come up from below)
+    const unfold = (items: HTMLElement[]) => {
+      const reveal = items[0].querySelector<HTMLElement>('[data-cs-reveal]');
+      if (!reveal || !leadOf(items)) return;
+      gsap.fromTo(
+        reveal,
+        { clipPath: 'inset(0% 0% 0% 100%)' },
+        { clipPath: 'inset(0% 0% 0% 0%)', ease: 'power1.inOut', scrollTrigger: { trigger: items[0], start: 'top top', end: () => `+=${leadOf(items)}`, scrub: true, invalidateOnRefresh: true } },
+      );
+    };
+
     // ---- a laptop: the capture's mechanism, a pin on each card (all but the last) with pinSpacing off, and a scrub that follows the scroll ----
     mm.add('(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)', () => {
       const root = document.querySelector<HTMLElement>('[data-cat-stack]');
@@ -91,11 +112,20 @@ const { cards } = Astro.props;
       root.dataset.live = 'pin';
       const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
       const words = prepare(root, items);
+      unfold(items);
       items.forEach((item, i) => {
         if (i === items.length - 1) return;
         const end = () => `+=${item.offsetHeight}`;
         ScrollTrigger.create({ trigger: item, start: 'top top', end, pin: true, pinSpacing: false });
-        cover(item, words[i], { trigger: item, start: 'top top', end, scrub: true });
+        // the first card, if it unfolds first, is covered only once it has: its covering starts after the lead
+        const lead = () => (i === 0 ? leadOf(items) : 0);
+        cover(item, words[i], {
+          trigger: item,
+          start: () => `top top-=${lead()}`,
+          end: () => `+=${item.offsetHeight - lead()}`,
+          scrub: true,
+          invalidateOnRefresh: true,
+        });
       });
       return () => {
         delete root.dataset.live;
@@ -111,6 +141,7 @@ const { cards } = Astro.props;
       root.dataset.live = 'sticky';
       const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
       const words = prepare(root, items);
+      unfold(items);
       items.forEach((item, i) => {
         const next = items[i + 1];
         if (!next) return;
@@ -129,6 +160,7 @@ const { cards } = Astro.props;
 <style>
   .cs {
     position: relative;
+    z-index: 2; /* above a section that is held still under it */
     background: #0c0907;
     color: #f4ede0;
   }
@@ -144,6 +176,27 @@ const { cards } = Astro.props;
   .cs[data-live='sticky'] .cs-item {
     position: sticky;
     top: 0;
+  }
+  /* with a section held under the stack: the stack is pulled up under it, and its first card is given the length to unfold in */
+  .cs[data-live][data-pulled] {
+    margin-top: var(--cs-pull);
+  }
+  /* no colour of its own: until the first card has unfolded, what is under the stack (the held screen) shows beside it */
+  .cs[data-live][data-lead] {
+    background: transparent;
+  }
+  .cs[data-live][data-lead] .cs-item:first-child {
+    height: calc(100vh + var(--cs-lead));
+    height: calc(100svh + var(--cs-lead));
+  }
+  .cs-reveal {
+    position: absolute;
+    inset: 0;
+  }
+  .cs[data-live][data-lead] .cs-item:first-child .cs-reveal {
+    bottom: auto;
+    height: 100vh;
+    height: 100svh;
   }
   .cs-card {
     position: absolute;

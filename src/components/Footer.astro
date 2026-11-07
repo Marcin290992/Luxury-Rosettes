@@ -108,6 +108,16 @@ import emblem from '../assets/logo/logo-emblem.svg';
     border-top: 1px dashed rgba(239, 233, 220, 0.25);
     margin-top: 3rem;
   }
+  /* the smallest phones (iPhone SE, 320-380px): the address must fit on one line */
+  @media (max-width: 380px) {
+    .mail {
+      font-size: 1.45rem;
+    }
+    .bottom {
+      justify-content: center;
+      text-align: center;
+    }
+  }
   .copy {
     font-size: 0.7rem;
     opacity: 0.45;

@@ -225,8 +225,10 @@ const {
 
 <style is:global>
   /* The menu is open: the page behind it does not scroll (any device, any way: wheel, finger, keys) */
+  /* NOT on body: when html is overflow:hidden it is the one that locks the window (its overflow goes to the viewport). A body that is
+     overflow:hidden too becomes a scroll container of its own, and every position:sticky stage inside it (the "Every kitten, a story"
+     photo, the Bengals chapter) stops sticking: the page behind the menu went blank. On a phone body is hidden all the time anyway (see above). */
   html.menu-open,
-  html.menu-open body,
   html.menu-open #scroll-root {
     overflow: hidden !important;
     overscroll-behavior: none;

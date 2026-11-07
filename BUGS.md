@@ -239,4 +239,4 @@ Po serii poprawek `awards-spiral.ts` i `AwardsSpiral.astro` zostały przepisane 
 
 ### Lenis na dotyku: próbnie wyłączony, przywrócony
 
-Na chwilę Lenis był wyłączony na dotyku (natywne przewijanie), ale wrócił. Żeby było mniej oporu, `SMOOTH_TOUCH` ma teraz `syncTouchLerp: 0.25` (było 0.12) i `touchMultiplier: 1.15` (było 1): strona idzie za palcem prawie bez opóźnienia, z minimalnym wygładzeniem. Za lekko → obniżyć `syncTouchLerp` (np. 0.18).
+Na chwilę Lenis był wyłączony na dotyku (natywne przewijanie), ale wrócił. Żeby było mniej oporu, `SMOOTH_TOUCH` ma teraz `syncTouchLerp: 0.15` i `touchMultiplier: 1` (było 0.12, potem 0.25 i 1.15, za lekko). Za lekko → obniżyć `syncTouchLerp`, za ciężko → podnieść.

@@ -24,7 +24,7 @@ export const SMOOTH_WHEEL = { duration: 2.4, wheelMultiplier: 0.4 }; // Lenis: h
 // a finger (phones, tablets): Lenis follows the finger with this much lag. Lower = heavier (its default is 0.075); touchMultiplier < 1 = the page moves less than the finger.
 // It used to be as heavy as the wheel (0.05 and 0.8) and felt stiff under a finger: the page lagged behind it and moved less than it. Now it follows the finger
 // closely (a finger wants the page right under it) and keeps only a little softness. For the native feel of the phone's own scrolling: syncTouch: false.
-export const SMOOTH_TOUCH = { syncTouch: true, syncTouchLerp: 0.25, touchMultiplier: 1.15 };
+export const SMOOTH_TOUCH = { syncTouch: true, syncTouchLerp: 0.15, touchMultiplier: 1 };
 
 // ---- story stage: the timeline layout shared by the laptop and the phone versions -----------------------------------------
 export const PX_PER_SEC = 520; // higher = the whole sequence is spread over more scrolling (slower)

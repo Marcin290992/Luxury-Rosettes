@@ -22,10 +22,6 @@ export function initLenis() {
   // on touch devices the page scrolls inside #scroll-root (scripts/scroller.ts): Lenis smooths that box instead of the window
   const box = scrollBox();
 
-  // on touch devices the phone's own scrolling is used (no Lenis); the page still scrolls inside #scroll-root, ScrollTrigger follows it natively.
-  // Everything that asks for Lenis (getLenis) checks for undefined. To bring Lenis back on touch: remove this line.
-  if (box) return undefined;
-
   lenis = new Lenis({
     ...SMOOTH_WHEEL,
     ...SMOOTH_TOUCH,

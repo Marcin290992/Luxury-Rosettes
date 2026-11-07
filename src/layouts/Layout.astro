@@ -64,6 +64,7 @@ const {
   import { initDebug } from '../scripts/debug-log';
   import { setupScrollRestore } from '../scripts/scroll-restore';
   import { settleLayout } from '../scripts/scroller';
+  import { prefetch } from 'astro:prefetch';
 
   // After a page transition the nav is already on screen: the home hero must not hide it and run its intro for it again (see Hero.astro).
   // The router rewrites <html>'s classes on a swap, so `intro-ready` is put back at once.
@@ -80,6 +81,21 @@ const {
     (window as unknown as { __lrSwapped?: boolean }).__lrSwapped = true;
     document.documentElement.classList.add('intro-ready');
   });
+
+  // Every page this page links to is fetched once the browser is idle, so a tap on any link (not only in the menu) finds its page already
+  // there and the transition does not wait for the network.
+  const warm = () => {
+    const seen = new Set<string>([location.pathname]);
+    document.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((a) => {
+      const u = new URL(a.href, location.href);
+      if (u.origin !== location.origin || a.target || seen.has(u.pathname)) return;
+      seen.add(u.pathname);
+      prefetch(u.pathname + u.search, { ignoreSlowConnection: true });
+    });
+  };
+  const idle = (window as unknown as { requestIdleCallback?: (f: () => void) => void }).requestIdleCallback;
+  const later = () => (idle ? idle(warm) : setTimeout(warm, 1500));
+  document.addEventListener('astro:page-load', later);
 
   initDebug(); // only does anything when the page is opened with ?debug=1
   setupScrollRestore(); // every page opens at its top; the router's restored position is put right while the page settles

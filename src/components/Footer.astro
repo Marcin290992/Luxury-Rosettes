@@ -2,80 +2,73 @@
 import emblem from '../assets/logo/logo-emblem.svg';
 ---
 
-<footer class="foot">
-  <div class="top">
-    <div class="brand">
-      <img src={emblem.src} alt="" width="44" height="44" loading="lazy" />
-      <div>
-        <p class="name">Luxury Rosettes</p>
-        <p class="tica">TICA registered Bengal cattery</p>
+<footer class="foot" data-footer>
+  <div class="foot-in" data-footer-content>
+    <div class="mid">
+      <img class="emblem" src={emblem.src} alt="" width="120" height="120" loading="lazy" />
+      <a class="mail" href="mailto:luxuryrosettes@yahoo.com">luxuryrosettes@yahoo.com</a>
+      <div class="social">
+        <a href="https://www.facebook.com/people/Luxuryrosettes-Bengal-cattery/100091469460702/" target="_blank" rel="noopener noreferrer">Facebook</a>
+        <a href="https://www.instagram.com/luxuryrosettes" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <a href="https://wa.me/447514951289" target="_blank" rel="noopener noreferrer">WhatsApp</a>
       </div>
     </div>
-    <div class="social">
-      <a href="https://www.facebook.com/people/Luxuryrosettes-Bengal-cattery/100091469460702/" target="_blank" rel="noopener noreferrer">Facebook</a>
-      <a href="https://www.instagram.com/luxuryrosettes" target="_blank" rel="noopener noreferrer">Instagram</a>
-      <a href="https://wa.me/447514951289" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+    <div class="bottom">
+      <nav aria-label="Footer navigation">
+        <a href="/#why-bengals">About</a>
+        <a href="/available-kittens">Kittens</a>
+        <a href="/gallery">Gallery</a>
+        <button type="button" data-contact-trigger>Contact</button>
+      </nav>
+      <p class="copy">© 2025 Luxury Rosettes · TICA registered Bengal cattery</p>
     </div>
-  </div>
-  <i class="dash" aria-hidden="true"></i>
-  <div class="bottom">
-    <nav aria-label="Footer navigation">
-      <a href="/#why-bengals">About</a>
-      <a href="/available-kittens">Kittens</a>
-      <a href="/gallery">Gallery</a>
-      <button type="button" data-contact-trigger>Contact</button>
-      <a href="mailto:luxuryrosettes@yahoo.com">luxuryrosettes@yahoo.com</a>
-    </nav>
-    <p class="copy">© 2025 Luxury Rosettes. All rights reserved.</p>
   </div>
 </footer>
 
 <style>
   .foot {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: var(--font-body);
-    padding: 3.5rem 1.5rem 2.5rem;
     position: relative;
+    z-index: 1;
+    color: var(--cream);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    padding: 0 1.5rem;
   }
-  .foot::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gold) 50%, transparent);
-  }
-  .top,
-  .bottom {
+  .foot-in {
+    width: 100%;
     max-width: 72rem;
     margin: 0 auto;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
     justify-content: space-between;
-    gap: 1.5rem;
+    padding: 30svh 0 2.5rem; /* the top part sits over the photo's lower edge while it is still visible */
   }
-  .brand {
+  .mid {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    text-align: center;
   }
-  .brand img {
+  .emblem {
+    width: clamp(5.5rem, 14vw, 9rem);
+    height: auto;
     opacity: 0.9;
+    margin-bottom: 2.25rem;
   }
-  .name {
+  .mail {
     font-family: var(--font-heading);
-    font-size: 1.4rem;
-    margin: 0;
+    font-size: clamp(1.8rem, 6.4vw, 4.5rem);
+    line-height: 1.05;
+    color: var(--cream);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    transition: color var(--hover-time, 0.3s);
   }
-  .tica {
-    font-size: 0.65rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    opacity: 0.5;
-    margin: 0.15rem 0 0;
+  .mail:hover,
+  .mail:focus-visible {
+    color: var(--gold);
   }
   .social,
   nav {
@@ -83,14 +76,19 @@ import emblem from '../assets/logo/logo-emblem.svg';
     flex-wrap: wrap;
     gap: 0.75rem 1.75rem;
   }
+  .social {
+    justify-content: center;
+    margin-top: 2.25rem;
+  }
   .social a,
   nav a,
   nav button {
     all: unset;
     cursor: pointer;
     font-size: 0.78rem;
-    color: rgba(26, 26, 26, 0.6);
-    transition: color var(--hover-time);
+    letter-spacing: 0.04em;
+    color: rgba(239, 233, 220, 0.65);
+    transition: color var(--hover-time, 0.3s);
   }
   .social a:hover,
   nav a:hover,
@@ -98,18 +96,21 @@ import emblem from '../assets/logo/logo-emblem.svg';
   .social a:focus-visible,
   nav a:focus-visible,
   nav button:focus-visible {
-    color: var(--gold-deep);
+    color: var(--gold);
   }
-  .foot .dash {
-    display: block;
-    max-width: 72rem;
-    margin: 2.5rem auto;
-    height: 0;
-    border-top: var(--dash-divider);
+  .bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed rgba(239, 233, 220, 0.25);
+    margin-top: 3rem;
   }
   .copy {
     font-size: 0.7rem;
-    opacity: 0.4;
+    opacity: 0.45;
     margin: 0;
   }
 </style>

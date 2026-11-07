@@ -241,7 +241,9 @@ const steps = [
     overflow: hidden;
     padding: max(6.5rem, 14vh) 1rem max(3.5rem, 7vh);
     padding-top: max(6.5rem, 14lvh); /* clear of the nav pill */
-    padding-bottom: max(3.5rem, 7lvh);
+    --bar: calc(100vh - 100svh);
+    --bar: calc(100lvh - 100svh);
+    padding-bottom: calc(max(3.5rem, 7lvh) + var(--bar)); /* keeps the cards above the browser's bottom bar */
   }
   .stack[data-live] .stack-aside {
     max-width: none;
@@ -276,7 +278,7 @@ const steps = [
     position: absolute;
     left: 0;
     right: 0;
-    bottom: max(1.25rem, 3vh);
+    bottom: calc(max(1.25rem, 3vh) + var(--bar, 0px));
     pointer-events: none;
   }
   /* progress: the site's dashed line, filled in by clipping (so the dashes are never stretched) */
@@ -315,7 +317,7 @@ const steps = [
       column-gap: clamp(2rem, 5vw, 6rem);
       padding: max(6rem, 12vh) 4vw max(3.5rem, 7vh);
       padding-top: max(6rem, 12lvh);
-      padding-bottom: max(3.5rem, 7lvh);
+      padding-bottom: calc(max(3.5rem, 7lvh) + var(--bar));
     }
     .stack[data-live] .stack-aside h2 {
       font-size: clamp(2.2rem, 3.6vw, 3.4rem);

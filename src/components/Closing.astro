@@ -1,28 +1,65 @@
 ---
+import { Image } from 'astro:assets';
 import LetterButton from './LetterButton.astro';
+import photo from '../assets/img/our_cats.webp'; // placeholder: swap for the real closing photo
 ---
 
-<section class="end" id="enquire">
-  <p class="eyebrow" data-reveal>Your Bengal awaits</p>
-  <h2 data-reveal>Ready to meet<br />your kitten?</h2>
-  <div class="ctas" data-reveal>
-    <LetterButton label="View available kittens" href="/available-kittens" solid />
-    <LetterButton label="Get in touch" contact />
+<!-- Full-screen photo with the closing line. When the footer rises, the photo is clipped inward and the footer scales in (scripts/footer-zoom.ts). -->
+<section class="end" id="enquire" data-footer-clip>
+  <div class="bg" aria-hidden="true">
+    <Image class="photo" src={photo} alt="" widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" draggable="false" data-footer-photo />
+    <i class="shade"></i>
+  </div>
+  <div class="inner">
+    <p class="eyebrow" data-reveal>Your Bengal awaits</p>
+    <h2 data-reveal>Ready to meet<br />your kitten?</h2>
+    <div class="ctas" data-reveal>
+      <LetterButton label="View available kittens" href="/available-kittens" solid />
+      <LetterButton label="Get in touch" contact />
+    </div>
   </div>
 </section>
 
 <style>
   .end {
+    position: relative;
+    overflow: hidden;
     background: #0d0b09;
     color: var(--cream);
     text-align: center;
-    min-height: 0; /* grows to fill the last screen (see .ending in index.astro) */
+    min-height: 100vh;
+    min-height: 100svh;
     display: grid;
     align-content: center;
     justify-items: center;
     padding: clamp(5.5rem, 14vh, 9rem) 1.5rem clamp(3rem, 8vh, 6rem); /* the top clears the nav pill */
   }
-  /* the same type as the "Meet your Bengal" finale */
+  .bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  /* taller than its frame so the parallax has room to move */
+  .photo {
+    position: absolute;
+    left: 0;
+    top: -15%;
+    width: 100%;
+    height: 130%;
+    object-fit: cover;
+    will-change: transform;
+  }
+  .shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(13, 11, 9, 0.55), rgba(13, 11, 9, 0.35) 45%, rgba(13, 11, 9, 0.7));
+  }
+  .inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    justify-items: center;
+  }
   .eyebrow {
     font-family: var(--font-body);
     font-size: 0.75rem;
@@ -34,7 +71,7 @@ import LetterButton from './LetterButton.astro';
   h2 {
     font-family: var(--font-heading);
     font-weight: 400;
-    font-size: clamp(2.4rem, 8vw, 3.5rem);
+    font-size: clamp(2.4rem, 8vw, 5.5rem);
     line-height: 1.02;
     margin: 0 0 2rem;
   }

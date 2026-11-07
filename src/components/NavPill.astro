@@ -164,12 +164,21 @@ const isCurrent = (href: string) =>
       label = next;
     };
 
+    // While the menu is open the page behind it does not scroll (phone, tablet, laptop): Lenis stops, and html.menu-open (see Layout.astro)
+    // takes away the native scrolling of the window and of #scroll-root too
+    const lockScroll = (on: boolean) => {
+      document.documentElement.classList.toggle('menu-open', on);
+      const lenis = getLenis();
+      if (on) lenis?.stop();
+      else lenis?.start();
+    };
     const setOpen = (open: boolean) => {
       nav.classList.toggle('expanded', open);
       shapeGlass();
       btn.setAttribute('aria-expanded', String(open));
       rollLabel(open ? 'Close' : 'Menu');
       panel.toggleAttribute('inert', !open);
+      lockScroll(open);
       // the scenes that follow the scroll hold still while the menu is open (see `nav-menu` in awards-spiral.ts)
       document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open, leaving: false } }));
     };
@@ -291,6 +300,7 @@ const isCurrent = (href: string) =>
       window.clearTimeout(warmTimer);
       nav.removeEventListener('click', onNavClick);
       offScroll();
+      lockScroll(false);
     };
   });
 </script>

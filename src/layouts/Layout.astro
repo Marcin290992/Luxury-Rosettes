@@ -224,6 +224,13 @@ const {
 </style>
 
 <style is:global>
+  /* The menu is open: the page behind it does not scroll (any device, any way: wheel, finger, keys) */
+  html.menu-open,
+  html.menu-open body,
+  html.menu-open #scroll-root {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
   /* A phone held sideways: the site is made for upright screens, so a note covers it until the phone is turned back */
   .rotate-note {
     display: none;

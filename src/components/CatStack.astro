@@ -4,8 +4,7 @@ import type { ImageMetadata } from 'astro';
 
 /**
  * Full-screen cat cards that stack while scrolling: the "Our Camps" stack of the white-desert capture (lib/fx/stack.js), in the style of this site.
- * Each card is pinned to the top while the next one slides up over it; the card underneath shrinks into a rounded frame and darkens, and its words
- * leave upward through their windows. The words of a card rise out of their windows when it arrives, like every other text of the site.
+ * Each card is pinned to the top while the next one slides up over it; the card underneath shrinks into a rounded frame and darkens (its words stay). The words of a card rise out of their windows when it arrives, like every other text of the site.
  * On a laptop (a mouse, a wide screen) it is the capture's mechanism: a ScrollTrigger pin with pinSpacing off and a scrub that follows the scroll
  * with no lag. On a phone and a tablet the cards are CSS sticky instead (a pin switches to position:fixed on the main thread and jitters under a
  * finger). Without the script (or with reduced motion) the cards are simply stacked one under another.
@@ -83,7 +82,7 @@ const { cards, pull, lead } = Astro.props;
         return words;
       });
 
-    // the card that is covered shrinks into a rounded frame, darkens, and its words leave upward (the values of the capture's stack.js)
+    // the card that is covered shrinks into a rounded frame and darkens (the values of the capture's stack.js); its words stay
     const cover = (item: HTMLElement, words: Element[], scrollTrigger: ScrollTrigger.Vars) => {
       const card = item.querySelector<HTMLElement>('[data-cs-card]')!;
       const dim = item.querySelector<HTMLElement>('[data-cs-dim]')!;
@@ -91,7 +90,7 @@ const { cards, pull, lead } = Astro.props;
       const tl = gsap.timeline({ scrollTrigger });
       tl.to(card, { clipPath: 'inset(2.5rem round 0.625rem)', scale: 0.96, ease: 'none' }, 0);
       tl.to(dim, { opacity: 0.65, ease: 'none' }, 0);
-      tl.fromTo(words, { yPercent: 0 }, { yPercent: -WORD_HIDDEN, stagger: 0.01, ease: 'none', immediateRender: false }, 0);
+      // (the words stay where they are: they do not leave while the next card covers this one)
     };
 
     // the first card unfolds from the right to the left, in place, while the section under it stands still (it does not come up from below)
@@ -117,15 +116,9 @@ const { cards, pull, lead } = Astro.props;
         if (i === items.length - 1) return;
         const end = () => `+=${item.offsetHeight}`;
         ScrollTrigger.create({ trigger: item, start: 'top top', end, pin: true, pinSpacing: false });
-        // the first card, if it unfolds first, is covered only once it has: its covering starts after the lead
-        const lead = () => (i === 0 ? leadOf(items) : 0);
-        cover(item, words[i], {
-          trigger: item,
-          start: () => `top top-=${lead()}`,
-          end: () => `+=${item.offsetHeight - lead()}`,
-          scrub: true,
-          invalidateOnRefresh: true,
-        });
+        // a card is covered while the next one slides up over it: from the moment that one's top enters the screen to the moment it reaches the top
+        // (the same for every card, the first one included, whatever it was given to unfold in before)
+        cover(item, words[i], { trigger: items[i + 1], start: 'top bottom', end: 'top top', scrub: true, invalidateOnRefresh: true });
       });
       return () => {
         delete root.dataset.live;

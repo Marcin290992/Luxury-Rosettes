@@ -236,3 +236,7 @@ Cena: na zimnej pamięci spirala pojawia się ok. 0,5 s później niż wcześnie
 ## Przepisanie spirali Awards na czysto (bez nawarstwionych łatek)
 
 Po serii poprawek `awards-spiral.ts` i `AwardsSpiral.astro` zostały przepisane na czysto, z tym samym zachowaniem (porównanie pikseli ze stanem sprzed przepisania: te same zrzuty w WebKit i Chromium na czterech pozycjach przewinięcia, jedyna różnica to subpikselowy tekst małego napisu). Usunięte jako zbędne: blok diagnostyczny `?debug=1` w spirali, wykrywanie iOS po user-agencie i `preserveDrawingBuffer`, nasłuchiwanie `visibilitychange` i wymuszony render po `astro:after-swap`, dzielenie małego napisu na słowa. Matematyka sceny (spirala, karty, shadery) bez zmian. Plik: 713 → 624 linii.
+
+### Lenis wyłączony na dotyku
+
+Na telefonach i tabletach (`pointer: coarse`) Lenis jest wyłączony: `initLenis()` w `lenis.ts` wraca od razu, strona przewija się natywnie wewnątrz `#scroll-root`, a ScrollTrigger nasłuchuje tego kontenera sam. Na laptopie nic się nie zmienia. Każde miejsce, które pyta o Lenis (`getLenis`), sprawdza `undefined`. Powrót Lenis na dotyku: usunąć linię `if (box) return undefined;`. Ustawienia `SMOOTH_TOUCH` w `settings.ts` są wtedy nieużywane.

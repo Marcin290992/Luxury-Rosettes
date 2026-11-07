@@ -68,7 +68,7 @@ const SHAPES = [spots[1], spots[0], spots[3]];
 
   // ---------- the numbers ----------
   const WORD = { stagger: 0.1, duration: 1.7 }; // the letters of the huge word flying in
-  const SPOTS = { at: 1.2, stagger: 0.45, duration: 1.5 }; // the spots growing from their centres, one after another (`at`: seconds after the start)
+  const SPOTS = { pause: 0.5, stagger: 0.45, duration: 1.5 }; // the spots growing from their centres, one after another (`pause`: seconds the finished word stands alone before the first one starts)
   const ENTRANCE = 0.65; // inside a StripeCover (the section is pinned and scrubbed by the scroll): the share of the scrolling the entrance takes
   const FOLLOW = [0.09, 0.06, 0.035]; // how much each photo follows the mouse (front, top, right)
 
@@ -115,6 +115,8 @@ const SHAPES = [spots[1], spots[0], spots[3]];
         const touch = matchMedia('(pointer: coarse)').matches;
         const share = touch ? 0.6 : ENTRANCE; // a touch screen: more empty scrolling at the end, so the finished section can be seen before the stripes
         const wrap = root.closest<HTMLElement>('[data-stripe-cover]');
+        // the photos wait until the last letter of the word has landed (and a pause on top), so the word is seen whole first
+        const spotsAt = WORD.duration + (huge.chars.length - 1) * WORD.stagger + SPOTS.pause;
         const tl = gsap
           .timeline({
             defaults: { ease: 'power3.out' },
@@ -122,9 +124,9 @@ const SHAPES = [spots[1], spots[0], spots[3]];
           })
           .from(kicker.words, { yPercent: 110, duration: 0.9, stagger: 0.06 }, 0)
           .from(huge.chars, { x: '100vw', ...WORD, ease: 'power2.inOut' }, 0)
-          .from([2, 1, 3].map((n) => root.querySelector(`#rt-spot-${n} path`)!), { scale: 0, svgOrigin: '0.5 0.5', stagger: SPOTS.stagger, duration: SPOTS.duration, ease: 'power2.inOut' }, SPOTS.at)
-          .from(text.words, { yPercent: 110, duration: 0.9, stagger: 0.05 }, SPOTS.at + 1.2)
-          .from(root.querySelector('.rt-btn')!, { opacity: 0, y: 20, duration: 0.8 }, SPOTS.at + 1.8);
+          .from([2, 1, 3].map((n) => root.querySelector(`#rt-spot-${n} path`)!), { scale: 0, svgOrigin: '0.5 0.5', stagger: SPOTS.stagger, duration: SPOTS.duration, ease: 'power2.inOut' }, spotsAt)
+          .from(text.words, { yPercent: 110, duration: 0.9, stagger: 0.05 }, spotsAt + 1.2)
+          .from(root.querySelector('.rt-btn')!, { opacity: 0, y: 20, duration: 0.8 }, spotsAt + 1.8);
         // the rest of the scrolling (a hold, then the stripes) is empty time at the end of the timeline
         if (wrap) tl.to({}, { duration: tl.duration() * (1 / share - 1) }, '>');
 

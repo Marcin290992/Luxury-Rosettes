@@ -20,6 +20,7 @@ import cosmo from '../assets/img/cats/cosmo.webp';
 import charlie from '../assets/img/cats/charlie.webp';
 import chester from '../assets/img/cats/chester.webp';
 import Testimonials from '../components/Testimonials.astro';
+import QuoteBand from '../components/QuoteBand.astro';
 import FAQ from '../components/FAQ.astro';
 import Closing from '../components/Closing.astro';
 import Footer from '../components/Footer.astro';
@@ -64,6 +65,12 @@ import expandImg from '../assets/img/expand.webp';
         <LetterButton label="Meet the parents" href="#cats" />
       </p>
     </TileReveal>
+    <QuoteBand
+      image={cosmo}
+      alt="Cosmo, a Bengal kitten"
+      by="Julius C."
+      quote="We brought our boy home last week, and he has been an absolute joy! He is incredibly friendly and handsome, and he bonded with our first cat in no time. It took them less than a week to share a bed and groom each other. Sylwia is a responsible and caring breeder. You can tell how much she loves her cats by how well they are raised. She was very helpful and informative throughout the process. Highly recommend!"
+    />
     <Testimonials />
     <FAQ />
   </main>

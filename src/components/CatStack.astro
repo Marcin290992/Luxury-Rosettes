@@ -1,0 +1,212 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * Full-screen cat cards that stack while scrolling: the "Our Camps" stack of the white-desert capture (lib/fx/stack.js), in the style of this site.
+ * Each card is pinned to the top while the next one slides up over it; the card underneath shrinks into a rounded frame and darkens, and its words
+ * leave upward through their windows. The words of a card rise out of their windows when it arrives, like every other text of the site.
+ * On a laptop (a mouse, a wide screen) it is the capture's mechanism: a ScrollTrigger pin with pinSpacing off and a scrub that follows the scroll
+ * with no lag. On a phone and a tablet the cards are CSS sticky instead (a pin switches to position:fixed on the main thread and jitters under a
+ * finger). Without the script (or with reduced motion) the cards are simply stacked one under another.
+ */
+interface Card {
+  name: string;
+  role: string; // Queen, Stud...
+  line: string;
+  image: ImageMetadata;
+  position?: string; // object-position of the photo
+}
+interface Props {
+  cards: Card[];
+}
+const { cards } = Astro.props;
+---
+
+<section class="cs" data-cat-stack>
+  {
+    cards.map((c) => (
+      <div class="cs-item" data-cs-item>
+        <div class="cs-card" data-cs-card>
+          <Image src={c.image} alt={c.name} widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" style={`object-position:${c.position ?? '50% 35%'}`} />
+          <span class="cs-shade" aria-hidden="true"></span>
+          <span class="cs-dim" aria-hidden="true" data-cs-dim></span>
+          <div class="cs-content">
+            <p class="cs-role">{c.role}</p>
+            <h2 class="cs-name">{c.name}</h2>
+            <p class="cs-line">{c.line}</p>
+          </div>
+        </div>
+      </div>
+    ))
+  }
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { SplitText } from 'gsap/SplitText';
+  import { mount } from '../scripts/lifecycle';
+  import { WORD_HIDDEN } from '../scripts/settings';
+
+  gsap.registerPlugin(ScrollTrigger, SplitText);
+
+  mount(() => {
+    const mm = gsap.matchMedia();
+    const splits: SplitText[] = [];
+
+    // what both versions share: the words rise out of their windows when a card arrives; returns each card's words (for the way out)
+    const prepare = (root: HTMLElement, items: HTMLElement[]) =>
+      items.map((item, i) => {
+        const role = SplitText.create(item.querySelector('.cs-role')!, { type: 'words', mask: 'words' });
+        const name = SplitText.create(item.querySelector('.cs-name')!, { type: 'words', mask: 'words' });
+        const line = SplitText.create(item.querySelector('.cs-line')!, { type: 'words', mask: 'words' });
+        splits.push(role, name, line);
+        const words = [...role.words, ...name.words, ...line.words];
+        gsap.from(words, {
+          yPercent: WORD_HIDDEN,
+          duration: 1.1,
+          stagger: 0.05,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: item, start: i === 0 ? 'top 75%' : 'top 55%', toggleActions: 'play none none reverse' },
+        });
+        return words;
+      });
+
+    // the card that is covered shrinks into a rounded frame, darkens, and its words leave upward (the values of the capture's stack.js)
+    const cover = (item: HTMLElement, words: Element[], scrollTrigger: ScrollTrigger.Vars) => {
+      const card = item.querySelector<HTMLElement>('[data-cs-card]')!;
+      const dim = item.querySelector<HTMLElement>('[data-cs-dim]')!;
+      gsap.set(card, { clipPath: 'inset(0rem round 0rem)' });
+      const tl = gsap.timeline({ scrollTrigger });
+      tl.to(card, { clipPath: 'inset(2.5rem round 0.625rem)', scale: 0.96, ease: 'none' }, 0);
+      tl.to(dim, { opacity: 0.65, ease: 'none' }, 0);
+      tl.fromTo(words, { yPercent: 0 }, { yPercent: -WORD_HIDDEN, stagger: 0.01, ease: 'none', immediateRender: false }, 0);
+    };
+
+    // ---- a laptop: the capture's mechanism, a pin on each card (all but the last) with pinSpacing off, and a scrub that follows the scroll ----
+    mm.add('(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)', () => {
+      const root = document.querySelector<HTMLElement>('[data-cat-stack]');
+      if (!root) return;
+      root.dataset.live = 'pin';
+      const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
+      const words = prepare(root, items);
+      items.forEach((item, i) => {
+        if (i === items.length - 1) return;
+        const end = () => `+=${item.offsetHeight}`;
+        ScrollTrigger.create({ trigger: item, start: 'top top', end, pin: true, pinSpacing: false });
+        cover(item, words[i], { trigger: item, start: 'top top', end, scrub: true });
+      });
+      return () => {
+        delete root.dataset.live;
+        splits.splice(0).forEach((s) => s.revert());
+      };
+    });
+
+    // ---- a phone, a tablet, a touch screen: CSS sticky, and the covered card is scrubbed while the next one rises over it ----
+    mm.add('(max-width: 1023px), (pointer: coarse)', () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const root = document.querySelector<HTMLElement>('[data-cat-stack]');
+      if (!root) return;
+      root.dataset.live = 'sticky';
+      const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
+      const words = prepare(root, items);
+      items.forEach((item, i) => {
+        const next = items[i + 1];
+        if (!next) return;
+        cover(item, words[i], { trigger: next, start: 'top bottom', end: 'top top', scrub: true });
+      });
+      return () => {
+        delete root.dataset.live;
+        splits.splice(0).forEach((s) => s.revert());
+      };
+    });
+
+    return () => mm.revert();
+  }, '[data-cat-stack]');
+</script>
+
+<style>
+  .cs {
+    position: relative;
+    background: #0c0907;
+    color: #f4ede0;
+  }
+  /* the cards: one screen each. Pinned by the script on a laptop, CSS sticky on a phone and a tablet. */
+  .cs-item {
+    position: relative;
+    height: 100vh;
+    height: 100svh;
+  }
+  .cs[data-live='pin'] .cs-item {
+    z-index: 2;
+  }
+  .cs[data-live='sticky'] .cs-item {
+    position: sticky;
+    top: 0;
+  }
+  .cs-card {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: #0c0907;
+    will-change: clip-path, transform;
+  }
+  .cs-card :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .cs-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(8, 7, 6, 0.65), rgba(8, 7, 6, 0.15) 55%, rgba(8, 7, 6, 0.4));
+    pointer-events: none;
+  }
+  .cs-dim {
+    position: absolute;
+    inset: 0;
+    background: #080706;
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* as in the capture: the content is in the middle of the card, centred: a small line above, the big name, a short text under it */
+  .cs-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 6vw;
+    text-align: center;
+  }
+  .cs-role {
+    margin: 0 0 1.25rem;
+    font-family: var(--font-body, sans-serif);
+    font-size: clamp(0.8rem, 1.1vw, 1.1rem);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold, #d4af37);
+  }
+  .cs-name {
+    margin: 0 0 1.5rem;
+    font-family: var(--font-heading, serif);
+    font-weight: 300;
+    font-size: clamp(3.4rem, 11vw, 9.5rem);
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+  .cs-line {
+    margin: 0 auto;
+    max-width: 28rem;
+    font-family: var(--font-heading, serif);
+    font-weight: 300;
+    font-size: clamp(1.25rem, 2vw, 1.9rem);
+    line-height: 1.15;
+  }
+</style>

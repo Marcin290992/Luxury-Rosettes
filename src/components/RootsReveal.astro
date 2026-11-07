@@ -63,11 +63,12 @@ const SHAPES = [spots[1], spots[0], spots[3]];
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { SplitText } from 'gsap/SplitText';
   import { mount } from '../scripts/lifecycle';
+  import { WORD_HIDDEN } from '../scripts/settings';
 
   gsap.registerPlugin(ScrollTrigger, SplitText);
 
   // ---------- the numbers ----------
-  const WORD = { stagger: 0.1, duration: 1.7 }; // the letters of the huge word flying in
+  const WORD = { stagger: 0.05, duration: 1.3 }; // the letters of the huge word rising out of their windows (the same as the hero's name)
   const SPOTS = { pause: 0.5, stagger: 0.45, duration: 1.5 }; // the spots growing from their centres, one after another (`pause`: seconds the finished word stands alone before the first one starts)
   const ENTRANCE = 0.65; // inside a StripeCover (the section is pinned and scrubbed by the scroll): the share of the scrolling the entrance takes
   const FOLLOW = [0.09, 0.06, 0.035]; // how much each photo follows the mouse (front, top, right)
@@ -105,7 +106,7 @@ const SHAPES = [spots[1], spots[0], spots[3]];
         if (!alive) return;
         const kicker = SplitText.create(root.querySelector('.rt-kicker')!, { type: 'words', mask: 'words' });
         const text = SplitText.create(root.querySelector('.rt-text')!, { type: 'words', mask: 'words' });
-        const huge = SplitText.create(root.querySelector('.rt-huge')!, { type: 'chars,words' });
+        const huge = SplitText.create(root.querySelector('.rt-huge')!, { type: 'chars,words', mask: 'words' });
         splits.push(kicker, text, huge);
 
         // the kicker, the huge word, the three photos one after another (the one behind, at the top, first: the tall one in front covers part of it), then the line of text and the button. Inside a StripeCover
@@ -123,7 +124,7 @@ const SHAPES = [spots[1], spots[0], spots[3]];
             scrollTrigger: wrap ? { trigger: wrap, start: 'top top', end: 'bottom bottom', scrub: touch ? 1.5 : 0.5 } : { trigger, start: 'top 60%', once: true },
           })
           .from(kicker.words, { yPercent: 110, duration: 0.9, stagger: 0.06 }, 0)
-          .from(huge.chars, { x: '100vw', ...WORD, ease: 'power2.inOut' }, 0)
+          .from(huge.chars, { yPercent: WORD_HIDDEN, ...WORD, ease: 'power3.out' }, 0)
           .from([2, 1, 3].map((n) => root.querySelector(`#rt-spot-${n} path`)!), { scale: 0, svgOrigin: '0.5 0.5', stagger: SPOTS.stagger, duration: SPOTS.duration, ease: 'power2.inOut' }, spotsAt)
           .from(text.words, { yPercent: 110, duration: 0.9, stagger: 0.05 }, spotsAt + 1.2)
           .from(root.querySelector('.rt-btn')!, { opacity: 0, y: 20, duration: 0.8 }, spotsAt + 1.8);

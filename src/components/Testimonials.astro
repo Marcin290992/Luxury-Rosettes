@@ -1,16 +1,12 @@
 ---
 // Real Facebook reviews, verbatim
-const featured = {
-  name: 'Julius C.',
-  quote:
-    'We brought our boy home last week, and he has been an absolute joy! He is incredibly friendly and handsome, and he bonded with our first cat in no time. It took them less than a week to share a bed and groom each other. Sylwia is a responsible and caring breeder. You can tell how much she loves her cats by how well they are raised. She was very helpful and informative throughout the process. Highly recommend!',
-};
+// The first review, Julius C., is the large band above this section (see QuoteBand in index.astro)
 const others = [
   { name: 'Zoe T.', quote: 'Fantastic communication. I bought my first Snow Bengal from Sylwia, she was very helpful with care and what they require: healthy kitten, full papers and support. Thank you.' },
   { name: 'Marcin K.', quote: 'You can truly see that Sylvia does what she does with passion and love. Amazing knowledge and understanding of cats\' behaviour. Our cat is healthy, chipped, and fully vaccinated. We also received toys and 24/7 support.' },
   { name: 'Robert S.', quote: 'We were shown all the details of our cats and their lineage and were very confident that we were getting our cats from the right person. Highly recommend Luxury Rosettes.' },
 ];
-const reviews = [featured, ...others];
+const reviews = others;
 ---
 
 <section class="tm" id="reviews">

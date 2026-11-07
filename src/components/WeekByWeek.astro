@@ -1,0 +1,377 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * A tall section scrubbed by the scroll (the idea of the "day-by-day" section of the white-desert capture, written for this site). Three columns:
+ * on the left a heading stays put with a small note at the bottom; in the middle a panel stays put and its list of steps slides up one step at a
+ * time; on the right the photo of each step wipes up over the last. A step is a tall card (the big number at the top, the title and the text at
+ * the bottom, a line under it), so it is always clear which text belongs to which photo. The heading's words rise out of their windows when the
+ * section arrives, like every other text of the site. The scroll does all of it (sticky + scrub, no GSAP pin). On a phone, and without the script
+ * (or with reduced motion), every step is its own card with its photo.
+ */
+interface Item {
+  title: string;
+  text: string;
+  image: ImageMetadata;
+  alt?: string;
+}
+interface Props {
+  head: [string, string]; // the heading, in two lines (the second one is dimmer)
+  noteTitle?: string;
+  note?: string;
+  items: Item[];
+}
+const { head, noteTitle, note, items } = Astro.props;
+---
+
+<section class="wk" data-week-by-week>
+  <div class="wk-layout" style={`--wk-count:${items.length}`} data-wk-layout>
+    <div class="wk-head">
+      <h2 class="wk-title">
+        <span>{head[0]}</span>
+        <span class="wk-faded">{head[1]}</span>
+      </h2>
+      {
+        note && (
+          <div class="wk-note">
+            {noteTitle && <p class="wk-note-title">{noteTitle}</p>}
+            <p class="wk-note-text">{note}</p>
+          </div>
+        )
+      }
+    </div>
+
+    <div class="wk-panel">
+      <div class="wk-inner">
+        <div class="wk-col wk-col--list">
+          <div class="wk-list" data-wk-list>
+            {
+              items.map((it, i) => (
+                <article class="wk-item" data-wk-item>
+                  <div class="wk-item-photo">
+                    <Image src={it.image} alt={it.alt ?? it.title} widths={[500, 900]} sizes="(max-width: 767px) 90vw, 1px" loading="lazy" />
+                  </div>
+                  <span class="wk-num">{String(i + 1).padStart(2, '0')}</span>
+                  <h3 class="wk-item-title">{it.title}</h3>
+                  <p class="wk-item-text">{it.text}</p>
+                </article>
+              ))
+            }
+          </div>
+        </div>
+        <div class="wk-col wk-col--media" aria-hidden="true">
+          {
+            items.map((it, i) => (
+              <div class="wk-media" data-wk-media data-index={i}>
+                <Image src={it.image} alt="" widths={[700, 1200]} sizes="(min-width: 768px) 34vw, 1px" loading="lazy" />
+                <span class="wk-media-dim" data-wk-dim></span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { SplitText } from 'gsap/SplitText';
+  import { mount } from '../scripts/lifecycle';
+  import { WORD_HIDDEN } from '../scripts/settings';
+  import { getLenis } from '../scripts/lenis';
+
+  gsap.registerPlugin(ScrollTrigger, SplitText);
+
+  mount(() => {
+    const mm = gsap.matchMedia();
+    const splits: SplitText[] = [];
+
+    mm.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
+      const root = document.querySelector<HTMLElement>('[data-week-by-week]');
+      if (!root) return;
+      const layout = root.querySelector<HTMLElement>('[data-wk-layout]')!;
+      const list = root.querySelector<HTMLElement>('[data-wk-list]')!;
+      const col = list.parentElement as HTMLElement;
+      const items = Array.from(root.querySelectorAll<HTMLElement>('[data-wk-item]'));
+      const media = Array.from(root.querySelectorAll<HTMLElement>('[data-wk-media]'));
+      const n = items.length;
+      if (n < 2) return;
+      root.dataset.live = '';
+
+      // the heading's words rise out of their windows
+      const title = SplitText.create(root.querySelector('.wk-title')!, { type: 'words', mask: 'words' });
+      splits.push(title);
+      gsap.from(title.words, {
+        yPercent: WORD_HIDDEN,
+        duration: 1.1,
+        stagger: 0.08,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: layout, start: 'top 70%', toggleActions: 'play none none reverse' },
+      });
+
+      // the list slides up one step at a time (the top of the step to the top of the panel), and each step's photo wipes up over the last
+      const yFor = (i: number) => () => -Math.min(items[i].offsetTop, Math.max(0, list.scrollHeight - col.clientHeight));
+      // As in the white-desert capture: every step is one continuous move (the list slides, the photo wipes up over the last one, the same duration
+      // and ease, so the text and its photo travel together), and the scrub follows the scroll with no lag of its own (scrub: true).
+      const tl = gsap.timeline({
+        defaults: { ease: 'power2.inOut', duration: 1 },
+        scrollTrigger: { trigger: layout, start: 'top top', end: 'bottom bottom', scrub: true, invalidateOnRefresh: true },
+      });
+      for (let i = 1; i < n; i++) {
+        const at = i - 1;
+        tl.to(list, { y: yFor(i) }, at);
+        tl.fromTo(media[i], { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)' }, at);
+        tl.fromTo(media[i].querySelector('img'), { yPercent: 12, scale: 1.15 }, { yPercent: 0, scale: 1 }, at);
+        tl.to(media[i - 1].querySelector('[data-wk-dim]'), { opacity: 0.5 }, at);
+        tl.to(items[i - 1], { opacity: 0.4 }, at);
+      }
+      tl.to({}, { duration: 0.35 });
+
+      // The smooth scroll of the capture is Lenis with { lerp: 0.1 } (the page follows the wheel closely and settles at once); the one of this site is a
+      // heavy one (a notch moves 0.4 and glides for 2.4 s), right for the long chapters but with no control over a section that follows the scroll step by
+      // step. While this section is on the screen Lenis runs with the capture's settings; it goes back as the section leaves.
+      const lenis = getLenis();
+      type LenisOptions = { duration?: number; easing?: (t: number) => number; lerp?: number; wheelMultiplier?: number };
+      let lenisBefore: LenisOptions | undefined;
+      const restoreLenis = () => {
+        if (lenis && lenisBefore) Object.assign(lenis.options, lenisBefore);
+        lenisBefore = undefined;
+      };
+      const lighter = ScrollTrigger.create({
+        trigger: layout,
+        start: 'top bottom',
+        end: 'bottom top',
+        onToggle: (self) => {
+          if (!lenis) return;
+          if (self.isActive) {
+            const o = lenis.options as LenisOptions;
+            lenisBefore ??= { duration: o.duration, easing: o.easing, lerp: o.lerp, wheelMultiplier: o.wheelMultiplier };
+            Object.assign(lenis.options, { duration: undefined, easing: undefined, lerp: 0.1, wheelMultiplier: 1 });
+          } else {
+            restoreLenis();
+          }
+        },
+      });
+
+      return () => {
+        lighter.kill();
+        restoreLenis();
+        delete root.dataset.live;
+        splits.splice(0).forEach((s) => s.revert());
+      };
+    });
+
+    return () => mm.revert();
+  }, '[data-week-by-week]');
+</script>
+
+<style>
+  .wk {
+    background: var(--ink-warm, #1a1410);
+    color: var(--cream, #efe9dc);
+    padding: var(--space) 1.5rem;
+  }
+
+  /* ---- a phone, no script, reduced motion: the heading, then every step as a card with its photo ---- */
+  .wk-title {
+    margin: 0 0 1rem;
+    font-family: var(--font-heading, serif);
+    font-weight: 300;
+    font-size: clamp(2.6rem, 8vw, 4.5rem);
+    line-height: 0.98;
+    text-transform: uppercase;
+  }
+  .wk-title span {
+    display: block;
+  }
+  .wk-faded {
+    opacity: 0.45;
+  }
+  .wk-note {
+    margin: 0 0 2rem;
+    max-width: 26rem;
+  }
+  .wk-note-title {
+    margin: 0 0 0.6rem;
+    font-family: var(--font-heading, serif);
+    font-style: italic;
+    font-size: 1.3rem;
+  }
+  .wk-note-text {
+    margin: 0;
+    font-family: var(--font-body, sans-serif);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    opacity: 0.6;
+  }
+  .wk-list {
+    display: grid;
+    gap: 1rem;
+  }
+  .wk-item {
+    padding: 1.25rem;
+    border-radius: 10px;
+    background: #241d17;
+  }
+  .wk-item-photo {
+    aspect-ratio: 4 / 3;
+    margin-bottom: 1.25rem;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0c0907;
+  }
+  .wk-item-photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .wk-num {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-heading, serif);
+    font-style: italic;
+    font-size: 1.6rem;
+    color: var(--gold, #d4af37);
+  }
+  .wk-item-title {
+    margin: 0 0 0.6rem;
+    font-family: var(--font-heading, serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1.5rem;
+    line-height: 1.1;
+  }
+  .wk-item-text {
+    margin: 0;
+    font-family: var(--font-body, sans-serif);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    opacity: 0.6;
+  }
+  .wk-col--media {
+    display: none;
+  }
+
+  /* ---- with the script, from a tablet up: the tall scrubbed section, three columns ---- */
+  @media (min-width: 768px) {
+    .wk[data-live] {
+      padding: 0;
+    }
+    .wk[data-live] .wk-layout {
+      height: calc(75vh * var(--wk-count)); /* three quarters of a screen of scrolling per step, as in the capture */
+      height: calc(75svh * var(--wk-count));
+      display: grid;
+      grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+      align-items: start;
+    }
+    /* the left column: the heading at the top, the note at the bottom, both staying put */
+    .wk[data-live] .wk-head {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      box-sizing: border-box;
+      padding: clamp(6rem, 14vh, 9rem) 2rem 3rem 3vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .wk[data-live] .wk-title {
+      margin: 0;
+      font-size: clamp(2.4rem, 3.4vw, 4.5rem);
+    }
+    .wk[data-live] .wk-note {
+      margin: 0;
+    }
+    /* the panel (the list and the photos) stays put as well */
+    .wk[data-live] .wk-panel {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      height: 100svh;
+      box-sizing: border-box;
+      padding: clamp(5.5rem, 11vh, 7rem) 1vw 2vh 0;
+    }
+    .wk[data-live] .wk-inner {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      background: #241d17;
+      overflow: clip;
+    }
+    .wk[data-live] .wk-col {
+      width: 50%;
+      height: 100%;
+    }
+    .wk[data-live] .wk-col--list {
+      position: relative;
+      overflow: hidden;
+    }
+    .wk[data-live] .wk-list {
+      display: block;
+      will-change: transform;
+    }
+    /* a step is a tall card, most of the panel: the big number at the top, a wide empty space under it, then the title and the
+       text at the bottom, and a line under the card. The step that is lit is at the top of the panel, with its photo beside it. */
+    .wk[data-live] .wk-item {
+      box-sizing: border-box;
+      /* nearly the whole panel: only the top of the next step shows at the bottom. A percentage does not work here (the list has no set height),
+         so it is worked out from the panel's height: the screen minus the panel's top and bottom padding (see .wk-panel) */
+      min-height: calc((100vh - clamp(5.5rem, 11vh, 7rem) - 2vh) * 0.84);
+      min-height: calc((100svh - clamp(5.5rem, 11vh, 7rem) - 2vh) * 0.84);
+      display: flex;
+      flex-direction: column;
+      padding: clamp(1.5rem, 2.6vw, 3rem);
+      border-radius: 0;
+      background: #241d17;
+      border-bottom: 1px solid #0c0907;
+    }
+    .wk[data-live] .wk-item-photo {
+      display: none;
+    }
+    .wk[data-live] .wk-num {
+      margin: 0;
+      font-size: clamp(2.4rem, 3.2vw, 3.75rem);
+      line-height: 1;
+      color: var(--cream, #efe9dc);
+    }
+    .wk[data-live] .wk-item-title {
+      margin: auto 0 1rem; /* the auto margin pushes the title and the text to the bottom of the card */
+      font-size: clamp(1.3rem, 1.7vw, 1.9rem);
+    }
+    .wk[data-live] .wk-item-text {
+      font-size: clamp(0.95rem, 1.1vw, 1.2rem);
+      max-width: 30rem;
+    }
+    .wk[data-live] .wk-col--media {
+      display: block;
+      position: relative;
+    }
+    .wk[data-live] .wk-media {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      clip-path: inset(100% 0 0 0);
+    }
+    .wk[data-live] .wk-media[data-index='0'] {
+      clip-path: inset(0);
+    }
+    .wk[data-live] .wk-media :global(img) {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .wk-media-dim {
+      position: absolute;
+      inset: 0;
+      background: #080706;
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+</style>

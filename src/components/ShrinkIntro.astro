@@ -5,17 +5,16 @@ import hero from '../assets/img/hero_img.webp';
 
 /**
  * An opening for a page (after the Codegrid "Waabi Scroll Animation", see scripts/shrink-intro.ts): a photo fills the screen
- * with a headline on it; scrolling sends the headline away, lights up a second line word by word, then shrinks the photo to a small
+ * with a headline on it (it opens like the home page: the photo settles, the letters rise); scrolling sends the headline away, then shrinks the photo to a small
  * tile while four columns of small photos drift up around a line of text, and a quiet closing line follows.
- * Without the script (or with reduced motion) it is the photo with its two lines, a grid of the small photos and the closing line.
+ * Without the script (or with reduced motion) it is the photo with its headline, a grid of the small photos and the closing line.
  */
 interface Props {
   headline: string;
-  line: string;
   collection: string;
-  closing: string;
+  closing?: string; // an optional quiet line at the end
 }
-const { headline, line, collection, closing } = Astro.props;
+const { headline, collection, closing } = Astro.props;
 
 // Sixteen small photos, four to a column. Sample ones for now (the cats and the story photos, some of them twice): to be replaced
 // with the photos of the page.
@@ -33,7 +32,6 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
         <span class="si-shade" aria-hidden="true"></span>
       </div>
       <div class="si-header"><h1>{headline}</h1></div>
-      <div class="si-copy"><h3>{line}</h3></div>
     </div>
   </section>
 
@@ -54,9 +52,13 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
     <div class="si-about-text"><h3>{collection}</h3></div>
   </section>
 
-  <section class="si-outro">
-    <h3>{closing}</h3>
-  </section>
+  {
+    closing && (
+      <section class="si-outro">
+        <h3>{closing}</h3>
+      </section>
+    )
+  }
 </div>
 
 <script>
@@ -88,7 +90,7 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
     font-size: clamp(1.8rem, 3.2vw, 3rem);
   }
 
-  /* ---- without the script: the photo with its lines, a grid of the small photos, the closing line ---- */
+  /* ---- without the script: the photo with its headline, a grid of the small photos, the closing line ---- */
   .si-pin {
     position: relative;
     min-height: 100svh;
@@ -117,8 +119,7 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
     pointer-events: none;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1) 55%, rgba(0, 0, 0, 0.35));
   }
-  .si-header,
-  .si-copy {
+  .si-header {
     position: relative;
     max-width: 52rem;
   }
@@ -182,8 +183,7 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
     height: 100%;
     will-change: width, height;
   }
-  .si-hero[data-live] .si-header,
-  .si-hero[data-live] .si-copy {
+  .si-hero[data-live] .si-header {
     position: absolute;
     inset: 0;
     max-width: none;
@@ -194,12 +194,6 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
   }
   .si-hero[data-live] .si-header h1 {
     width: min(75%, 56rem);
-  }
-  .si-hero[data-live] .si-copy h3 {
-    width: min(50%, 36rem);
-  }
-  .si-hero[data-live] .si-copy :global(.si-word) {
-    opacity: 0;
   }
 
   /* the next section rises under the last part of the pin (the tile is still on the screen), over the shrinking photo */
@@ -243,8 +237,7 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
   }
 
   @media (max-width: 1000px) {
-    .si-hero[data-live] .si-header h1,
-    .si-hero[data-live] .si-copy h3 {
+    .si-hero[data-live] .si-header h1 {
       width: 100%;
     }
     .si-hero[data-live] + .si-about .si-cols {

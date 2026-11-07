@@ -1,0 +1,122 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * One review, large, over a tall photo (the idea of the quote band of the white-desert capture, written for this site). The photo moves slowly
+ * against the page behind the text; the words of the review rise out of their windows when the band comes onto the screen, like every other
+ * text of the site. Without the script (or with reduced motion) the photo and the review simply stand still.
+ */
+interface Props {
+  quote: string;
+  by: string;
+  source?: string;
+  image: ImageMetadata;
+  alt?: string;
+}
+const { quote, by, source = 'Facebook review', image, alt = '' } = Astro.props;
+---
+
+<section class="qb" data-quote-band>
+  <div class="qb-photo" data-qb-photo>
+    <Image src={image} alt={alt} widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
+  </div>
+  <span class="qb-shade" aria-hidden="true"></span>
+  <figure class="qb-copy">
+    <blockquote class="qb-quote">{quote}</blockquote>
+    <figcaption class="qb-by">{by} <span>{source}</span></figcaption>
+  </figure>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { SplitText } from 'gsap/SplitText';
+  import { mount } from '../scripts/lifecycle';
+  import { WORD_HIDDEN } from '../scripts/settings';
+
+  gsap.registerPlugin(ScrollTrigger, SplitText);
+
+  mount(() => {
+    const mm = gsap.matchMedia();
+    const splits: SplitText[] = [];
+
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      const root = document.querySelector<HTMLElement>('[data-quote-band]');
+      if (!root) return;
+      const photo = root.querySelector<HTMLElement>('[data-qb-photo]')!;
+
+      // the photo is a little larger than the band and drifts against the page
+      gsap.set(photo, { scale: 1.12 });
+      gsap.fromTo(photo, { yPercent: -6 }, { yPercent: 6, ease: 'none', scrollTrigger: { trigger: root, start: 'top bottom', end: 'bottom top', scrub: true } });
+
+      // the words of the review, then the name, rise out of their windows
+      const quote = SplitText.create(root.querySelector('.qb-quote')!, { type: 'words', mask: 'words' });
+      const by = SplitText.create(root.querySelector('.qb-by')!, { type: 'words', mask: 'words' });
+      splits.push(quote, by);
+      const arrive = { trigger: root.querySelector('.qb-copy'), start: 'top 75%', toggleActions: 'play none none reverse' };
+      gsap.from(quote.words, { yPercent: WORD_HIDDEN, duration: 1.1, stagger: 0.02, ease: 'power3.out', scrollTrigger: arrive });
+      gsap.from(by.words, { yPercent: WORD_HIDDEN, duration: 0.9, stagger: 0.05, delay: 0.4, ease: 'power3.out', scrollTrigger: arrive });
+
+      return () => splits.splice(0).forEach((s) => s.revert());
+    });
+
+    return () => mm.revert();
+  }, '[data-quote-band]');
+</script>
+
+<style>
+  .qb {
+    position: relative;
+    overflow: clip;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: var(--space) 6vw;
+    background: #0c0907;
+    color: #f4ede0;
+  }
+  .qb-photo {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+  }
+  .qb-photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 35%;
+    display: block;
+  }
+  .qb-shade {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 7, 6, 0.55);
+    pointer-events: none;
+  }
+  .qb-copy {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    max-width: 62rem;
+    text-align: center;
+  }
+  .qb-quote {
+    margin: 0 0 2rem;
+    font-family: var(--font-heading, serif);
+    font-weight: 300;
+    font-size: clamp(1.35rem, 2.4vw, 2.3rem);
+    line-height: 1.2;
+  }
+  .qb-by {
+    font-family: var(--font-body, sans-serif);
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .qb-by span {
+    margin-left: 0.8em;
+    color: var(--gold, #d4af37);
+  }
+</style>

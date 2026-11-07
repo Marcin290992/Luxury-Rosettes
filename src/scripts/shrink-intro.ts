@@ -1,5 +1,4 @@
-// Shrink intro: one pinned screen scrubbed by the scroll. The headline slides up and away, the line under it lights up word by word and
-// goes out, and the photo that filled the screen shrinks to a small rounded tile. The next section rises under it while it does: four
+// Shrink intro: one pinned screen scrubbed by the scroll. The headline slides up and away, and the photo that filled the screen shrinks to a small rounded tile. The next section rises under it while it does: four
 // columns of small photos that drift up at different speeds around a line of text.
 //
 // Adapted from the Codegrid "Waabi Scroll Animation" to Vanilla TS for this site (see docs/SCRIPTING.md, section 3):
@@ -10,47 +9,48 @@
 //    headline, the words and the photo always agree; the words are set once, not by a `gsap.set` per word per scroll event,
 //  - the numbers are in settings.ts (SHRINK_INTRO).
 //
-// Expected markup (see ShrinkIntro.astro): root > .si-hero (the track) > .si-pin > .si-img, .si-header, .si-copy h3; .si-about > .si-col x4.
+// Expected markup (see ShrinkIntro.astro): root > .si-hero (the track) > .si-pin > .si-img, .si-header; .si-about > .si-col x4.
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
-import { SHRINK_INTRO } from './settings';
+import { SHRINK_INTRO, WORD_HIDDEN, HERO } from './settings';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const between = (p: number, from: number, to: number) => clamp01((p - from) / (to - from));
+// the progress of word `i` of `n` when the whole line goes 0..1 and the words follow one another (the house style: a word rises out of / leaves
+// through its own window, one after the other)
+const SPREAD = 0.5;
+const stagger = (t: number, i: number, n: number) => clamp01((t - (i / n) * SPREAD) / (1 - SPREAD));
 
 export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
   const mm = gsap.matchMedia();
-  let words: SplitText | undefined;
+  let headWords: SplitText | undefined;
+  let opening: gsap.core.Timeline | undefined;
 
   mm.add('(prefers-reduced-motion: no-preference)', () => {
     const track = root.querySelector<HTMLElement>('.si-hero')!;
     const pin = root.querySelector<HTMLElement>('.si-pin')!;
     const img = root.querySelector<HTMLElement>('.si-img')!;
     const header = root.querySelector<HTMLElement>('.si-header')!;
-    const copy = root.querySelector<HTMLElement>('.si-copy h3')!;
     const about = root.querySelector<HTMLElement>('.si-about')!;
     const columns = Array.from(root.querySelectorAll<HTMLElement>('.si-col'));
 
     track.dataset.live = '';
     root.style.setProperty('--si-length', String(o.length));
     root.style.setProperty('--si-overlap', String(o.overlap));
-    words = SplitText.create(copy, { type: 'words', wordsClass: 'si-word' });
+    // like every other text of the site, the words sit in their own windows and move through them (no fading)
+    headWords = SplitText.create(header.querySelector('h1')!, { type: 'chars,words', mask: 'words', wordsClass: 'si-hword' });
 
     // everything is drawn from one number, the scroll position of the pinned part (0..1)
     const draw = (p: number) => {
       const narrow = window.innerWidth <= 1000;
-      gsap.set(header, { yPercent: -between(p, 0, o.headerEnd) * 100 });
-
-      const lit = between(p, o.words[0], o.words[1]);
-      const count = words!.words.length;
-      words!.words.forEach((word, i) => {
-        (word as HTMLElement).style.opacity = clamp01((lit - i / count) / (1 / count)).toFixed(3);
-      });
-      copy.style.opacity = (1 - between(p, o.copyHideAt, o.copyHideAt + o.copyFade)).toFixed(3);
+      // the headline leaves upward, word after word, each through its own window
+      const away = between(p, 0, o.headerEnd);
+      const headCount = headWords!.words.length;
+      headWords!.words.forEach((word, i) => gsap.set(word, { yPercent: -WORD_HIDDEN * stagger(away, i, headCount) }));
 
       // the photo shrinks from the whole screen to the tile
       const k = between(p, o.shrink[0], o.shrink[1]);
@@ -61,6 +61,16 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
         borderRadius: gsap.utils.interpolate(0, o.radius, k),
       });
     };
+
+    // The opening is the home page's: the photo settles from a slow zoom and the letters of the headline rise out of their windows one after
+    // another (the numbers are the hero's, see HERO in settings.ts). It waits for the page transition, which takes ~1s.
+    const photo = img.querySelector<HTMLElement>('img');
+    const T = HERO.timeline;
+    gsap.set(headWords.chars, { yPercent: WORD_HIDDEN });
+    if (photo) gsap.set(photo, { scale: HERO.mediaZoom });
+    opening = gsap.timeline({ defaults: { ease: 'power3.out' }, delay: 1.05 });
+    if (photo) opening.to(photo, { scale: 1, duration: T.zoom }, 0);
+    opening.to(headWords.chars, { yPercent: 0, duration: T.chars.dur, stagger: T.chars.stagger }, T.chars.at);
 
     const state = { p: 0 };
     draw(0);
@@ -82,6 +92,7 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
     });
 
     return () => {
+      opening?.kill();
       delete track.dataset.live;
       root.style.removeProperty('--si-length');
       root.style.removeProperty('--si-overlap');
@@ -94,6 +105,6 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
 
   return () => {
     mm.revert();
-    words?.revert();
+    headWords?.revert();
   };
 }

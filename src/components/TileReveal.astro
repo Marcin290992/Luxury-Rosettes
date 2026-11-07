@@ -42,9 +42,13 @@ const { columns, gap, gridWidth, tileAspect, scrollLength } = TILE_REVEAL;
 </section>
 
 <script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { mount } from '../scripts/lifecycle';
   import { initTileReveal } from '../scripts/tile-reveal';
   import { TILE_REVEAL } from '../scripts/settings';
+
+  gsap.registerPlugin(ScrollTrigger);
 
   mount(() => {
     const roots = Array.from(document.querySelectorAll<HTMLElement>('.tr'));
@@ -60,6 +64,18 @@ const { columns, gap, gridWidth, tileAspect, scrollLength } = TILE_REVEAL;
       roots.forEach((root) => {
         root.dataset.live = '';
         destroy.push(initTileReveal(root, TILE_REVEAL));
+
+        // The section arrives with rounded side margins that open to the full width as it reaches the top of the screen (the "inset" of the
+        // white-desert capture). A clip-path, so the section keeps its size and the tile maths is not touched. Not on a phone.
+        const mm = gsap.matchMedia();
+        mm.add('(min-width: 769px)', () => {
+          gsap.fromTo(
+            root,
+            { '--inset': '24px', '--inset-r': '10px' },
+            { '--inset': '0px', '--inset-r': '0px', ease: 'none', scrollTrigger: { trigger: root, start: 'top 450px', end: 'top top', scrub: true } },
+          );
+        });
+        destroy.push(() => mm.revert());
       });
     };
     motion.addEventListener('change', sync);
@@ -78,6 +94,8 @@ const { columns, gap, gridWidth, tileAspect, scrollLength } = TILE_REVEAL;
     position: relative;
     background: var(--cream);
     color: var(--ink-warm);
+    /* rounded side margins that the script opens to the full width (--inset, --inset-r); without the script they are 0 */
+    clip-path: inset(0 var(--inset, 0px) round var(--inset-r, 0px));
   }
   /* without the script: the text, then the photos in a plain grid */
   .tr-stage {

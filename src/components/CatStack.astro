@@ -66,7 +66,8 @@ const { cards, pull, lead } = Astro.props;
       if (!items[0].closest('[data-cat-stack]')?.hasAttribute('data-lead')) return 0;
       // pinned by script: the first card is taller than the screen; sticky: the space in front of the second card
       const gap = items[1] ? parseFloat(getComputedStyle(items[1]).marginTop) || 0 : 0;
-      return Math.max(0, items[0].offsetHeight - window.innerHeight) + Math.max(0, gap);
+      // (the first card's height beyond a normal card's: the screen's own height is not used, it differs from the card's on a phone)
+      return Math.max(0, items[0].offsetHeight - (items[1]?.offsetHeight ?? window.innerHeight)) + Math.max(0, gap);
     };
 
     // what both versions share: the words rise out of their windows when a card arrives; returns each card's words (for the way out)
@@ -179,6 +180,10 @@ const { cards, pull, lead } = Astro.props;
   .cs[data-live='sticky'] .cs-item {
     position: sticky;
     top: 0;
+    /* a phone, a tablet: the page scrolls in a box as tall as the LARGEST viewport (see Layout.astro and the hero), the browser's bars sit over it. A card of
+       100svh would be a bar shorter than the box and the edge of the next card would show under it, so the cards are as tall as the box. */
+    height: 100vh;
+    height: 100lvh;
   }
   /* with a section held under the stack: the stack is pulled up under it, and its first card is given the length to unfold in */
   .cs[data-live][data-pulled] {
@@ -196,7 +201,7 @@ const { cards, pull, lead } = Astro.props;
     position: absolute;
     inset: 0;
   }
-  .cs[data-live][data-lead] .cs-item:first-child .cs-reveal {
+  .cs[data-live='pin'][data-lead] .cs-item:first-child .cs-reveal {
     bottom: auto;
     height: 100vh;
     height: 100svh;

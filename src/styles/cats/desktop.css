@@ -42,6 +42,14 @@
 .cats[data-pinned] .cat-photo {
   height: 62vh;
   aspect-ratio: auto;
+  /* own compositor layer: the mask opens and the photo drifts while the whole row slides, without repainting the row each frame */
+  will-change: clip-path;
+  transform: translateZ(0);
+  contain: paint;
+}
+.cats[data-pinned] .cats-sheet {
+  will-change: transform;
+  backface-visibility: hidden;
 }
 /* photos are wider than their frame so they can drift sideways inside it */
 .cats[data-pinned] .cat-photo img {

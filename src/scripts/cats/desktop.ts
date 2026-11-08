@@ -69,8 +69,9 @@ export function initDesktop() {
 
         // 2. Sideways travel (this tween is also the "scroller" the cards react to)
         const range = scrubbed(at(arrival()), () => pin.end - hold());
-        const move = gsap.to(track, { x: () => -distance(), ease: 'none', scrollTrigger: range });
-        gsap.fromTo(photos, { xPercent: CATS.photoDrift }, { xPercent: -CATS.photoDrift, ease: 'none', scrollTrigger: range });
+        // force3D: the row and the photos move on the GPU
+        const move = gsap.to(track, { x: () => -distance(), ease: 'none', force3D: true, scrollTrigger: range });
+        gsap.fromTo(photos, { xPercent: CATS.photoDrift }, { xPercent: -CATS.photoDrift, ease: 'none', force3D: true, scrollTrigger: range });
         gsap.fromTo('.cats-fill', { clipPath: CLIP.closedX }, { clipPath: CLIP.open, ease: 'none', scrollTrigger: range });
 
         // 3. Each photo is revealed like in the story chapter: a mask opens while the image settles from a slow zoom

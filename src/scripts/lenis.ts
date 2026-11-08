@@ -44,7 +44,17 @@ export function initLenis() {
     stopInertiaOnNavigate: true,
   });
   lenis.on('scroll', ScrollTrigger.update);
-  tick = (time) => lenis?.raf(time * 1000);
+  // On a phone Lenis smooths the scroll box itself (wrapper and content are the same fixed box), so nothing tells it when the page inside grows: the page
+  // is built after the page transition (the spiral, the stacks, the images), and Lenis kept the first, shorter height as its limit: the finger stopped at
+  // the old end of the page and the scenes were left half drawn. So the box's height is watched and Lenis measures again when it changes.
+  let seenHeight = box ? box.scrollHeight : 0;
+  tick = (time) => {
+    if (box && box.scrollHeight !== seenHeight) {
+      seenHeight = box.scrollHeight;
+      lenis?.resize();
+    }
+    lenis?.raf(time * 1000);
+  };
   gsap.ticker.add(tick);
   gsap.ticker.lagSmoothing(0);
 

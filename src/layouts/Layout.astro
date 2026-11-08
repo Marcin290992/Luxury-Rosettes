@@ -66,6 +66,7 @@ const {
   import { initDebug } from '../scripts/debug-log';
   import { setupScrollRestore } from '../scripts/scroll-restore';
   import { settleLayout } from '../scripts/scroller';
+  import { refreshWhenSettled } from '../scripts/refresh-when-settled';
   import { prefetch } from 'astro:prefetch';
 
   // After a page transition the nav is already on screen: the home hero must not hide it and run its intro for it again (see Hero.astro).
@@ -120,6 +121,8 @@ const {
     initLenis();
     return destroyLenis;
   });
+  // every page measures its scenes again when its images and fonts have arrived (a click through has no `load` to do it)
+  mount(refreshWhenSettled);
   document.addEventListener('astro:after-preparation', destroyLenis);
 </script>
 

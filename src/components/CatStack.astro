@@ -70,8 +70,22 @@ const { cards, pull, lead } = Astro.props;
       return Math.max(0, items[0].offsetHeight - (items[1]?.offsetHeight ?? window.innerHeight)) + Math.max(0, gap);
     };
 
+    // Where card `i` sits in the page when it is not stuck: the sum of the heights and gaps of the cards before it. On a phone the cards are CSS sticky, and ScrollTrigger
+    // measures a trigger where it IS at the moment it measures (on a phone that happens at any scroll position: the address bar, the images, a rotation): a card that
+    // is stuck at that moment would be measured at the top of the screen and its scrubs would start far too early. So on a phone the triggers are the (not
+    // sticky) stack itself, with the card's natural offset worked out from its siblings.
+    const natural = (items: HTMLElement[], i: number) => {
+      let y = 0;
+      for (let j = 0; j <= i; j += 1) {
+        y += parseFloat(getComputedStyle(items[j]).marginTop) || 0;
+        if (j < i) y += items[j].offsetHeight;
+      }
+      return y;
+    };
+    const mark = (sticky: boolean, items: HTMLElement[], i: number, where: string) => (sticky ? `top+=${Math.round(natural(items, i))} ${where}` : `top ${where}`);
+
     // what both versions share: the words rise out of their windows when a card arrives; returns each card's words (for the way out)
-    const prepare = (root: HTMLElement, items: HTMLElement[]) =>
+    const prepare = (root: HTMLElement, items: HTMLElement[], sticky = false) =>
       items.map((item, i) => {
         const role = SplitText.create(item.querySelector('.cs-role')!, { type: 'words', mask: 'words' });
         const name = SplitText.create(item.querySelector('.cs-name')!, { type: 'words', mask: 'words' });
@@ -83,7 +97,11 @@ const { cards, pull, lead } = Astro.props;
           duration: 1.1,
           stagger: 0.05,
           ease: 'power3.out',
-          scrollTrigger: { trigger: item, start: i === 0 && leadOf(items) ? () => `top top-=${Math.round(leadOf(items) * 0.7)}` : i === 0 ? 'top 75%' : 'top 55%', toggleActions: 'play none none reverse' },
+          scrollTrigger: {
+            trigger: sticky ? root : item,
+            start: i === 0 && leadOf(items) ? () => mark(sticky, items, i, `top-=${Math.round(leadOf(items) * 0.7)}`) : () => mark(sticky, items, i, i === 0 ? '75%' : '55%'),
+            toggleActions: 'play none none reverse',
+          },
         });
         return words;
       });
@@ -100,13 +118,13 @@ const { cards, pull, lead } = Astro.props;
     };
 
     // the first card unfolds from the right to the left, in place, while the section under it stands still (it does not come up from below)
-    const unfold = (items: HTMLElement[]) => {
+    const unfold = (items: HTMLElement[], root: HTMLElement, sticky = false) => {
       const reveal = items[0].querySelector<HTMLElement>('[data-cs-reveal]');
       if (!reveal || !leadOf(items)) return;
       gsap.fromTo(
         reveal,
         { clipPath: 'inset(0% 0% 0% 100%)' },
-        { clipPath: 'inset(0% 0% 0% 0%)', ease: 'power1.inOut', onComplete: () => gsap.set(reveal, { clearProps: 'clipPath' }), scrollTrigger: { trigger: items[0], start: 'top top', end: () => `+=${leadOf(items)}`, scrub: true, invalidateOnRefresh: true } },
+        { clipPath: 'inset(0% 0% 0% 0%)', ease: 'power1.inOut', onComplete: () => gsap.set(reveal, { clearProps: 'clipPath' }), scrollTrigger: { trigger: sticky ? root : items[0], start: 'top top', end: () => `+=${leadOf(items)}`, scrub: true, invalidateOnRefresh: true } },
       );
     };
 
@@ -117,7 +135,7 @@ const { cards, pull, lead } = Astro.props;
       root.dataset.live = 'pin';
       const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
       const words = prepare(root, items);
-      unfold(items);
+      unfold(items, root);
       items.forEach((item, i) => {
         if (i === items.length - 1) return;
         // every card stays pinned until the LAST card has reached the top: the covered cards stay where they are, one under the other (a card that let go
@@ -143,12 +161,18 @@ const { cards, pull, lead } = Astro.props;
       roots.forEach((root) => {
       root.dataset.live = 'sticky';
       const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
-      const words = prepare(root, items);
-      unfold(items);
+      const words = prepare(root, items, true);
+      unfold(items, root, true);
       items.forEach((item, i) => {
         const next = items[i + 1];
         if (!next) return;
-        cover(item, words[i], { trigger: next, start: 'top bottom', end: 'top top', scrub: true });
+        cover(item, words[i], {
+          trigger: root,
+          start: () => mark(true, items, i + 1, 'bottom'),
+          end: () => mark(true, items, i + 1, 'top'),
+          scrub: true,
+          invalidateOnRefresh: true,
+        });
       });
       });
       return () => {

@@ -22,9 +22,22 @@ export function initLenis() {
   // on touch devices the page scrolls inside #scroll-root (scripts/scroller.ts): Lenis smooths that box instead of the window
   const box = scrollBox();
 
+  // To compare on a real phone: open any page with ?native=1 and the finger scrolls the page natively (the phone's own momentum, Lenis does not take the
+  // touch over); ?native=0 puts the smooth finger back. The choice is kept for the session.
+  let native = false;
+  try {
+    const q = new URLSearchParams(location.search).get('native');
+    if (q === '1') sessionStorage.setItem('lr-native', '1');
+    if (q === '0') sessionStorage.removeItem('lr-native');
+    native = sessionStorage.getItem('lr-native') === '1';
+  } catch {
+    /* no storage: the default */
+  }
+
   lenis = new Lenis({
     ...SMOOTH_WHEEL,
     ...SMOOTH_TOUCH,
+    ...(native ? { syncTouch: false } : {}),
     ...(box ? { wrapper: box, content: box } : {}),
     smoothWheel: true,
     autoRaf: false,

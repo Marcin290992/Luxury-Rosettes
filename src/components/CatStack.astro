@@ -225,6 +225,12 @@ const { cards, pull, lead } = Astro.props;
     position: absolute;
     inset: 0;
   }
+  /* The first card is shown over a section that is held still under it (see `pull`), and what shows round the card when it shrinks must not depend on
+     what is under it: on a phone that section is a bar shorter than the cards, so its brown ended above the bottom and the paper showed under it.
+     The colour of that section is behind the card itself (the box unfolds with the card, so the held screen still shows beside it while it opens). */
+  .cs[data-lead] .cs-reveal {
+    background: var(--ink-warm, #1a1410);
+  }
   .cs[data-live='pin'][data-lead] .cs-item:first-child .cs-reveal {
     bottom: auto;
     height: 100vh;

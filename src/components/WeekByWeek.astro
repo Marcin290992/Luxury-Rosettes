@@ -64,7 +64,7 @@ const { head, noteTitle, note, items } = Astro.props;
           {
             items.map((it, i) => (
               <div class="wk-media" data-wk-media data-index={i}>
-                <Image src={it.image} alt="" widths={[700, 1200]} sizes="(min-width: 768px) 34vw, 1px" loading="lazy" />
+                <Image src={it.image} alt="" widths={[700, 1200]} sizes="(min-width: 768px) 34vw, 1px" loading="eager" decoding="async" />
                 <span class="wk-media-dim" data-wk-dim></span>
               </div>
             ))
@@ -111,6 +111,16 @@ const { head, noteTitle, note, items } = Astro.props;
         ease: 'power3.out',
         scrollTrigger: { trigger: layout, start: 'top 70%', toggleActions: 'play none none reverse' },
       });
+
+      // the section rides up over the one above it, and that one (its content) travels slower than the page and dims a little as it is covered
+      const above = root.previousElementSibling?.firstElementChild as HTMLElement | undefined;
+      if (above) {
+        gsap.fromTo(
+          above,
+          { yPercent: 0, opacity: 1 },
+          { yPercent: 14, opacity: 0.55, ease: 'none', scrollTrigger: { trigger: root, start: 'top bottom', end: 'top top', scrub: true, invalidateOnRefresh: true } },
+        );
+      }
 
       // the list slides up one step at a time (the top of the step to the top of the panel), and each step's photo wipes up over the last
       const yFor = (i: number) => () => -Math.min(items[i].offsetTop, Math.max(0, list.scrollHeight - col.clientHeight));
@@ -170,8 +180,8 @@ const { head, noteTitle, note, items } = Astro.props;
 
 <style>
   .wk {
-    background: var(--ink-warm, #1a1410);
-    color: var(--cream, #efe9dc);
+    background: var(--paper, #faf8f3); /* the cream of the hero */
+    color: var(--ink, #1a1a1a);
     padding: var(--space) 1.5rem;
   }
 
@@ -212,16 +222,17 @@ const { head, noteTitle, note, items } = Astro.props;
     gap: 1rem;
   }
   .wk-item {
+    color: var(--ink, #1a1a1a);
     padding: 1.25rem;
     border-radius: 10px;
-    background: #241d17;
+    background: #f0ece2;
   }
   .wk-item-photo {
     aspect-ratio: 4 / 3;
     margin-bottom: 1.25rem;
     border-radius: 10px;
     overflow: hidden;
-    background: #0c0907;
+    background: #e6e1d5;
   }
   .wk-item-photo :global(img) {
     width: 100%;
@@ -235,7 +246,7 @@ const { head, noteTitle, note, items } = Astro.props;
     font-family: var(--font-heading, serif);
     font-style: italic;
     font-size: 1.6rem;
-    color: var(--gold, #d4af37);
+    color: var(--gold-deep, #b8922a);
   }
   .wk-item-title {
     margin: 0 0 0.6rem;
@@ -259,7 +270,12 @@ const { head, noteTitle, note, items } = Astro.props;
   /* ---- with the script, from a tablet up: the tall scrubbed section, three columns ---- */
   @media (min-width: 768px) {
     .wk[data-live] {
-      padding: 0;
+      padding: 0 0 calc(var(--space) * 4); /* the page's space under it, before the next section */
+      /* pulled up over the end of the section above, with rounded top corners, like a sheet sliding over it */
+      position: relative;
+      z-index: 3;
+      margin-top: calc(var(--space) * -1); /* less than the padding of the section above: its content is never covered */
+      border-radius: 1.25rem 1.25rem 0 0;
     }
     .wk[data-live] .wk-layout {
       height: calc(75vh * var(--wk-count)); /* three quarters of a screen of scrolling per step, as in the capture */
@@ -300,7 +316,8 @@ const { head, noteTitle, note, items } = Astro.props;
       width: 100%;
       height: 100%;
       border-radius: 10px;
-      background: #241d17;
+      background: #f0ece2;
+      color: var(--ink, #1a1a1a);
       overflow: clip;
     }
     .wk[data-live] .wk-col {
@@ -327,8 +344,8 @@ const { head, noteTitle, note, items } = Astro.props;
       flex-direction: column;
       padding: clamp(1.5rem, 2.6vw, 3rem);
       border-radius: 0;
-      background: #241d17;
-      border-bottom: 1px solid #0c0907;
+      background: #f0ece2;
+      border-bottom: 1px solid rgba(26, 26, 26, 0.14);
     }
     .wk[data-live] .wk-item-photo {
       display: none;
@@ -337,7 +354,7 @@ const { head, noteTitle, note, items } = Astro.props;
       margin: 0;
       font-size: clamp(2.4rem, 3.2vw, 3.75rem);
       line-height: 1;
-      color: var(--cream, #efe9dc);
+      color: var(--ink, #1a1a1a);
     }
     .wk[data-live] .wk-item-title {
       margin: auto 0 1rem; /* the auto margin pushes the title and the text to the bottom of the card */
@@ -356,6 +373,14 @@ const { head, noteTitle, note, items } = Astro.props;
       inset: 0;
       overflow: hidden;
       clip-path: inset(100% 0 0 0);
+      will-change: clip-path;
+      transform: translateZ(0);
+    }
+    .wk[data-live] .wk-media :global(img) {
+      will-change: transform;
+    }
+    .wk[data-live] .wk-item {
+      will-change: opacity;
     }
     .wk[data-live] .wk-media[data-index='0'] {
       clip-path: inset(0);
@@ -372,6 +397,7 @@ const { head, noteTitle, note, items } = Astro.props;
       background: #080706;
       opacity: 0;
       pointer-events: none;
+      will-change: opacity;
     }
   }
 </style>

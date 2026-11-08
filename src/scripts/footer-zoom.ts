@@ -12,13 +12,14 @@ export function initFooterZoom(): () => void {
   const photo = root?.querySelector<HTMLElement>('[data-footer-photo]');
   const footer = root?.querySelector<HTMLElement>('[data-footer]');
   const content = root?.querySelector<HTMLElement>('[data-footer-content]');
-  if (!root || !clipped || !photo || !footer || !content) return () => {};
+  // (the photo is optional: where the clipped block has no photo of its own to drift, only the clipping and the footer's zoom run)
+  if (!root || !clipped || !footer || !content) return () => {};
 
   const mm = gsap.matchMedia();
   mm.add('(prefers-reduced-motion: no-preference)', () => {
     root.dataset.fx = ''; // turns on the overlap (see index.astro)
     const wide = matchMedia('(min-width: 992px)').matches;
-    gsap.fromTo(photo, { yPercent: -5 }, { yPercent: 5, ease: 'none', scrollTrigger: { trigger: clipped, start: 'top bottom', end: 'bottom top', scrub: 0.5 } });
+    if (photo) gsap.fromTo(photo, { yPercent: -5 }, { yPercent: 5, ease: 'none', scrollTrigger: { trigger: clipped, start: 'top bottom', end: 'bottom top', scrub: 0.5 } });
     gsap
       .timeline({ scrollTrigger: { trigger: footer, start: 'top 70%', end: 'top top', scrub: 0.5 } })
       .fromTo(clipped, { clipPath: 'inset(0% 0% 0% 0%)' }, { clipPath: wide ? 'inset(8% 22% 8% 22%)' : 'inset(4% 20% 4% 20%)', ease: 'none' }, 0)

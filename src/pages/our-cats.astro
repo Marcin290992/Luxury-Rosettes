@@ -3,7 +3,9 @@ import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
 import ShrinkIntro from '../components/ShrinkIntro.astro';
 import CatStack from '../components/CatStack.astro';
+import SplitStory from '../components/SplitStory.astro';
 import WeekByWeek from '../components/WeekByWeek.astro';
+import Footer from '../components/Footer.astro';
 import PhotoGrow from '../components/PhotoGrow.astro';
 import kittens from '../assets/img/kittens.webp';
 import candy from '../assets/img/cats/candy.webp';
@@ -13,10 +15,25 @@ import cosmo from '../assets/img/cats/cosmo.webp';
 import draco from '../assets/img/cats/draco.webp';
 import kita from '../assets/img/cats/kita.webp';
 
-// The two main cats of the cattery. PLACEHOLDERS: the photo of Hera is not here yet (Kita's stands in), and the texts are sample ones.
+// The two cards of the stack are both Hera (two photos of her). PLACEHOLDERS: Hera's real photos are not here yet (Kita's and Candy's stand in), and the texts are sample ones.
 const cards = [
-  { name: 'Draco', role: 'Stud', line: 'Placeholder text. A few calm words about Draco: his temperament, his line and what he gives his kittens.', image: draco },
   { name: 'Hera', role: 'Queen', line: 'Placeholder text. A few calm words about Hera: her coat, her character and her place in the line.', image: kita },
+  { name: 'Hera', role: 'Queen', line: 'Placeholder text. A second moment with Hera: how she is at home, with her kittens and with people.', image: candy },
+];
+
+// The second stack: Draco, two cards. PLACEHOLDERS: his second photo (Chester's stands in) and the texts are sample ones.
+const dracoCards = [
+  { name: 'Draco', role: 'Stud', line: 'Placeholder text. A few calm words about Draco: his temperament, his line and what he gives his kittens.', image: draco },
+  { name: 'Draco', role: 'Stud', line: 'Placeholder text. A second moment with Draco: how he is at home, with the family and with visitors.', image: chester },
+];
+
+// The closing stack, like the "Our Camps" cards of the capture: Hera and Draco, four cards. PLACEHOLDERS: the photos (Candy's and Chester's stand in for the
+// second ones) and the texts are sample ones.
+const familyCards = [
+  { name: 'Hera', role: 'Queen', line: 'Placeholder text. Hera at home: calm, curious and always the first to greet a visitor.', image: kita },
+  { name: 'Draco', role: 'Stud', line: 'Placeholder text. Draco at home: bold markings, a quiet voice and a soft spot for the sunny window.', image: draco },
+  { name: 'Hera', role: 'Queen', line: 'Placeholder text. Hera with her kittens: patient, gentle and watchful.', image: candy },
+  { name: 'Draco', role: 'Stud', line: 'Placeholder text. Draco at play: quick, athletic and endlessly inventive.', image: chester },
 ];
 
 // A kitten's first weeks, up to the day it goes home. PLACEHOLDERS: the texts are sample ones (only "12 to 14 weeks, fully vaccinated" is from the
@@ -37,6 +54,49 @@ const weeks = [
     collection="Queens, studs and kittens, gathered into one calm family."
   />
   <CatStack cards={cards} pull="-160svh" lead="60svh" />
+  <SplitStory
+    heading="Meet Hera"
+    paragraphs={[
+      'Placeholder text. A few calm words about Hera: where she came from, her coat and the character that made her the heart of the line. She lives with us in the house, as one of the family.',
+      'Placeholder text. Healthy, tested and loved, Hera is the reason our kittens begin so well: gentle mothers raise confident, people-friendly kittens.',
+    ]}
+    images={[kita, candy, kittens]}
+    alts={['Hera', 'Hera', 'Hera with her kittens']}
+  />
+  <CatStack cards={dracoCards} />
+  <SplitStory
+    heading="Meet Draco"
+    paragraphs={[
+      'Placeholder text. A few calm words about Draco: his lineage, his rosettes and the temperament we chose him for. He is a stud with a quiet, friendly nature.',
+      'Placeholder text. Draco gives his kittens strong build, bold markings and an easy character, and he is as happy on a lap as on the highest shelf.',
+    ]}
+    images={[draco, chester, charlie]}
+    alts={['Draco', 'Draco', 'Draco']}
+  />
   <WeekByWeek head={['Week by week,', 'to your home']} noteTitle="A Note About Growing Up" note="Placeholder text. Every kitten grows at its own pace, so the weeks here are a guide, not a promise." items={weeks} />
-  <PhotoGrow images={[draco, kittens, kita]} alts={['Draco', 'Bengal kittens', 'Hera']} headline="Meet the kittens" cta={{ label: 'Available kittens', href: '/available-kittens' }} />
+  <CatStack cards={familyCards} />
+  <!-- the last screen: the grown photo shrinks as the footer rises, then the footer (the effect of the home page's closing photo) -->
+  <div class="ending">
+  <PhotoGrow ending images={[draco, kittens, kita]} alts={['Draco', 'Bengal kittens', 'Hera']} headline="Meet the kittens" cta={{ label: 'Available kittens', href: '/available-kittens' }} />
+    <Footer />
+  </div>
 </Layout>
+
+<style>
+  .ending {
+    position: relative;
+    z-index: 5;
+    background: #0d0b09;
+  }
+  /* with the effect on, the footer's top part overlaps the photo's lower edge (the footer is clear there) */
+  .ending[data-fx] > :global(footer) {
+    margin-top: -30svh;
+  }
+</style>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initFooterZoom } from '../scripts/footer-zoom';
+
+  mount(initFooterZoom, '.ending');
+</script>

@@ -14,14 +14,16 @@ interface Props {
   alts?: [string, string, string];
   headline: string;
   cta: { label: string; href: string };
+  // the last block of the page: as the footer rises under it the whole stage shrinks inward (scripts/footer-zoom.ts), like the closing photo of the home page
+  ending?: boolean;
 }
-const { images, alts = ['', '', ''], headline, cta } = Astro.props;
+const { images, alts = ['', '', ''], headline, cta, ending = false } = Astro.props;
 const [left, mid, right] = images;
 ---
 
 <section class="pg" data-photo-grow>
   <div class="pg-track" data-pg-track>
-    <div class="pg-stage" data-pg-stage>
+    <div class="pg-stage" data-pg-stage data-footer-clip={ending ? "" : undefined}>
       <div class="pg-img pg-img--l" data-pg-left>
         <div class="pg-wrap"><Image src={left} alt={alts[0]} widths={[600, 1000]} sizes="34vw" loading="lazy" /></div>
       </div>
@@ -103,6 +105,7 @@ const [left, mid, right] = images;
   .pg {
     background: #0c0907;
     color: #f4ede0;
+    padding-top: calc(var(--space) * 4); /* the page's space above it, as every section has (it ends full screen, so nothing under it) */
   }
 
   /* ---- a phone, no script, reduced motion: the middle photo alone, with the headline and the button over it ---- */

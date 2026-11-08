@@ -1,0 +1,261 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * Photos on the left, a heading and two paragraphs on the right (the "sticky split" of the white-desert capture, e.g. "The End of the World",
+ * written for this site). The photos are a small slider: an arrow wipes the next one down over the current one (up when going back), the new photo
+ * settling from a slight zoom. The paragraphs brighten from top to bottom as the page scrolls them up (a gradient mask moved by the scroll, scrubbed).
+ * The heading's words rise out of their windows when the section arrives, like every other text of the site. Without the script (or with reduced
+ * motion) the first photo and the text simply stand still.
+ */
+interface Props {
+  heading: string;
+  paragraphs: string[];
+  images: ImageMetadata[];
+  alts?: string[];
+}
+const { heading, paragraphs, images, alts = [] } = Astro.props;
+---
+
+<section class="ss" data-split-story>
+  <div class="ss-grid">
+    <div class="ss-slider" data-ss-slider>
+      <div class="ss-wrap">
+        {
+          images.map((img, i) => (
+            <div class={`ss-item${i === 0 ? ' is-active' : ''}`} data-ss-item>
+              <Image src={img} alt={alts[i] ?? ''} widths={[700, 1200]} sizes="(min-width: 900px) 46vw, 92vw" loading="eager" decoding="async" />
+            </div>
+          ))
+        }
+        {
+          images.length > 1 && (
+            <div class="ss-nav">
+              <button type="button" class="ss-btn" aria-label="Previous photo" data-ss-prev>
+                <svg viewBox="0 0 21 6" aria-hidden="true"><path d="M21 3H1M4 .5 1 3l3 2.5" fill="none" stroke="currentColor" stroke-width="1" /></svg>
+              </button>
+              <button type="button" class="ss-btn" aria-label="Next photo" data-ss-next>
+                <svg viewBox="0 0 21 6" aria-hidden="true"><path d="M0 3h20M17 .5 20 3l-3 2.5" fill="none" stroke="currentColor" stroke-width="1" /></svg>
+              </button>
+            </div>
+          )
+        }
+      </div>
+    </div>
+    <div class="ss-text">
+      <h2 class="ss-heading" data-ss-heading>{heading}</h2>
+      <div class="ss-body" data-ss-body>
+        {paragraphs.map((p) => <p>{p}</p>)}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { SplitText } from 'gsap/SplitText';
+  import { mount } from '../scripts/lifecycle';
+  import { WORD_HIDDEN } from '../scripts/settings';
+
+  gsap.registerPlugin(ScrollTrigger, SplitText);
+
+  const FULL = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+  const TOP = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)';
+  const BOTTOM = 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)';
+
+  mount(() => {
+    const mm = gsap.matchMedia();
+    const splits: SplitText[] = [];
+
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-split-story]'));
+      if (!roots.length) return;
+      const offs: Array<() => void> = [];
+      roots.forEach((root) => {
+      root.dataset.live = '';
+
+      // the heading's words rise out of their windows
+      const title = SplitText.create(root.querySelector('[data-ss-heading]')!, { type: 'words', mask: 'words' });
+      splits.push(title);
+      gsap.from(title.words, {
+        yPercent: WORD_HIDDEN,
+        duration: 1.1,
+        stagger: 0.08,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: root, start: 'top 70%', toggleActions: 'play none none reverse' },
+      });
+
+      // the paragraphs brighten from top to bottom as they scroll up (the capture's gradient mask, moved by the scroll)
+      const body = root.querySelector<HTMLElement>('[data-ss-body]')!;
+      gsap.fromTo(
+        body,
+        { '--mask-position': -40 },
+        { '--mask-position': 100, ease: 'none', scrollTrigger: { trigger: body, start: 'top 90%', end: 'bottom 55%', scrub: true } },
+      );
+
+      // the slider: the next photo wipes down over the current one (up when going back)
+      const items = Array.from(root.querySelectorAll<HTMLElement>('[data-ss-item]'));
+      let off = () => {};
+      if (items.length > 1) {
+        let index = 0;
+        let busy = false;
+        let z = 2;
+        items.forEach((it, i) => gsap.set(it, { clipPath: i === 0 ? FULL : TOP, zIndex: i === 0 ? 1 : 0 }));
+        const go = (dir: number) => {
+          if (busy) return;
+          busy = true;
+          const next = (index + dir + items.length) % items.length;
+          const el = items[next];
+          gsap.set(el, { zIndex: z++, clipPath: dir > 0 ? TOP : BOTTOM });
+          gsap.fromTo(el.querySelector('img'), { scale: 1.2 }, { scale: 1, duration: 1.2, ease: 'expo.out' });
+          gsap.to(el, {
+            clipPath: FULL,
+            duration: 1,
+            ease: 'expo.inOut',
+            onComplete: () => {
+              index = next;
+              busy = false;
+            },
+          });
+        };
+        const prev = root.querySelector('[data-ss-prev]');
+        const nextBtn = root.querySelector('[data-ss-next]');
+        const onPrev = () => go(-1);
+        const onNext = () => go(1);
+        prev?.addEventListener('click', onPrev);
+        nextBtn?.addEventListener('click', onNext);
+        off = () => {
+          prev?.removeEventListener('click', onPrev);
+          nextBtn?.removeEventListener('click', onNext);
+        };
+      }
+
+      offs.push(() => {
+        off();
+        delete root.dataset.live;
+      });
+      });
+
+      return () => {
+        offs.forEach((f) => f());
+        splits.splice(0).forEach((s) => s.revert());
+      };
+    });
+
+    return () => mm.revert();
+  }, '[data-split-story]');
+</script>
+
+<style>
+  .ss {
+    background: #0c0907;
+    color: #f4ede0;
+    padding: calc(var(--space, 6rem) * 4) 1.5rem; /* one gap between sections everywhere on the page: four times --space */
+  }
+  .ss-grid {
+    max-width: 90rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column-reverse; /* a phone, as in the capture: the text first, the photos under it */
+    gap: 2.5rem;
+  }
+  .ss-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1.01;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #241d17;
+  }
+  .ss-item {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .ss[data-live] .ss-item:not(.is-active) {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%);
+  }
+  .ss-item :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .ss-nav {
+    position: absolute;
+    left: 50%;
+    bottom: 1.25rem;
+    transform: translateX(-50%);
+    z-index: 500;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .ss-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.75rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #f4ede0;
+    background: rgba(12, 9, 7, 0.55);
+    backdrop-filter: blur(8px);
+    transition: color 0.3s, background 0.3s;
+  }
+  .ss-btn svg {
+    width: 21px;
+    height: 6px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ss-btn:hover {
+      color: #0c0907;
+      background: #f4ede0;
+    }
+  }
+  .ss-heading {
+    margin: 0 0 1.5rem;
+    font-family: var(--font-heading, serif);
+    font-weight: 300;
+    font-size: clamp(2rem, 3.2vw, 3.4rem);
+    line-height: 1.05;
+    text-transform: uppercase;
+  }
+  .ss-body {
+    --mask-position: 100;
+    display: grid;
+    gap: 1.25rem;
+    font-family: var(--font-body, sans-serif);
+    font-size: clamp(1rem, 1.15vw, 1.2rem);
+    line-height: 1.6;
+  }
+  .ss-body :global(p) {
+    margin: 0;
+  }
+  .ss[data-live] .ss-body {
+    -webkit-mask-image: linear-gradient(#000 calc(var(--mask-position) * 1%), rgba(0, 0, 0, 0.9) calc((var(--mask-position) + 5) * 1%), rgba(0, 0, 0, 0.8) calc((var(--mask-position) + 10) * 1%), rgba(0, 0, 0, 0.6) calc((var(--mask-position) + 20) * 1%), rgba(0, 0, 0, 0.4) calc((var(--mask-position) + 30) * 1%), rgba(0, 0, 0, 0.2) calc((var(--mask-position) + 35) * 1%), rgba(0, 0, 0, 0.1) calc((var(--mask-position) + 40) * 1%), rgba(0, 0, 0, 0.1) 100%);
+    mask-image: linear-gradient(#000 calc(var(--mask-position) * 1%), rgba(0, 0, 0, 0.9) calc((var(--mask-position) + 5) * 1%), rgba(0, 0, 0, 0.8) calc((var(--mask-position) + 10) * 1%), rgba(0, 0, 0, 0.6) calc((var(--mask-position) + 20) * 1%), rgba(0, 0, 0, 0.4) calc((var(--mask-position) + 30) * 1%), rgba(0, 0, 0, 0.2) calc((var(--mask-position) + 35) * 1%), rgba(0, 0, 0, 0.1) calc((var(--mask-position) + 40) * 1%), rgba(0, 0, 0, 0.1) 100%);
+  }
+
+  /* a laptop: the photos on the left (half the width), the text on the right, centred against them (the capture's col-6 and col-4 offset-7) */
+  @media (min-width: 900px) {
+    .ss {
+      padding: calc(var(--space, 6rem) * 4) 3vw;
+    }
+    .ss-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: 1.5rem;
+      align-items: center;
+    }
+    .ss-slider {
+      grid-column: 1 / span 6;
+    }
+    .ss-text {
+      grid-column: 8 / span 4;
+    }
+  }
+</style>

@@ -33,7 +33,7 @@ const { cards, pull, lead } = Astro.props;
       <div class="cs-item" data-cs-item>
         <div class="cs-reveal" data-cs-reveal>
         <div class="cs-card" data-cs-card>
-          <Image src={c.image} alt={c.name} widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" style={`object-position:${c.position ?? '50% 35%'}`} />
+          <Image src={c.image} alt={c.name} widths={[900, 1600, 2400]} sizes="100vw" loading="eager" decoding="async" style={`object-position:${c.position ?? '50% 35%'}`} />
           <span class="cs-shade" aria-hidden="true"></span>
           <span class="cs-dim" aria-hidden="true" data-cs-dim></span>
           <div class="cs-content">
@@ -62,7 +62,12 @@ const { cards, pull, lead } = Astro.props;
     const splits: SplitText[] = [];
 
     // the scrolling the first card is given to unfold in place (0 if it just comes up like the others)
-    const leadOf = (items: HTMLElement[]) => (items[0].closest('[data-cat-stack]')?.hasAttribute('data-lead') ? Math.max(0, items[0].offsetHeight - window.innerHeight) : 0);
+    const leadOf = (items: HTMLElement[]) => {
+      if (!items[0].closest('[data-cat-stack]')?.hasAttribute('data-lead')) return 0;
+      // pinned by script: the first card is taller than the screen; sticky: the space in front of the second card
+      const gap = items[1] ? parseFloat(getComputedStyle(items[1]).marginTop) || 0 : 0;
+      return Math.max(0, items[0].offsetHeight - window.innerHeight) + Math.max(0, gap);
+    };
 
     // what both versions share: the words rise out of their windows when a card arrives; returns each card's words (for the way out)
     const prepare = (root: HTMLElement, items: HTMLElement[]) =>
@@ -100,28 +105,32 @@ const { cards, pull, lead } = Astro.props;
       gsap.fromTo(
         reveal,
         { clipPath: 'inset(0% 0% 0% 100%)' },
-        { clipPath: 'inset(0% 0% 0% 0%)', ease: 'power1.inOut', scrollTrigger: { trigger: items[0], start: 'top top', end: () => `+=${leadOf(items)}`, scrub: true, invalidateOnRefresh: true } },
+        { clipPath: 'inset(0% 0% 0% 0%)', ease: 'power1.inOut', onComplete: () => gsap.set(reveal, { clearProps: 'clipPath' }), scrollTrigger: { trigger: items[0], start: 'top top', end: () => `+=${leadOf(items)}`, scrub: true, invalidateOnRefresh: true } },
       );
     };
 
     // ---- a laptop: the capture's mechanism, a pin on each card (all but the last) with pinSpacing off, and a scrub that follows the scroll ----
     mm.add('(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)', () => {
-      const root = document.querySelector<HTMLElement>('[data-cat-stack]');
-      if (!root) return;
+      const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-cat-stack]'));
+      roots.forEach((root) => {
       root.dataset.live = 'pin';
       const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
       const words = prepare(root, items);
       unfold(items);
       items.forEach((item, i) => {
         if (i === items.length - 1) return;
-        const end = () => `+=${item.offsetHeight}`;
+        // every card stays pinned until the LAST card has reached the top: the covered cards stay where they are, one under the other (a card that let go
+        // as soon as the next had covered it would scroll away upwards and show through the gap round the card in front)
+        const last = items[items.length - 1];
+        const end = () => `+=${last.offsetTop - item.offsetTop}`;
         ScrollTrigger.create({ trigger: item, start: 'top top', end, pin: true, pinSpacing: false });
         // a card is covered while the next one slides up over it: from the moment that one's top enters the screen to the moment it reaches the top
         // (the same for every card, the first one included, whatever it was given to unfold in before)
         cover(item, words[i], { trigger: items[i + 1], start: 'top bottom', end: 'top top', scrub: true, invalidateOnRefresh: true });
       });
+      });
       return () => {
-        delete root.dataset.live;
+        roots.forEach((root) => delete root.dataset.live);
         splits.splice(0).forEach((s) => s.revert());
       };
     });
@@ -129,8 +138,8 @@ const { cards, pull, lead } = Astro.props;
     // ---- a phone, a tablet, a touch screen: CSS sticky, and the covered card is scrubbed while the next one rises over it ----
     mm.add('(max-width: 1023px), (pointer: coarse)', () => {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const root = document.querySelector<HTMLElement>('[data-cat-stack]');
-      if (!root) return;
+      const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-cat-stack]'));
+      roots.forEach((root) => {
       root.dataset.live = 'sticky';
       const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
       const words = prepare(root, items);
@@ -140,8 +149,9 @@ const { cards, pull, lead } = Astro.props;
         if (!next) return;
         cover(item, words[i], { trigger: next, start: 'top bottom', end: 'top top', scrub: true });
       });
+      });
       return () => {
-        delete root.dataset.live;
+        roots.forEach((root) => delete root.dataset.live);
         splits.splice(0).forEach((s) => s.revert());
       };
     });
@@ -178,7 +188,7 @@ const { cards, pull, lead } = Astro.props;
   .cs[data-live][data-lead] {
     background: transparent;
   }
-  .cs[data-live][data-lead] .cs-item:first-child {
+  .cs[data-live='pin'][data-lead] .cs-item:first-child {
     height: calc(100vh + var(--cs-lead));
     height: calc(100svh + var(--cs-lead));
   }
@@ -191,12 +201,23 @@ const { cards, pull, lead } = Astro.props;
     height: 100vh;
     height: 100svh;
   }
+  /* a phone, a tablet: every card, the first one too, is one screen high and sticky until the end of the stack. The scrolling the first card is given
+     to unfold in is the space in front of the second card (a sticky box taller than the screen would let go of its card too early). */
+  .cs[data-live='sticky'][data-lead] .cs-item:nth-child(2) {
+    margin-top: var(--cs-lead);
+  }
   .cs-card {
     position: absolute;
     inset: 0;
     overflow: hidden;
     background: #0c0907;
     will-change: clip-path, transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: paint;
+  }
+  .cs-dim {
+    will-change: opacity;
   }
   .cs-card :global(img) {
     position: absolute;

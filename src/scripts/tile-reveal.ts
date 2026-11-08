@@ -115,9 +115,9 @@ export function initTileReveal(root: HTMLElement, o: TileRevealOptions) {
 
   // the scroll position (0..1) and the smoothed value that is painted
   const state = { target: 0, shown: 0 };
-  const follow = () => {
-    gsap.to(state, { shown: state.target, duration: o.smooth, ease: 'none', overwrite: true, onUpdate: () => paint(state.shown) });
-  };
+  // quickTo keeps ONE tween and only moves its end: a new linear tween on every scroll event restarted the speed each time (steppy motion)
+  const glide = gsap.quickTo(state, 'shown', { duration: o.smooth, ease: 'power2.out', onUpdate: () => paint(state.shown) });
+  const follow = () => glide(state.target);
 
   const measure = () => {
     const box = stage.getBoundingClientRect();

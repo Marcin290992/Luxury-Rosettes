@@ -71,8 +71,8 @@ const { columns, gap, gridWidth, tileAspect, scrollLength } = TILE_REVEAL;
         mm.add('(min-width: 769px)', () => {
           gsap.fromTo(
             root,
-            { '--inset': '24px', '--inset-r': '10px' },
-            { '--inset': '0px', '--inset-r': '0px', ease: 'none', scrollTrigger: { trigger: root, start: 'top 450px', end: 'top top', scrub: true } },
+            { clipPath: 'inset(0px 24px round 10px)' },
+            { clipPath: 'inset(0px 0px round 0px)', ease: 'none', scrollTrigger: { trigger: root, start: 'top 450px', end: 'top top', scrub: true } },
           );
         });
         destroy.push(() => mm.revert());

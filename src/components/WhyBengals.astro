@@ -92,7 +92,7 @@ const scenes = [
             </svg>
             <figure class="why-fig">
               <div class="why-shape" style={`clip-path:url(#why-spot-${i % spots.length})`}>
-                <Image src={s.img} alt={s.alt} widths={[600, 1000, 1400]} sizes="(min-width:1024px) 40vw, 80vw" loading="lazy" />
+                <Image src={s.img} alt={s.alt} widths={[600, 1000, 1400]} sizes="(min-width:1024px) 40vw, 80vw" loading="eager" decoding="async" />
               </div>
             </figure>
           </div>

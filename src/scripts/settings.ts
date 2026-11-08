@@ -315,8 +315,8 @@ export const PRELOADER = {
   waitMax: 2.5, // s the longest it waits (dark) for the fonts and the first photos before it shows itself anyway
   fadeIn: 1.2, // s the dark takes to clear and the words and the frame take to come in, before the count starts
   count: 3.2, // s the counter and the photos take (and so each word stays long enough to be read)
-  holdBefore: 0.45, // s between the end of the count and the frame opening
-  open: 2.2, // s the frame takes to grow to the full screen (slow and smooth)
+  holdBefore: 0.15, // s between the end of the count and the frame opening
+  open: 1.4, // s the frame takes to grow to the full screen
   fade: 1.0, // s the preloader takes to melt away over the hero
   rounds: 1.5, // how many times the photos go round while counting
   frame: { width: 240, height: 300 }, // px, the small frame

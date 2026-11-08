@@ -52,6 +52,12 @@ import hero from '../assets/img/hero_img.webp';
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     // true when this page was reached by a page transition (set in Layout.astro): the nav must not hide and fade in again
     const arrived = !!(window as unknown as { __lrSwapped?: boolean }).__lrSwapped;
+    // After a click through the page is already on screen: the black curtain (it waits for the fonts and the photo, then fades) would only cover it
+    // again for a moment and lift a second time. So it is out of the way from the first moment.
+    if (arrived) {
+      hero.dataset.ready = '';
+      hero.querySelector<HTMLElement>('.hero-curtain')?.style.setProperty('display', 'none');
+    }
     const media = hero.querySelector<HTMLElement>('.hero-media')!;
     const title = hero.querySelector<HTMLElement>('.hero-title')!;
     const rail = hero.querySelector<HTMLElement>('.hero-rail')!;
@@ -141,8 +147,9 @@ import hero from '../assets/img/hero_img.webp';
       gsap.set(chars, { yPercent: WORD_HIDDEN });
       gsap.set(title, { opacity: 1 });
       gsap.set(rail, { y: HERO.railRise });
-      // after the intro the photo is already on screen (the preloader's last frame): no second zoom on top of it
-      gsap.set(media, { scale: document.documentElement.classList.contains('preloading') ? 1 : HERO.mediaZoom });
+      // after the intro the photo is already on screen (the preloader's last frame): no second zoom on top of it. The same after a click through from
+      // another page: the page transition has just shown the photo, and zooming it in and settling it again looked like the hero loading twice.
+      gsap.set(media, { scale: document.documentElement.classList.contains('preloading') || arrived ? 1 : HERO.mediaZoom });
       if (nav && !arrived) gsap.set(nav, { '--intro': 0, visibility: 'hidden' });
     }
 

@@ -65,6 +65,7 @@ const steps = [
   import { mount } from '../scripts/lifecycle';
   import { initScrollStack } from '../scripts/scroll-stack';
   import { initLineReveal } from '../scripts/line-reveal';
+  import { getLenis } from '../scripts/lenis';
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -99,7 +100,27 @@ const steps = [
             scrollTrigger: { trigger: root, start: 'top 55%', toggleActions: 'play none none reverse' },
           },
         );
+        // The cards must not move before the frame has finished unfolding (it is on time, the cards are on scroll: scrolling into the pinned
+        // stack while it still unfolds made the first card jump). So when the pin is reached and the unfold is not done, the scroll waits for it.
+        let held = false;
+        const release = () => {
+          if (!held) return;
+          held = false;
+          getLenis()?.start();
+        };
+        const hold = ScrollTrigger.create({
+          trigger: root,
+          start: 'top top',
+          onEnter: () => {
+            if (unfold.progress() >= 1) return;
+            held = true;
+            getLenis()?.stop();
+            unfold.eventCallback('onComplete', release);
+          },
+        });
         destroy = () => {
+          hold.kill();
+          release();
           unfold.scrollTrigger?.kill();
           unfold.kill();
           frame.style.clipPath = '';

@@ -416,3 +416,33 @@ export const AWARDS_SPIRAL = {
   grid: [0, 1, 4, 2, 7, 6], // which of the photos (counted from 0) land in the grid at the end
   stripes: 5, // stripes that cover the scene at the end
 };
+
+// ---- spin shutter (the kittens on a tilted ring in 3D that turns, with depth of field; one WebGL2 draw call, no libraries) -------
+// After the React Bits "Spin Shutter". Sizes are fractions of the ring (see scripts/spin-shutter.ts).
+export const SPIN_SHUTTER = {
+  count: 10, // cards on the ring (the kittens are repeated to fill it)
+  startIndex: 0, // the card that is in front at the start
+  aspect: 0.8, // width / height of a card
+  size: 0.47, // height of a card, in ring radii
+  radius: 14, // px of the rounded corners on the front card (the others in proportion)
+  tilt: 28, // degrees the ring leans towards you
+  roll: -7, // degrees the whole ring is turned in the plane of the screen
+  distance: 3.4, // how far the camera is, in ring radii (higher = flatter)
+  scale: 1, // how much of the room the ring fills
+  sizeTall: 0.62, // the same two for a tall screen (phone, tablet upright): bigger cards, the ring leans more
+  tiltTall: 58,
+  stretch: 2.2, // the most the ring is stretched sideways to fill a wide screen (1 = never)
+  cluster: 1, // cards in a group (1 = evenly spread)
+  spread: 0.6, // how tight the cards of a group stand (cluster > 1)
+  speed: 1.2, // turns per minute (negative = the other way)
+  aperture: 0.45, // depth of field: how soft the cards away from the focus are
+  haze: 0.3, // how far the far cards fade into the background
+  shadow: 0.35,
+  intro: true, // the cards open out of the first one
+  pauseOnHover: false, // the ring keeps turning under the pointer (the focus and the caption still follow it)
+  draggable: false, // false: nothing stops or turns the ring by hand
+  selectable: false, // false: a click or the keys do not pick a card (the pointer only focuses it)
+  wheel: false, // a wheel turns the ring (and then the page does not scroll over it): left off
+  captions: true,
+  dpr: 2, // top device pixel ratio
+} as const;

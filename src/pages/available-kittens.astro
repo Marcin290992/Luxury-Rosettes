@@ -3,12 +3,22 @@ import { Image } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
 import SpinShutter from '../components/SpinShutter.astro';
+import CloseTo from '../components/CloseTo.astro';
+import Closing from '../components/Closing.astro';
+import Footer from '../components/Footer.astro';
+import closeToPhoto from '../assets/img/cats/chester.webp';
+import closingPhoto from '../assets/img/kittens.webp'; // not the photo of the home page's closing screen
 import candy from '../assets/img/cats/candy.webp';
 import charlie from '../assets/img/cats/charlie.webp';
 import chester from '../assets/img/cats/chester.webp';
 import cosmo from '../assets/img/cats/cosmo.webp';
+import { spots } from '../scripts/spots';
+import { getKittens } from '../data/litters';
+import { KITTEN_EXPAND as K } from '../scripts/settings';
 
 // Sample page for trying out page transitions: placeholder kittens and copy
+// the short description of each kitten comes from the one place the site keeps them (data/litters.ts)
+const about = Object.fromEntries(getKittens().map((k) => [k.name, k.text]));
 const kittens = [
   { name: 'Candy', line: 'Female, brown rosetted', image: candy },
   { name: 'Charlie', line: 'Male, snow', image: charlie },
@@ -29,26 +39,71 @@ const kittens = [
       </SpinShutter>
     </section>
     <div class="page">
+    <svg class="kp-defs" width="0" height="0" aria-hidden="true" focusable="false">
+      <defs>
+        {kittens.map((_, i) => (
+          <>
+            <clipPath id={`kp-${i}`} clipPathUnits="objectBoundingBox"><path d={spots[i % spots.length]} /></clipPath>
+            <clipPath id={`kp-${i}-closed`} clipPathUnits="objectBoundingBox"><path d={spots[i % spots.length]} transform={`translate(0.5 0.5) scale(${K.startWidth / 100} ${K.startHeight / 100}) translate(-0.5 -0.5)`} /></clipPath>
+          </>
+        ))}
+      </defs>
+    </svg>
     <ul class="list">
       {
-        kittens.map((k) => (
+        kittens.map((k, i) => (
           <li class="row" id={k.name.toLowerCase()}>
-            <div class="photo"><Image src={k.image} alt={k.name} widths={[600, 1000]} sizes="(min-width:1024px) 40vw, 90vw" /></div>
+            <div class="photo" data-clip={`kp-${i}`} style={`--clip:url(#kp-${i});--clip-closed:url(#kp-${i}-closed)`}><Image src={k.image} alt={k.name} widths={[600, 1000]} sizes="(min-width:1024px) 40vw, 90vw" /></div>
             <div class="text">
-              <h2>{k.name}</h2>
-              <p>{k.line}</p>
-              <a href="#">Reserve {k.name} →</a>
+              <h2 data-line-reveal>{k.name}</h2>
+              <p class="line" data-line-reveal>{k.line}</p>
+              <p class="about" data-line-reveal>{about[k.name]}</p>
+              <p class="cta"><a href="#">Reserve {k.name} →</a></p>
             </div>
           </li>
         ))
       }
     </ul>
-    <p class="next"><a href="/our-cats">← Meet the parents</a></p>
     </div>
+    <CloseTo
+      words={['Placeholder', 'text', 'goes', 'here']}
+      above="Placeholder text. A calm sentence that stays above the picture and"
+      below="one more that follows below it."
+      image={closeToPhoto}
+      alt="A Bengal kitten"
+    />
   </main>
+  <!-- the last screen, as on the home page: the photo shrinks as the footer rises -->
+  <div class="ending">
+    <Closing photo={closingPhoto} eyebrow="Not sure yet?" heading={['Meet the parents', 'behind them']} cta={{ label: 'Our cats', href: '/our-cats' }} />
+    <Footer />
+  </div>
 </Layout>
 
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initKittenExpand } from '../scripts/kitten-expand';
+  import { initFooterZoom } from '../scripts/footer-zoom';
+  import { initLineReveal } from '../scripts/line-reveal';
+
+  mount(initFooterZoom, '.ending');
+
+  // each kitten's name and words rise out of their masks as the row comes up (the same reveal as Process and Testimonials)
+  mount(() => initLineReveal(Array.from(document.querySelectorAll<HTMLElement>('.list [data-line-reveal]'))), '.list');
+
+  mount(() => initKittenExpand(Array.from(document.querySelectorAll<HTMLElement>('.list .photo'))), '.list');
+</script>
+
 <style>
+  .ending {
+    position: relative;
+    z-index: 5;
+    background: #0d0b09;
+  }
+  /* with the effect on, the footer's top part overlaps the photo's lower edge (the footer is clear there) */
+  .ending[data-fx] > :global(footer) {
+    margin-top: -30svh;
+  }
   /* the top gap is the room of the menu bar: the ring never goes under it */
   .hero {
     position: relative;
@@ -77,19 +132,31 @@ const kittens = [
     margin: 0 auto;
   }
   .list { list-style: none; padding: 0; display: grid; gap: 3rem; }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
   .row:nth-child(even) .photo { order: 2; }
-  .photo { aspect-ratio: 4 / 3; overflow: hidden; border-radius: 10px; background: var(--placeholder); }
-  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .kp-defs { position: absolute; width: 0; height: 0; }
+  /* cut to a spot of the home page (the same shapes as "Your Bengal") */
+  .photo { aspect-ratio: 1; clip-path: var(--clip); }
+  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; will-change: transform; }
+  /* closed (a small copy of the spot) until the script opens it as the photo comes up: no flash of the full photo */
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    .photo { clip-path: var(--clip-closed); }
+    .photo :global(img) { transform: scale(1.35); }
+  }
   h2 { font-family: var(--font-heading); font-weight: 400; font-size: clamp(1.8rem, 3vw, 2.6rem); margin: 0 0 0.4rem; }
-  .text p { margin: 0 0 1.25rem; opacity: 0.6; }
-  .text a, .next a { color: var(--gold-deep); text-decoration: none; letter-spacing: 0.08em; }
-  .next { margin: 4rem 0 0; }
+  /* the text always stands the same distance from its photo: the next to the photo edge of its column (the gap is the grid's) */
+  .text { max-width: 28rem; }
+  .row:nth-child(even) .text { justify-self: end; text-align: right; }
+  .text .line { margin: 0 0 1rem; opacity: 0.6; }
+  .text .about { margin: 0 0 1.5rem; line-height: 1.65; opacity: 0.8; }
+  .text .cta { margin: 0; }
+  .text a { color: var(--gold-deep); text-decoration: none; letter-spacing: 0.08em; }
   @media (max-width: 600px) {
     .lead { max-width: 62vw; }
   }
   @media (max-width: 700px) {
     .row { grid-template-columns: 1fr; }
     .row:nth-child(even) .photo { order: 0; }
+    .row:nth-child(even) .text { justify-self: start; text-align: left; }
   }
 </style>

@@ -1,7 +1,22 @@
 ---
 import { Image } from 'astro:assets';
 import LetterButton from './LetterButton.astro';
-import photo from '../assets/img/our_cats.webp'; // placeholder: swap for the real closing photo
+import defaultPhoto from '../assets/img/our_cats.webp'; // placeholder: swap for the real closing photo
+import type { ImageMetadata } from 'astro';
+
+// Every page that ends with the footer uses this block; only the photo and the words change.
+interface Props {
+  photo?: ImageMetadata;
+  eyebrow?: string;
+  heading?: string[]; // one entry per line
+  cta?: { label: string; href: string };
+}
+const {
+  photo = defaultPhoto,
+  eyebrow = 'Your Bengal awaits',
+  heading = ['Ready to meet', 'your kitten?'],
+  cta = { label: 'View available kittens', href: '/available-kittens' },
+} = Astro.props;
 ---
 
 <!-- Full-screen photo with the closing line. When the footer rises, the photo is clipped inward and the footer scales in (scripts/footer-zoom.ts). -->
@@ -11,10 +26,10 @@ import photo from '../assets/img/our_cats.webp'; // placeholder: swap for the re
     <i class="shade"></i>
   </div>
   <div class="inner">
-    <p class="eyebrow" data-reveal>Your Bengal awaits</p>
-    <h2 data-reveal>Ready to meet<br />your kitten?</h2>
+    <p class="eyebrow" data-reveal>{eyebrow}</p>
+    <h2 data-reveal>{heading.map((line, i) => (<>{i > 0 && <br />}{line}</>))}</h2>
     <div class="ctas" data-reveal>
-      <LetterButton label="View available kittens" href="/available-kittens" solid />
+      <LetterButton label={cta.label} href={cta.href} solid />
       <LetterButton label="Get in touch" contact />
     </div>
   </div>

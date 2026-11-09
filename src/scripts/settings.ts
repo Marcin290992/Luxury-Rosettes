@@ -446,3 +446,23 @@ export const SPIN_SHUTTER = {
   captions: true,
   dpr: 2, // top device pixel ratio
 } as const;
+
+// ---- the kitten photos on the "Available kittens" page: cut to the spots of the home page (scripts/spots.ts) ----
+// Each photo starts as a small spot in the middle of its frame (zoomed in) and the spot grows to its full size as the photo comes up the screen.
+export const KITTEN_EXPAND = {
+  startWidth: 42, // % of the spot's full width at the start (the same window as ScrollExpand)
+  startHeight: 58,
+  mediaZoom: 1.35, // the picture inside is this much bigger at the start
+  from: 0.95, // it starts opening when the frame's top is this far down the screen (0 = top, 1 = bottom)
+  to: 0.5, // and is fully open when the frame's middle is this far down it
+} as const;
+
+// ---- close-to (words that pull together while a picture opens between two lines; after the 71three "Close to the work") ----
+// The END state is the CSS of the section (the words close together, the picture open); these are where it starts and when it plays.
+export const CLOSE_TO = {
+  desktop: { gapFrom: 20, start: 'top center+=20%', scrub: 0.5, mediaAt: 0.7 }, // gapFrom in vw: the words start this far apart
+  tablet: { gapFrom: 14, start: 'top 75%', scrub: 0.8, mediaAt: 0.6 },
+  phone: { gapFrom: 25, start: 'top 82%', scrub: 1, mediaAt: 0.5 },
+  gapDuration: 1.5, // the words' move, against a picture that opens in 1
+  gapEase: 'power2.inOut',
+} as const;

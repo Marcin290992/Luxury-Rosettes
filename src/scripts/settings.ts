@@ -385,6 +385,8 @@ export const AWARD_ORBIT = {
 // After the Codegrid "PrototypeStudio Scroll Animation". The pinned part is `length` screens long.
 export const AWARDS_LIST = {
   length: 5, // screens of scrolling the whole list takes
+  exit: 0.9, // screens of scrolling after the last award: paper-coloured stripes rise and cover the list (the next section follows)
+  stripes: 5, // how many stripes
   dim: 0.35, // opacity of a photo that is not the one at the middle of the screen
   detailFade: 2.2, // how fast the words of an award fade as the list moves on from it (higher = faster)
   detailShift: 24, // px the words of an award travel while they come in and go out
@@ -465,4 +467,12 @@ export const CLOSE_TO = {
   phone: { gapFrom: 25, start: 'top 82%', scrub: 1, mediaAt: 0.5 },
   gapDuration: 1.5, // the words' move, against a picture that opens in 1
   gapEase: 'power2.inOut',
+} as const;
+
+// ---- gallery hero (a photo opens from a window to the whole screen and fades, photos float up below it; scripts/gallery-hero.ts) ----
+export const GALLERY_HERO = {
+  window: 25, // % of each side that is closed at the start (25 = a window of half the screen)
+  scrub: 0.5,
+  desktop: { section: 1500, fade: 500, zoom: 1.7, parallax: 1 }, // px of scroll the opening takes / the fade takes; the zoom at the start; the photos' travel
+  phone: { section: 1000, fade: 350, zoom: 1.5, parallax: 0.5 }, // a thumb-swipe is much longer than a wheel: shorter, and the photos travel less
 } as const;

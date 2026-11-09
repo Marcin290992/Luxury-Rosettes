@@ -4,6 +4,9 @@ import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
 import AwardsSpiral from '../components/AwardsSpiral.astro';
 import AwardsList from '../components/AwardsList.astro';
+import Closing from '../components/Closing.astro';
+import Footer from '../components/Footer.astro';
+import closingPhoto from '../assets/img/story/award3.webp'; // placeholder: swap for the real closing photo
 
 // Sample page. The photos, titles, shows, years and words of the awards are placeholders, to be replaced with the real ones.
 const found = import.meta.glob<{ default: ImageMetadata }>('../assets/img/{cats,story}/*.webp', { eager: true });
@@ -33,4 +36,28 @@ const awards = [
     photos={Array.from({ length: 9 }, (_, i) => pool[(i * 4) % pool.length])}
   />
   <AwardsList items={awards} />
+  <!-- the last screen, as on the home page: the photo shrinks as the footer rises -->
+  <div class="ending">
+    <Closing photo={closingPhoto} eyebrow="The line continues" heading={['Meet the next', 'champion']} cta={{ label: 'Available kittens', href: '/available-kittens' }} />
+    <Footer />
+  </div>
 </Layout>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initFooterZoom } from '../scripts/footer-zoom';
+
+  mount(initFooterZoom, '.ending');
+</script>
+
+<style>
+  .ending {
+    position: relative;
+    z-index: 5;
+    background: #0d0b09;
+  }
+  /* with the effect on, the footer's top part overlaps the photo's lower edge (the footer is clear there) */
+  .ending[data-fx] > :global(footer) {
+    margin-top: -30svh;
+  }
+</style>

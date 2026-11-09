@@ -1,0 +1,152 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * The gallery's opening: a photo that is a small window in the middle of the screen opens to fill it as you scroll, then fades, while photos
+ * float up below it at their own speeds (see scripts/gallery-hero.ts; from a scroll hero in React, rewritten for this site).
+ * Without the script, or with reduced motion, the photo is simply open and the photos stand at rest.
+ * `from` / `to` are how far (px, on a desktop) a photo starts below / ends above its place while it crosses the screen.
+ */
+interface Props {
+  title: string;
+  image: ImageMetadata;
+  alt?: string;
+  photos: { src: ImageMetadata; alt: string; from: number; to: number; place: 'left' | 'centre' | 'right' | 'inset' }[];
+}
+const { title, image, alt = '', photos } = Astro.props;
+---
+
+<section class="gh" data-gallery-hero>
+  <div class="gh-center">
+    <div class="gh-media">
+      <Image src={image} alt={alt} widths={[900, 1600, 2400]} sizes="100vw" loading="eager" draggable="false" />
+    </div>
+    <div class="gh-scrim" aria-hidden="true"></div>
+    <h1 class="gh-title">{title}</h1>
+  </div>
+
+  <div class="gh-imgs">
+    {
+      photos.map((p) => (
+        <figure class={`gh-img gh-${p.place}`} data-from={p.from} data-to={p.to}>
+          <Image src={p.src} alt={p.alt} widths={[500, 900, 1300]} sizes="(min-width:769px) 40vw, 80vw" loading="lazy" draggable="false" />
+        </figure>
+      ))
+    }
+  </div>
+
+  <div class="gh-fade" aria-hidden="true"></div>
+</section>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initGalleryHero } from '../scripts/gallery-hero';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('[data-gallery-hero]');
+    return root ? initGalleryHero(root) : undefined;
+  }, '[data-gallery-hero]');
+</script>
+
+<style>
+  .gh {
+    position: relative;
+    width: 100%;
+    height: calc(var(--gh-section, 1500px) + 100vh);
+    height: calc(var(--gh-section, 1500px) + 100svh);
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  /* the photo sticks to the top while the section scrolls past: it is what the opening plays on */
+  .gh-center {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    width: 100%;
+    overflow: hidden;
+    will-change: clip-path, opacity;
+  }
+  .gh-media {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+    transform-origin: center;
+  }
+  .gh-media :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .gh-scrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to top, rgba(13, 11, 9, 0.55), rgba(13, 11, 9, 0.2) 55%, rgba(13, 11, 9, 0.35));
+  }
+  .gh-title {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 0 1.5rem;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: clamp(3.2rem, 11vw, 9rem);
+    line-height: 1;
+    color: var(--cream, #efe9dc);
+    pointer-events: none;
+  }
+
+  /* closed (a window in the middle, zoomed in) from the first frame, so there is no flash of the open photo before the script */
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    .gh-center { clip-path: inset(25% 25% 25% 25%); }
+    .gh-media { transform: scale(1.7); }
+  }
+
+  /* the floating photos come after the photo's screen, over it: a column of photos in their own proportions, no gaps (as in the original) */
+  .gh-imgs {
+    position: relative;
+    box-sizing: border-box;
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 200px 1rem 0;
+  }
+  .gh-img { margin: 0; }
+  .gh-img :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    will-change: transform, opacity;
+  }
+  .gh-left { width: 33.333%; }
+  .gh-centre { width: 66.666%; margin-left: auto; margin-right: auto; }
+  .gh-right { width: 33.333%; margin-left: auto; }
+  .gh-inset { width: 41.666%; margin-left: 6rem; }
+
+  .gh-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 24rem;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(250, 248, 243, 0), var(--paper));
+  }
+
+  /* phone: a third of the width would be a thumbnail, so the photos are bigger there (same order, same movement) */
+  @media (max-width: 768px) {
+    .gh-imgs { padding-top: 120px; }
+    .gh-left, .gh-right { width: 62%; }
+    .gh-centre { width: 92%; }
+    .gh-inset { width: 72%; margin-left: 4%; }
+    .gh-fade { height: 14rem; }
+  }
+</style>

@@ -21,6 +21,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { AWARDS_LIST } from './settings';
+import { drawStripes } from './stripes';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -41,10 +42,14 @@ export function initAwardsList(root: HTMLElement, o = AWARDS_LIST) {
     const details = Array.from(root.querySelectorAll<HTMLElement>('.al-detail'));
     const roll = root.querySelector<HTMLElement>('.al-roll')!;
     const nameLabels = Array.from(root.querySelectorAll<HTMLElement>('.al-name'));
+    const stripes = Array.from(root.querySelectorAll<HTMLElement>('.al-stripes div'));
     const count = images.length;
+    // the track is the list's screens plus the stripes' screens: p (0..1) is split between them
+    const share = o.length / (o.length + o.exit);
 
     root.dataset.live = '';
     root.style.setProperty('--al-length', String(o.length));
+    root.style.setProperty('--al-exit', String(o.exit));
     gsap.set(imagesBox, { xPercent: -50 });
 
     // ---- the measures: the screen, the column of photos, the counter and the names, in px ----
@@ -64,7 +69,9 @@ export function initAwardsList(root: HTMLElement, o = AWARDS_LIST) {
     };
 
     // everything is drawn from p, the scroll position of the pinned part (0..1)
-    const draw = (p: number) => {
+    const draw = (whole: number) => {
+      const p = Math.min(whole / share, 1); // the list's own progress; it is over before the stripes begin
+      drawStripes(stripes, clamp(0, 1, (whole - share) / (1 - share)));
       gsap.set(imagesBox, { y: startY + p * (endY - startY) });
       // the current award, as a number of awards: 0 when the first photo is the one at the middle line, 1 when the second is, ...
       const at = p * (count - 1);
@@ -146,7 +153,8 @@ export function initAwardsList(root: HTMLElement, o = AWARDS_LIST) {
       watch.disconnect();
       delete root.dataset.live;
       root.style.removeProperty('--al-length');
-      [imagesBox, index, ...images, ...names, ...details].forEach((el) => el.removeAttribute('style'));
+      root.style.removeProperty('--al-exit');
+      [imagesBox, index, ...images, ...names, ...details, ...stripes].forEach((el) => el.removeAttribute('style'));
       names.forEach((name) => name.classList.remove('is-current'));
     };
   });

@@ -17,7 +17,7 @@ const { items } = Astro.props;
 const total = String(items.length).padStart(2, '0');
 ---
 
-<section class="al" aria-label="The awards" style={`--al-length:${S.length}`}>
+<section class="al" aria-label="The awards" style={`--al-length:${S.length};--al-exit:${S.exit}`}>
   <div class="al-pin">
     <p class="al-index" aria-hidden="true"><span class="al-mask"><span class="al-roll"><span class="al-num">01</span><span class="al-total">/{total}</span></span></span></p>
 
@@ -45,6 +45,11 @@ const total = String(items.length).padStart(2, '0');
           </article>
         ))
       }
+    </div>
+
+    <!-- the transition to the next section: after the last award a few paper-coloured stripes rise from the bottom and cover the screen (scripts/awards-list.ts) -->
+    <div class="al-stripes" aria-hidden="true">
+      {Array.from({ length: S.stripes }, () => <div></div>)}
     </div>
   </div>
 </section>
@@ -124,7 +129,25 @@ const total = String(items.length).padStart(2, '0');
 
   /* ---- with the script: one pinned screen in a tall track ---- */
   .al[data-live] {
-    height: calc((1 + var(--al-length)) * 100svh);
+    height: calc((1 + var(--al-length) + var(--al-exit, 0)) * 100svh);
+  }
+  .al-stripes {
+    display: none;
+  }
+  .al[data-live] .al-stripes {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .al[data-live] .al-stripes div {
+    flex: 1;
+    margin-top: -1px;
+    background: #faf8f3; /* the paper colour of the page */
+    transform: scaleY(0);
+    transform-origin: bottom;
   }
   /* The list comes up while the stripes of the spiral are still rising, not after them (that was a long empty dark stretch of scrolling):
      it is pulled up by one screen over the end of the spiral's pin, so it reaches the top of the screen exactly when the pin ends. Its own

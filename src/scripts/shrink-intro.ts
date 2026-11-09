@@ -77,12 +77,22 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
 
     const state = { p: 0 };
     draw(0);
-    gsap.to(state, {
+    const scrubbed = gsap.to(state, {
       p: 1,
       ease: 'none',
       onUpdate: () => draw(state.p),
       scrollTrigger: { trigger: track, start: 'top top', end: 'bottom bottom', scrub: o.scrub, invalidateOnRefresh: true, onRefresh: () => draw(state.p) },
     });
+
+    // After a page transition the scroll is put back to the top while the page is still being built, and the scrubbed photo could stay a little shrunk
+    // (gaps at the sides and the bottom) although the page is at its top. A few checks while the page settles: at the top, the photo is whole again.
+    const settle = () => {
+      if (window.scrollY > 2) return;
+      scrubbed.progress(0);
+      state.p = 0;
+      draw(0);
+    };
+    const settleTimers = [150, 500, 1000, 1800, 3000].map((ms) => window.setTimeout(settle, ms));
 
     // the columns of photos drift up, each at its own speed (on a narrow screen they stand in a line)
     columns.forEach((col, i) => {
@@ -121,6 +131,7 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
 
     return () => {
       opening?.kill();
+      settleTimers.forEach((t) => window.clearTimeout(t));
       delete track.dataset.live;
       root.style.removeProperty('--si-length');
       root.style.removeProperty('--si-overlap');

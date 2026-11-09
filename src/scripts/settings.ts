@@ -329,13 +329,13 @@ export const PRELOADER = {
 // ---- shrink intro (a pinned hero scrubbed by the scroll: the headline leaves, the photo shrinks to a tile, the photos drift) ---
 // After the Codegrid "Waabi Scroll Animation". The pinned part is `length` screens long; the other numbers are places on it (0..1).
 export const SHRINK_INTRO = {
-  length: 2.5, // screens of scrolling the pinned part takes
-  overlap: 0.75, // screens of the pinned part during which the next section is already rising under it
-  headerEnd: 0.5, // the headline has left the screen by here
-  shrink: [0.45, 1], // the photo shrinks to its tile between these
+  length: 1.5, // screens of scrolling the pinned part takes
+  overlap: 0.5, // screens of the pinned part during which the next section is already rising under it
+  headerEnd: 0.25, // the headline has left the screen by here
+  shrink: [0.2, 0.8], // the photo shrinks to its tile between these
   tile: { wide: 150, narrow: 100 }, // px, the side of the tile
   radius: 10, // px, the rounding the tile ends with
-  scrub: 1, // seconds the picture takes to catch up with the scroll
+  scrub: 0.5, // seconds the picture takes to catch up with the scroll
   // the four columns of photos: where each starts and ends (px), so they drift at different speeds. They end above the top of the screen: the
   // section is held still while they drift, and the next one only comes in once they have gone.
   columns: [

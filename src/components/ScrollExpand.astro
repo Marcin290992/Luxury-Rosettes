@@ -111,6 +111,9 @@ const has = Astro.slots.has('default');
     const probe = root.querySelector<HTMLElement>('.se-probe')!;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // on a phone the same number of screens is a much longer thumb-swipe: the expansion and the hold are shorter there
+    let dist = c.scrollDistance;
+    let hold = c.holdDistance;
     let stageH = 0; // the stage is as tall as the LARGEST viewport (lvh) and never changes with the mobile address bar
     let visibleH = 0; // the part that is visible while the bar is showing (svh)
     let boxW = 0;
@@ -161,15 +164,18 @@ const has = Astro.slots.has('default');
     const measure = () => {
       // heights come from CSS (lvh): only the length of the track is set here, also in lvh, so nothing changes in
       // px when the address bar slides away
-      track.style.height = `calc(100vh * ${1 + Math.max(0, c.scrollDistance) + Math.max(0, c.holdDistance)})`;
-      track.style.height = `calc(100lvh * ${1 + Math.max(0, c.scrollDistance) + Math.max(0, c.holdDistance)})`;
+      boxW = root.clientWidth;
+      const phone = boxW < 1024;
+      dist = phone ? Math.min(c.scrollDistance, 0.7) : c.scrollDistance;
+      hold = phone ? Math.min(c.holdDistance, 0.5) : c.holdDistance;
+      track.style.height = `calc(100vh * ${1 + Math.max(0, dist) + Math.max(0, hold)})`;
+      track.style.height = `calc(100lvh * ${1 + Math.max(0, dist) + Math.max(0, hold)})`;
       stageH = stage.offsetHeight;
       visibleH = probe.offsetHeight;
-      boxW = root.clientWidth;
       st = start();
       stage.style.setProperty('--se-title-size', `${clamp(boxW * 0.075, 28, 96)}px`);
     };
-    const progress = () => clamp(-track.getBoundingClientRect().top / (stageH * Math.max(0.01, c.scrollDistance)), 0, 1);
+    const progress = () => clamp(-track.getBoundingClientRect().top / (stageH * Math.max(0.01, dist)), 0, 1);
 
     const tick = () => {
       // frame-rate independent ease towards the scroll position

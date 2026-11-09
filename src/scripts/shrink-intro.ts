@@ -56,9 +56,11 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
       // the photo shrinks from the whole screen to the tile
       const k = between(p, o.shrink[0], o.shrink[1]);
       const tile = narrow ? o.tile.narrow : o.tile.wide;
+      // before it starts to shrink the photo is simply the whole pin (100%, not a measured pixel size: on a phone the measure taken during the page
+      // transition could be stale and left gaps at the sides and the bottom until the first scroll)
       gsap.set(img, {
-        width: gsap.utils.interpolate(pin.clientWidth, tile, k),
-        height: gsap.utils.interpolate(pin.clientHeight, tile, k),
+        width: k === 0 ? '100%' : gsap.utils.interpolate(pin.clientWidth, tile, k),
+        height: k === 0 ? '100%' : gsap.utils.interpolate(pin.clientHeight, tile, k),
         borderRadius: gsap.utils.interpolate(0, o.radius, k),
       });
     };

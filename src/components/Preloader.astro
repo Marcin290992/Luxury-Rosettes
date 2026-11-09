@@ -20,7 +20,7 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
   from another page). Otherwise none of this is shown. The hero waits for the `preloader-done` event (see Hero.astro).
 -->
 
-<div class="preloader" aria-hidden="true" style={`--pl-w:${P.frame.width}px;--pl-h:${P.frame.height}px`}>
+<div class="preloader" aria-hidden="true" style={`--pl-w:${P.frame.width}px;--pl-h:${P.frame.height}px;--pl-fade:${P.photo.fade}s;--pl-zoom:${P.photo.zoom};--pl-zoom-time:${P.photo.zoomTime}s`}>
   <div class="pl-veil"></div>
   <div class="pl-head">
     <div class="pl-brand">
@@ -68,6 +68,7 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     const photos = Array.from(el.querySelectorAll<HTMLElement>('.pl-photo'));
     const texts = [word, count, el.querySelector<HTMLElement>('.pl-brand')!];
     const veil = el.querySelector<HTMLElement>('.pl-veil')!;
+    const brand = el.querySelector<HTMLElement>('.pl-brand')!;
     const parts = [el.querySelector<HTMLElement>('.pl-head')!, frame, word, el.querySelector<HTMLElement>('.pl-foot')!];
     let dead = false;
 
@@ -127,19 +128,22 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     };
 
     const tl = gsap.timeline({ paused: true });
-    // 1. the dark clears and the words and the frame come in, one after another
+    // 1. the cover clears and the brand, the frame and the words come in, one after another (the brand also clears from a blur)
     tl.to(veil, { opacity: 0, duration: P.fadeIn, ease: 'power2.inOut' }, 0);
-    tl.to(parts, { opacity: 1, y: 0, duration: P.fadeIn, ease: 'power2.out', stagger: 0.14 }, 0.25);
+    tl.to(parts, { opacity: 1, y: 0, duration: P.fadeIn, ease: 'power2.out', stagger: P.fadeInStagger }, P.fadeInAt);
+    tl.fromTo(brand, { filter: `blur(${P.blur}px)` }, { filter: 'blur(0px)', duration: P.fadeIn, ease: 'power2.out' }, '<');
     // 2. then the count starts
-    tl.to(progress, { n: 100, duration: P.count, ease: 'power1.inOut', onUpdate: draw }, `>-0.2`);
-    tl.to(texts, { opacity: 0, duration: 0.3 }, `+=${P.holdBefore}`);
+    tl.to(progress, { n: 100, duration: P.count, ease: 'power1.inOut', onUpdate: draw }, '>-0.2');
+    // 3. the words leave upwards one after another and the frame starts opening before they are gone
+    tl.addLabel('exit');
+    tl.to(texts, { opacity: 0, y: -P.exit.rise, duration: P.exit.dur, stagger: P.exit.stagger, ease: 'power2.in' }, 'exit');
     // the window opens onto the wallpaper (the photo does not scale: only more of it is shown)
     tl.add(() => {
       gsap.to(win, { t: 0, r: 0, b: 0, l: 0, duration: P.open, ease: 'hop', onUpdate: applyWindow });
-    });
+    }, `exit+=${P.exit.openAt}`);
     // the hero starts its own opening while the preloader melts away over it
-    tl.add(handOver, `+=${P.open}`);
-    tl.to(el, { opacity: 0, duration: P.fade, ease: 'power1.out', onComplete: finish });
+    tl.add(handOver, `exit+=${P.exit.openAt + P.open}`);
+    tl.to(el, { opacity: 0, duration: P.fade, ease: 'power1.out', onComplete: finish }, `exit+=${P.exit.openAt + P.open}`);
 
     const first = photos[0] as HTMLImageElement;
     const logo = el.querySelector<HTMLImageElement>('.pl-logo');
@@ -176,12 +180,12 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
   .preloader {
     display: none;
   }
-  /* it starts as a dark screen and clears by itself (see the script), so that it does not pop in */
+  /* it starts as a covered screen and clears by itself (see the script), so that it does not pop in */
   .pl-veil {
     position: absolute;
     inset: 0;
     z-index: 5;
-    background: #000;
+    background: var(--paper);
     pointer-events: none;
   }
   html.preloading .preloader {
@@ -275,6 +279,15 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     opacity: 1;
     z-index: 1;
     transition: opacity 0.28s ease-out;
+  }
+  /* the photos of the small frame fade softly and each settles from a slow zoom (never the wallpaper: it must match the hero exactly) */
+  .pl-frame .pl-photo {
+    scale: var(--pl-zoom);
+    transition: opacity 0.01s linear var(--pl-fade), scale 0s linear var(--pl-fade);
+  }
+  .pl-frame .pl-photo.is-on {
+    scale: 1;
+    transition: opacity var(--pl-fade) ease-out, scale var(--pl-zoom-time) cubic-bezier(0.22, 1, 0.36, 1);
   }
   /* the wallpaper: over the small frame, the size of the screen; only the window of the frame is shown until it opens */
   .pl-wall {

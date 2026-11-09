@@ -70,6 +70,11 @@ const [left, mid, right] = images;
 
       const title = SplitText.create(root.querySelector('.pg-title')!, { type: 'words', mask: 'words' });
       splits.push(title);
+      // the whole block of the headline is hidden until its moment on the timeline (it must not show while the photos are still tiles, nor
+      // flash on the way in: it is visible in the plain layout until this script has run)
+      const copy = root.querySelector<HTMLElement>('.pg-copy')!;
+      gsap.set(copy, { autoAlpha: 0 });
+      gsap.set(title.words, { yPercent: WORD_HIDDEN });
 
       // the side photos rise in a little later than the middle one
       gsap.fromTo(
@@ -87,6 +92,7 @@ const [left, mid, right] = images;
         .fromTo(mid.querySelector('img'), { scale: 1.25 }, { scale: 1, duration: 1, ease: 'power2.inOut' }, 0)
         .to([left, right], { opacity: 0.4, duration: 1, ease: 'none' }, 0)
         .to(shade, { opacity: 1, duration: 0.5, ease: 'none' }, 0.6)
+        .fromTo(copy, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.01 }, 0.84)
         .fromTo(title.words, { yPercent: WORD_HIDDEN }, { yPercent: 0, duration: 0.5, stagger: 0.06, ease: 'power3.out' }, 0.85)
         .fromTo(btn, { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out' }, 1.3)
         .to({}, { duration: 0.35 });

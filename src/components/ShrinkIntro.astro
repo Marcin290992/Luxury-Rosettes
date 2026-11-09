@@ -31,7 +31,7 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
         <Image src={hero} alt="" widths={[900, 1600, 2400]} sizes="100vw" loading="eager" />
         <span class="si-shade" aria-hidden="true"></span>
       </div>
-      <div class="si-header"><h1>{headline}</h1></div>
+      <div class="si-header"><h1 set:html={headline} /></div>
     </div>
   </section>
 

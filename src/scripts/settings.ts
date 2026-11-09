@@ -327,7 +327,7 @@ export const PRELOADER = {
 export const SHRINK_INTRO = {
   length: 2.5, // screens of scrolling the pinned part takes
   overlap: 0.75, // screens of the pinned part during which the next section is already rising under it
-  headerEnd: 0.4, // the headline has left the screen by here
+  headerEnd: 0.5, // the headline has left the screen by here
   shrink: [0.45, 1], // the photo shrinks to its tile between these
   tile: { wide: 150, narrow: 100 }, // px, the side of the tile
   radius: 10, // px, the rounding the tile ends with

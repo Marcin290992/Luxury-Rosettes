@@ -25,6 +25,21 @@ export function paintDebug() {
       'background:rgba(0,0,0,.82);color:#7CFC00;font:9px/1.25 monospace;white-space:pre-wrap;max-height:45vh;overflow:hidden;';
     document.documentElement.appendChild(box);
   }
+  // TEMPORARY: links to the gallery test pages (a tap goes through the router, so the page transition plays)
+  if (!document.getElementById('lr-debug-links')) {
+    const links = document.createElement('nav');
+    links.id = 'lr-debug-links';
+    links.style.cssText =
+      'position:fixed;left:0;right:0;top:0;z-index:2147483647;display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:rgba(0,0,0,.82);font:12px/1 monospace;';
+    for (const href of ['/about', '/gallery', '/t-stripes', '/t-hero', '/t-apart']) {
+      const a = document.createElement('a');
+      a.href = href;
+      a.textContent = href;
+      a.style.cssText = 'color:#7CFC00;padding:8px 6px;border:1px solid #7CFC00;text-decoration:none;';
+      links.appendChild(a);
+    }
+    document.body.appendChild(links);
+  }
   try {
     box.textContent = (JSON.parse(sessionStorage.getItem(LOG) || '[]') as string[]).join('\n');
     box.scrollTop = box.scrollHeight; // the newest lines stay in view

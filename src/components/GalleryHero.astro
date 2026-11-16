@@ -36,7 +36,6 @@ const { title, image, alt = '', photos } = Astro.props;
     }
   </div>
 
-  <div class="gh-fade" aria-hidden="true"></div>
 </section>
 
 <script>
@@ -54,7 +53,7 @@ const { title, image, alt = '', photos } = Astro.props;
     position: relative;
     width: 100%;
     height: calc(var(--gh-section, 1500px) + 100vh);
-    height: calc(var(--gh-section, 1500px) + 100svh);
+    height: calc(var(--gh-section, 1500px) + 100svh + var(--gh-exit, 0px));
     background: var(--paper);
     color: var(--ink);
   }
@@ -131,22 +130,11 @@ const { title, image, alt = '', photos } = Astro.props;
   .gh-right { width: 33.333%; margin-left: auto; }
   .gh-inset { width: 41.666%; margin-left: 6rem; }
 
-  .gh-fade {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 24rem;
-    pointer-events: none;
-    background: linear-gradient(to bottom, rgba(250, 248, 243, 0), var(--paper));
-  }
-
   /* phone: a third of the width would be a thumbnail, so the photos are bigger there (same order, same movement) */
   @media (max-width: 768px) {
     .gh-imgs { padding-top: 120px; }
     .gh-left, .gh-right { width: 62%; }
     .gh-centre { width: 92%; }
     .gh-inset { width: 72%; margin-left: 4%; }
-    .gh-fade { height: 14rem; }
   }
 </style>

@@ -2,13 +2,18 @@
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
 import GalleryHero from '../components/GalleryHero.astro';
+import GalleryDome from '../components/GalleryDome.astro';
+import StripeReveal from '../components/StripeReveal.astro';
 import Closing from '../components/Closing.astro';
+import closingPhoto from '../assets/img/story/premium-care.webp'; // placeholder: swap for the real closing photo
 import Footer from '../components/Footer.astro';
 import heroPhoto from '../assets/img/hero_img.webp';
 import candy from '../assets/img/cats/candy.webp';
 import kita from '../assets/img/cats/kita.webp';
 import cosmo from '../assets/img/cats/cosmo.webp';
 import chester from '../assets/img/cats/chester.webp';
+import draco from '../assets/img/cats/draco.webp';
+import charlie from '../assets/img/cats/charlie.webp';
 
 // Sample page: the photos are placeholders, to be replaced with the real gallery. Landscape ones, as the layout is made for (a column of
 // photos in their own proportions). `from` / `to` are the original's numbers.
@@ -18,16 +23,38 @@ const photos = [
   { src: cosmo, alt: 'Cosmo, a Bengal kitten', from: -200, to: 200, place: 'right' as const },
   { src: chester, alt: 'Chester, a Bengal kitten', from: 0, to: -500, place: 'inset' as const },
 ];
+
+// The wall of photos after the opening: the same placeholders (and more), to be replaced with the real gallery. A few photos are enough,
+// the wall repeats them (it looks best from about 15 different ones).
+const domePhotos = [
+  { src: candy, alt: 'Candy, a Bengal kitten' },
+  { src: kita, alt: 'Kita, a Bengal queen' },
+  { src: cosmo, alt: 'Cosmo, a Bengal kitten' },
+  { src: chester, alt: 'Chester, a Bengal kitten' },
+  { src: draco, alt: 'Draco, a Bengal cat' },
+  { src: charlie, alt: 'Charlie, a Bengal cat' },
+  { src: heroPhoto, alt: 'A Bengal cat' },
+];
 ---
 
 <Layout title="Gallery — Luxury Rosettes">
   <NavPill />
   <main>
     <GalleryHero title="Gallery" image={heroPhoto} alt="A Bengal cat" photos={photos} />
+    <!-- paper-coloured stripes rise over the opening, which stands still at its end; the gallery comes out on them by itself once they have closed -->
+    <StripeReveal pin={2.2} duration={1.8} hold={0.8}>
+      <GalleryDome photos={domePhotos} label="Photos of our Bengal cats, drag to explore" />
+    </StripeReveal>
+    <!-- a quiet word after the wall; its own space also keeps the wall (a whole screen with the stripes) from running into the closing photo -->
+    <section class="note">
+      <p class="note-eyebrow" data-line-reveal>Every day</p>
+      <h2 data-line-reveal>Small moments, <em>kept</em></h2>
+      <p class="note-text" data-line-reveal>Placeholder text. A few calm sentences about ordinary days in our home: the sunny window, the first games, the quiet evenings.</p>
+    </section>
   </main>
   <!-- the last screen, as on the home page: the photo shrinks as the footer rises -->
   <div class="ending">
-    <Closing />
+    <Closing photo={closingPhoto} eyebrow="Like what you see?" heading={['Come and meet', 'them yourself']} cta={{ label: 'View available kittens', href: '/available-kittens' }} />
     <Footer />
   </div>
 </Layout>
@@ -35,11 +62,56 @@ const photos = [
 <script>
   import { mount } from '../scripts/lifecycle';
   import { initFooterZoom } from '../scripts/footer-zoom';
+  import { initLineReveal } from '../scripts/line-reveal';
 
   mount(initFooterZoom, '.ending');
+  // the words of the note rise out of their masks, like the texts of the other pages
+  mount(() => initLineReveal(Array.from(document.querySelectorAll<HTMLElement>('.note [data-line-reveal]'))), '.note');
 </script>
 
 <style>
+  .note {
+    background: var(--paper);
+    color: var(--ink);
+    padding: var(--space) 1.5rem;
+    text-align: center;
+  }
+  .note > * {
+    max-width: 40rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .note-eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+  }
+  .note h2 {
+    font-family: var(--font-heading);
+    font-weight: 300;
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+  }
+  .note h2 :global(em) {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold-deep);
+  }
+  .note-text {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    opacity: 0.65;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
   .ending {
     position: relative;
     z-index: 5;

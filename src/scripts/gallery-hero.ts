@@ -27,6 +27,8 @@ export function initGalleryHero(root: HTMLElement, o = GALLERY_HERO): () => void
   const play = (cfg: { section: number; fade: number; zoom: number; parallax: number }) => {
     // the section is as long as the opening takes, plus a screen: the photo sticks for that scroll
     root.style.setProperty('--gh-section', `${cfg.section}px`);
+    // some more screens of standing still at the end: the photo does not scroll away, the stripes of the page (gallery.astro) cover it there
+    root.style.setProperty('--gh-exit', `${o.exit * 100}svh`);
     const u = 1 / 1000; // one second of the timeline is 1000px of scroll
     const open = `inset(${o.window}% ${o.window}% ${o.window}% ${o.window}%)`;
     gsap
@@ -35,8 +37,7 @@ export function initGalleryHero(root: HTMLElement, o = GALLERY_HERO): () => void
         defaults: { ease: 'none' },
       })
       .fromTo(center, { clipPath: open }, { clipPath: 'inset(0% 0% 0% 0%)', duration: cfg.section * u }, 0)
-      .fromTo(media, { scale: cfg.zoom }, { scale: 1, duration: (cfg.section + cfg.fade) * u }, 0)
-      .fromTo(center, { opacity: 1 }, { opacity: 0, duration: cfg.fade * u }, cfg.section * u);
+      .fromTo(media, { scale: cfg.zoom }, { scale: 1, duration: (cfg.section + cfg.fade) * u }, 0);
     if (title) gsap.to(title, { opacity: 0, y: -40, ease: 'none', scrollTrigger: { trigger: root, start: 'top top', end: `+=${cfg.section * 0.35}`, scrub: o.scrub } });
 
     figures.forEach((fig) => {
@@ -67,5 +68,6 @@ export function initGalleryHero(root: HTMLElement, o = GALLERY_HERO): () => void
   return () => {
     mm.revert();
     root.style.removeProperty('--gh-section');
+    root.style.removeProperty('--gh-exit');
   };
 }

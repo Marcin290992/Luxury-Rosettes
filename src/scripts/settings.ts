@@ -473,10 +473,31 @@ export const CLOSE_TO = {
   gapEase: 'power2.inOut',
 } as const;
 
+// ---- gallery dome (an endless wall of photos seen through a lens; drag to move; plain WebGL2, scripts/gallery-dome.ts) ----
+// After the "Inverted Dome" component (React + three.js), rewritten without libraries. Sizes follow the room, so a phone gets the same picture.
+export const GALLERY_DOME = {
+  tileShare: 0.27, // width of a photo, as a share of the shorter side of the section
+  tileMin: 110, // px: but never smaller / bigger than this
+  tileMax: 230,
+  aspect: 0.8, // width / height of a photo
+  gap: 0.12, // between photos, as a share of a photo's width
+  radius: 14, // px of the rounded corners
+  curve: 0.4, // how strongly the wall bends away at the edges
+  curveRadius: 1.5, // how wide the lens is (higher = flatter)
+  zoom: 0.35, // base scale of the lens
+  vignette: 0, // how far the edges fade into the page colour (0 = not at all)
+  drift: { x: 9, y: 14 }, // px per second the wall slides by itself (0 = still)
+  friction: 3, // how fast a flick dies down (per second)
+  wheel: 0.5, // a sideways wheel / trackpad swipe; the vertical wheel is left to the page
+  segments: 14, // the lens is calculated on a grid this fine, per photo
+  dpr: 2, // top device pixel ratio
+} as const;
+
 // ---- gallery hero (a photo opens from a window to the whole screen and fades, photos float up below it; scripts/gallery-hero.ts) ----
 export const GALLERY_HERO = {
   window: 25, // % of each side that is closed at the start (25 = a window of half the screen)
   scrub: 0.5,
+  exit: 3, // screens the photo stands still after its opening, while the page's stripes cover it (gallery.astro: the stripes' `pin` is shorter than this, so they start later)
   desktop: { section: 1500, fade: 500, zoom: 1.7, parallax: 1 }, // px of scroll the opening takes / the fade takes; the zoom at the start; the photos' travel
   phone: { section: 1000, fade: 350, zoom: 1.5, parallax: 0.5 }, // a thumb-swipe is much longer than a wheel: shorter, and the photos travel less
 } as const;

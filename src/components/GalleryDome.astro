@@ -1,0 +1,393 @@
+---
+import { Image } from 'astro:assets';
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * An endless wall of photos seen through a lens: drag to move it, tap a photo to open it large (see scripts/gallery-dome.ts; from the
+ * "Inverted Dome" in React + three.js, rewritten in plain WebGL2 for this site).
+ * The list below is the source of the photos (the script reads the <img> elements) and the fallback: without the script or WebGL2 it is a plain grid.
+ * On touch a finger moves the wall sideways only, so the page still scrolls under a vertical swipe.
+ */
+interface Props {
+  photos: { src: ImageMetadata; alt: string }[];
+  label?: string;
+}
+const { photos, label = 'Photo gallery' } = Astro.props;
+
+const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 1800 })));
+---
+
+<div class="gd-wrap">
+<section class="gd" data-gallery-dome aria-label={label} tabindex="0">
+  <ul class="gd-list">
+    {
+      photos.map((p, i) => (
+        <li>
+          <Image src={p.src} alt={p.alt} widths={[500, 800]} sizes="(min-width:769px) 30vw, 46vw" loading="eager" draggable="false" data-full={fulls[i].src} />
+        </li>
+      ))
+    }
+  </ul>
+  <div class="gd-stage"></div>
+
+  <div class="gd-box" hidden role="dialog" aria-modal="true" aria-label="Photo">
+    <img alt="" draggable="false" />
+    <p class="gd-caption"><span class="gd-caption-text"></span><span class="gd-count"></span></p>
+    <button type="button" class="gd-nav gd-prev" aria-label="Previous photo">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 2L4 8l6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </button>
+    <button type="button" class="gd-nav gd-next" aria-label="Next photo">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 2l6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </button>
+    <button type="button" class="gd-close" aria-label="Close">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+      </svg>
+    </button>
+  </div>
+</section>
+<div class="gd-plate">
+  <p class="eyebrow">The gallery</p>
+  <h2>Life with <em>our Bengals</em></h2>
+  <p class="gd-lead">Placeholder text. Moments from our home, one after another.</p>
+  <p class="gd-hint" aria-hidden="true">Drag to explore</p>
+</div>
+</div>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initGalleryDome } from '../scripts/gallery-dome';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('[data-gallery-dome]');
+    return root ? initGalleryDome(root) : undefined;
+  }, '[data-gallery-dome]');
+</script>
+
+<style>
+  /* the page's own space above and below, as every section has, and a heading in the same style (without the stripes it stands above the wall) */
+  .gd-wrap {
+    background: var(--paper);
+    color: var(--ink);
+    padding: var(--space) 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .gd-plate {
+    order: -1;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 72rem;
+    margin: 0 auto clamp(2.5rem, 6vh, 4.5rem);
+    padding: 0 1.5rem;
+  }
+  .gd-plate > * {
+    max-width: 40rem;
+  }
+  .gd-hint {
+    display: none;
+  }
+
+  /* On the stripes (StripeReveal): the whole section is one screen. The wall fills it edge to edge, nothing cuts it, and the heading is a small
+     paper plate laid on it. The plate comes out first, line by line, in the first part of the entrance (--sr-intro, 0..1); the wall follows
+     (see gallery-dome.ts). The plate does not catch the pointer, so the wall can be dragged under it. */
+  :global(.sr[data-live]) .gd-wrap {
+    position: relative;
+    display: block;
+    height: 100%;
+    padding: 0;
+    background: transparent;
+  }
+  :global(.sr[data-live]) .gd[data-live] {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    min-height: 0;
+  }
+  :global(.sr[data-live]) .gd-plate {
+    position: absolute;
+    z-index: 3;
+    left: clamp(1rem, 4vw, 3.5rem);
+    bottom: calc(clamp(1rem, 5vh, 3rem) + env(safe-area-inset-bottom, 0px));
+    width: min(27rem, calc(100% - 2rem));
+    max-width: none;
+    margin: 0;
+    padding: 1.7rem 1.9rem 1.5rem;
+    background: var(--paper);
+    border-radius: 14px;
+    box-shadow: 0 28px 60px -24px rgba(13, 11, 9, 0.45);
+    pointer-events: none;
+    opacity: clamp(0, calc(var(--sr-intro, 1) * 8), 1);
+  }
+  :global(.sr[data-live]) .gd-plate > * {
+    --t: clamp(0, calc(var(--sr-intro, 1) * 5 - var(--d, 0)), 1);
+    max-width: none;
+    opacity: var(--t);
+    transform: translateY(calc((1 - var(--t)) * 14px));
+  }
+  :global(.sr[data-live]) .eyebrow {
+    --d: 0;
+    margin-bottom: 1rem;
+  }
+  :global(.sr[data-live]) h2 {
+    --d: 0.6;
+    font-size: clamp(2rem, 3.2vw, 3rem);
+    margin-bottom: 1rem;
+  }
+  :global(.sr[data-live]) .gd-lead {
+    --d: 1;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    margin-bottom: 1.1rem;
+  }
+  :global(.sr[data-live]) .gd-hint {
+    --d: 1.4;
+    display: block;
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    transition: opacity 0.6s ease;
+  }
+  :global(.sr[data-live]) .gd-wrap:has(.gd[data-touched]) .gd-hint {
+    opacity: 0;
+  }
+  @media (max-width: 768px) {
+    :global(.sr[data-live]) .gd-plate {
+      left: 1rem;
+      padding: 1.2rem 1.3rem 1.1rem;
+    }
+    :global(.sr[data-live]) .gd-lead {
+      display: none; /* the wall needs the room on a phone */
+    }
+  }
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 0 0 1.5rem;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 2.5rem;
+    border-top: 1px solid var(--gold-deep);
+  }
+  h2 {
+    font-family: var(--font-heading);
+    font-weight: 300;
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    margin: 0 0 1.5rem;
+  }
+  h2 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold-deep);
+  }
+  .gd-lead {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    opacity: 0.65;
+    margin: 0;
+  }
+
+  .gd {
+    position: relative;
+    width: 100%;
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+  }
+
+  /* fallback: a plain grid of the photos */
+  .gd-list {
+    list-style: none;
+    margin: 0;
+    padding: 4rem 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .gd-list :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 14px;
+  }
+  @media (min-width: 769px) {
+    .gd-list {
+      grid-template-columns: repeat(3, 1fr);
+      padding: 6rem 3rem;
+      gap: 1.5rem;
+    }
+  }
+  .gd-stage {
+    display: none;
+  }
+
+  /* with the script running: one screen, the list steps aside (still there for screen readers) */
+  .gd[data-live] {
+    height: 80vh;
+    height: 80svh;
+    min-height: 480px;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .gd[data-live] .gd-list {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .gd[data-live] .gd-stage {
+    display: block;
+    position: absolute;
+    inset: 0;
+    cursor: grab;
+    /* a finger moves the wall sideways; up and down stays the page's */
+    touch-action: pan-y;
+  }
+  .gd :global(.gd-canvas) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+  }
+  .gd[data-ready] :global(.gd-canvas) {
+    opacity: 1;
+  }
+
+
+  /* the photo opened large */
+  .gd-box {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(13, 11, 9, 0.7);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    opacity: 0;
+    transition: opacity 0.28s ease;
+    cursor: zoom-out;
+  }
+  .gd-box[hidden] {
+    display: none;
+  }
+  .gd-box:global(.is-open) {
+    opacity: 1;
+  }
+  .gd-box img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 14px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    transform: scale(0.94);
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+    cursor: default;
+  }
+  .gd-box:global(.is-open) img {
+    transform: none;
+  }
+  .gd-box img {
+    max-height: calc(100% - 3.5rem);
+  }
+  .gd-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+  }
+  .gd-count {
+    color: var(--gold, #d4af37);
+  }
+  .gd-nav {
+    position: absolute;
+    top: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: pointer;
+  }
+  .gd-nav:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .gd-nav:focus-visible {
+    outline: 2px solid #fff;
+  }
+  .gd-prev {
+    left: max(12px, 2vw);
+  }
+  .gd-next {
+    right: max(12px, 2vw);
+  }
+  .gd-close {
+    position: absolute;
+    top: max(16px, env(safe-area-inset-top, 0px));
+    right: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: pointer;
+  }
+  .gd-close:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .gd-close:focus-visible {
+    outline: 2px solid #fff;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gd :global(.gd-canvas),
+    .gd-box,
+    .gd-box img {
+      transition: none;
+    }
+  }
+</style>

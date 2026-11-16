@@ -59,9 +59,37 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
   import { mount } from '../scripts/lifecycle';
   import { initGalleryDome } from '../scripts/gallery-dome';
 
+  // The wall (a WebGL context, a texture atlas, the photos decoded) is only built once the page transition has finished: it is a heavy piece
+  // of work, and on a phone it held up the transition (it stopped half way, or did not play). The wall is far down the page (after the
+  // opening and the stripes), so nobody sees it being built a moment later; the fallback grid is in the page until then.
   mount(() => {
     const root = document.querySelector<HTMLElement>('[data-gallery-dome]');
-    return root ? initGalleryDome(root) : undefined;
+    if (!root) return;
+    const html = document.documentElement;
+    let destroy: (() => void) | undefined;
+    let started = false;
+    let safety = 0;
+    const watch = new MutationObserver(() => {
+      if (!html.hasAttribute('data-astro-transition')) start();
+    });
+    const start = () => {
+      if (started) return;
+      started = true;
+      watch.disconnect();
+      window.clearTimeout(safety);
+      destroy = initGalleryDome(root);
+    };
+    if (!html.hasAttribute('data-astro-transition')) start();
+    else {
+      watch.observe(html, { attributes: true, attributeFilter: ['data-astro-transition'] });
+      safety = window.setTimeout(start, 3000); // never wait longer than this
+    }
+    return () => {
+      started = true;
+      watch.disconnect();
+      window.clearTimeout(safety);
+      destroy?.();
+    };
   }, '[data-gallery-dome]');
 </script>
 

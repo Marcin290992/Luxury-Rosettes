@@ -717,7 +717,14 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
     schedule();
   };
   const freeze = (event: Event) => {
-    if (!shown || !visible || still || lost || destroyed) return;
+    if (still || lost || destroyed) return;
+    if (!shown || !visible) {
+      // the wall is not on the screen: nothing to keep, but the canvas stays out of the transition's picture and the wall stops drawing
+      frozen = true;
+      canvas.style.visibility = 'hidden';
+      unfreeze = window.setTimeout(thaw, 5000);
+      return;
+    }
     try {
       if (raf) cancelAnimationFrame(raf);
       raf = 0;

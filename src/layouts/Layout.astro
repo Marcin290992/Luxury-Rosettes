@@ -180,6 +180,13 @@ const {
       --space: clamp(3rem, 8vh, 5rem);
     }
   }
+  /* One cursor everywhere: the arrow, never the hand (links, buttons, the photo wall and its lightbox included). !important so that no component
+     rule or inline style (grab, grabbing, zoom-out, pointer) can change it. */
+  *,
+  *::before,
+  *::after {
+    cursor: default !important;
+  }
   /* Lenis's recommended base styles: native smooth-scroll must not fight the JS one */
   html.lenis,
   html.lenis body {

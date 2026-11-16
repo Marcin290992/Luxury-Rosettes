@@ -112,6 +112,14 @@ const domePhotos = [
     margin-top: 0;
     margin-bottom: 0;
   }
+  /* During a page transition the opening's layers (a clip-path window, a zoomed photo, the floating photos: each kept as its own GPU layer by
+     will-change) are dropped back into the page. Together with the browser's own snapshot layers they were too much for a phone's GPU, and the
+     transition was cut in half (as with the About portrait, see BUGS.md). The router sets this attribute before the picture is taken. */
+  :global(html[data-astro-transition]) :global(.gh-center),
+  :global(html[data-astro-transition]) :global(.gh-media),
+  :global(html[data-astro-transition]) :global(.gh-img img) {
+    will-change: auto;
+  }
   .ending {
     position: relative;
     z-index: 5;

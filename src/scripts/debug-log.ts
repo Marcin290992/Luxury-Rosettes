@@ -2,8 +2,6 @@
 // Turn it on by opening any page with ?debug=1 (it stays on for the visit, across page transitions), off with ?debug=off.
 // The last lines are kept in sessionStorage and drawn over the bottom of the screen, so they are still there after the page is swapped.
 
-import { offList } from './bisect';
-
 declare const __BUILD__: string;
 const ON = 'lrdebug';
 const LOG = 'lrdebug-log';
@@ -94,7 +92,7 @@ function watchTransition() {
     vt?.ready.then(() => dbg(`--- ready +${ms()} (the transition layers are up)`), (e) => dbg(`!!! SKIPPED +${ms()} ${why(e)}`));
     vt?.finished.then(() => dbg(`--- finished +${ms()}`), () => {});
   });
-  document.addEventListener('astro:after-swap', () => start(`after-swap ${location.pathname} off=${offList()}`));
+  document.addEventListener('astro:after-swap', () => start(`after-swap ${location.pathname}`));
 
   // The window at the moment the page is captured, and the browser's own units (lvh = address bar hidden, svh = shown), so the
   // log can be read against the transition's layers below: CAP is what the page looked like, VT is where the snapshot was put.
@@ -168,7 +166,7 @@ export function initDebug() {
   }
   if (debugOn()) {
     // always at least this line, so it is clear that the log is on (and the bar is not just an empty strip)
-    dbg(`DEBUG ON build ${typeof __BUILD__ === 'string' ? __BUILD__ : '?'} off=${offList()} ${location.pathname} inner ${innerWidth}x${innerHeight} vv ${Math.round(window.visualViewport?.height ?? 0)} dpr ${devicePixelRatio}`);
+    dbg(`DEBUG ON build ${typeof __BUILD__ === 'string' ? __BUILD__ : '?'} ${location.pathname} inner ${innerWidth}x${innerHeight} vv ${Math.round(window.visualViewport?.height ?? 0)} dpr ${devicePixelRatio}`);
   }
   if (debugOn()) watchTransition();
   paintDebug();

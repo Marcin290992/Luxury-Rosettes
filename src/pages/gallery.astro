@@ -40,11 +40,15 @@ const domePhotos = [
 <Layout title="Gallery — Luxury Rosettes">
   <NavPill />
   <main>
+    {/* TEMPORARY TEST: the opening is off, to see whether it is what breaks the page transition on a phone. The stripes go with it (they rise
+         over the opening and pull themselves up over its last screens: without it they would sit above the top of the page), so the wall
+         stands on its own here. To put it back:
     <GalleryHero title="Gallery" image={heroPhoto} alt="A Bengal cat" photos={photos} />
-    <!-- paper-coloured stripes rise over the opening, which stands still at its end; the gallery comes out on them by itself once they have closed -->
     <StripeReveal pin={2.2} duration={1.8} hold={0.8}>
       <GalleryDome photos={domePhotos} label="Photos of our Bengal cats, drag to explore" />
     </StripeReveal>
+    */}
+    <GalleryDome photos={domePhotos} label="Photos of our Bengal cats, drag to explore" />
     <!-- a quiet word after the wall; its own space also keeps the wall (a whole screen with the stripes) from running into the closing photo -->
     <section class="note">
       <p class="note-eyebrow" data-line-reveal>Every day</p>
@@ -63,11 +67,10 @@ const domePhotos = [
   import { mount } from '../scripts/lifecycle';
   import { initFooterZoom } from '../scripts/footer-zoom';
   import { initLineReveal } from '../scripts/line-reveal';
-  import { off } from '../scripts/bisect';
 
-  mount(() => (off('footer') ? undefined : initFooterZoom()), '.ending');
+  mount(initFooterZoom, '.ending');
   // the words of the note rise out of their masks, like the texts of the other pages
-  mount(() => (off('lines') ? undefined : initLineReveal(Array.from(document.querySelectorAll<HTMLElement>('.note [data-line-reveal]')))), '.note');
+  mount(() => initLineReveal(Array.from(document.querySelectorAll<HTMLElement>('.note [data-line-reveal]'))), '.note');
 </script>
 
 <style>

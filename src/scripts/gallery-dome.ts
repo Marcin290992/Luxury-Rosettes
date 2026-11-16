@@ -15,7 +15,6 @@
 import { GALLERY_DOME } from './settings';
 import { getLenis } from './lenis';
 import { clamp } from './math';
-import { innerScroll } from './scroller';
 
 const o = GALLERY_DOME;
 
@@ -104,7 +103,7 @@ void main() {
   float d = roundBox(vLocal - ext, ext, r);
   float aa = max(fwidth(d), 0.0001);
   float shape = 1.0 - smoothstep(-aa, aa, d);
-  // the edges fade into the page's colour (the canvas is cleared to it), not into black
+  // the edges fade into the page (the canvas is see-through), not into black
   float fade = smoothstep(uReach * 0.35, uReach, vEdge);
   // the entrance: the photos appear from the middle outwards
   float bloom = 1.0 - smoothstep(uIntro * 1.9 * uReach - 0.9 * uReach, uIntro * 1.9 * uReach, vEdge);
@@ -145,8 +144,7 @@ const unlens = (x: number, y: number, width: number, height: number) => {
   return { x: ((nx * k) / aspect + 0.5) * width, y: (ny * k + 0.5) * height };
 };
 
-// `onCancelled`: the wall gave its GPU memory back for a page transition that then did not happen; the caller builds it again.
-export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): (() => void) | undefined {
+export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
   const stage = root.querySelector<HTMLElement>('.gd-stage');
   const list = root.querySelector<HTMLElement>('.gd-list');
   const box = root.querySelector<HTMLElement>('.gd-box');
@@ -164,30 +162,22 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
   const doc = root.ownerDocument;
   const view = doc.defaultView ?? window;
 
-  const phone = innerScroll(); // touch: phones and tablets (the same test as the page's scroll box)
-  // The canvas is opaque, painted in the page's colour (the wall's background): less work for the compositor than a see-through canvas,
-  // and its still picture for a page transition can be a JPEG (fast to make; Safari cannot make a WebP and made a slow, large PNG instead).
-  const paper = (getComputedStyle(root).backgroundColor.match(/[\d.]+/g) ?? ['250', '248', '243']).slice(0, 3).map((v) => parseFloat(v) / 255);
-
   const canvas = doc.createElement('canvas');
   canvas.className = 'gd-canvas';
-  const context = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: phone ? 'low-power' : 'high-performance' });
+  const context = canvas.getContext('webgl2', { alpha: true, antialias: false, premultipliedAlpha: true, powerPreference: 'high-performance' });
   if (!context) return;
   const gl: WebGL2RenderingContext = context; // (a const of the plain type: the null check does not carry into the functions below)
 
   // ---- the atlas: every photo cut to the shape of a tile, side by side on one canvas ----
   const columns = Math.ceil(Math.sqrt(images.length));
   const rows = Math.ceil(images.length / columns);
-  const maxAtlas = phone ? o.phone.maxAtlas : MAX_ATLAS;
-  let cellWidth = Math.min(phone ? o.phone.cell : CELL_WIDTH, Math.floor(maxAtlas / columns), Math.floor((maxAtlas * o.aspect) / rows));
+  let cellWidth = Math.min(CELL_WIDTH, Math.floor(MAX_ATLAS / columns), Math.floor((MAX_ATLAS * o.aspect) / rows));
   while (columns * rows * cellWidth * (cellWidth / o.aspect) > MAX_ATLAS_PIXELS && cellWidth > 128) cellWidth -= 32;
   const cellHeight = Math.round(cellWidth / o.aspect);
   const atlas = doc.createElement('canvas');
   atlas.width = cellWidth * columns;
   atlas.height = cellHeight * rows;
-  // willReadFrequently keeps the atlas in the main memory: a canvas this big is otherwise kept on the GPU (Chrome on Android), next to the
-  // WebGL texture made from it, and a phone's GPU memory is what the page transition needs for its pictures
-  const actx = atlas.getContext('2d', { willReadFrequently: true });
+  const actx = atlas.getContext('2d');
   if (!actx) return;
   let painted = 0;
 
@@ -287,7 +277,7 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // the shader writes premultiplied colour
     gl.disable(gl.DEPTH_TEST);
-    gl.clearColor(paper[0], paper[1], paper[2], 1);
+    gl.clearColor(0, 0, 0, 0);
     instances = 0;
     uploaded = false;
   };
@@ -350,7 +340,7 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
     const w = Math.round(root.clientWidth);
     const h = Math.round(root.clientHeight);
     if (w < 2 || h < 2) return false;
-    const nextDpr = Math.min(view.devicePixelRatio || 1, Math.max(phone ? o.phone.dpr : o.dpr, 0.5));
+    const nextDpr = Math.min(view.devicePixelRatio || 1, Math.max(o.dpr, 0.5));
     if (w === width && h === height && nextDpr === dpr) return false;
     width = w;
     height = h;
@@ -472,11 +462,6 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
       schedule();
     }
   };
-  // the photos are lazy in the markup (nothing is loaded before the wall is near); the list is visually hidden once the wall is live, and a
-  // lazy image in it would never count as on the screen, so they are asked for now
-  images.forEach((image) => {
-    if (image.loading === 'lazy') image.loading = 'eager';
-  });
   images.forEach((image) => {
     const ready = () => {
       if (destroyed) return;
@@ -722,37 +707,9 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
   //  1. all of it in the same task as the event (the router reads `loader` right after it, and the buffer still holds the frame);
   //  2. the picture goes OVER the canvas and the canvas is hidden once the picture is decoded, so no frame has neither;
   //  3. the wall stops drawing from the moment of the picture, so the two stay the same picture.
-  // 4. Then the wall gives its GPU memory back (the WebGL context, the texture, the canvas's buffers, the atlas): on a phone the transition's
-  //    pictures of the old and the new page did not fit next to it, and the transition did not play (to the gallery and from it).
   let still: HTMLImageElement | undefined;
   let unfreeze = 0;
-  let released = false;
-  const freeGpu = () => {
-    if (gpu) {
-      gl.deleteTexture(gpu.texture);
-      gpu.buffers.forEach((b) => gl.deleteBuffer(b));
-      gl.deleteVertexArray(gpu.vao);
-      gl.deleteProgram(gpu.program);
-      gpu = undefined;
-    }
-    gl.getExtension('WEBGL_lose_context')?.loseContext();
-  };
-  const release = () => {
-    if (released) return;
-    released = true;
-    lost = true; // nothing draws any more
-    if (raf) cancelAnimationFrame(raf);
-    raf = 0;
-    freeGpu();
-    canvas.width = canvas.height = 0;
-    atlas.width = atlas.height = 0;
-    canvas.style.visibility = 'hidden';
-  };
   const thaw = () => {
-    if (released) {
-      onCancelled?.(); // the wall is gone: it is built again from the start
-      return;
-    }
     frozen = false;
     still?.remove();
     still = undefined;
@@ -764,7 +721,7 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
     if (!shown || !visible) {
       // the wall is not on the screen: nothing to keep, but the canvas stays out of the transition's picture and the wall stops drawing
       frozen = true;
-      release();
+      canvas.style.visibility = 'hidden';
       unfreeze = window.setTimeout(thaw, 5000);
       return;
     }
@@ -775,7 +732,7 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
       frame(performance.now()); // draws now, in this task: the buffer holds this frame until the task ends
       const img = new Image();
       img.alt = '';
-      img.src = canvas.toDataURL('image/jpeg', 0.88);
+      img.src = canvas.toDataURL('image/webp', 0.92);
       img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;';
       canvas.after(img);
       still = img;
@@ -783,7 +740,7 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
       const original = nav.loader;
       nav.loader = async () => {
         await img.decode().catch(() => {});
-        if (still === img) release();
+        if (still === img) canvas.style.visibility = 'hidden';
         await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
         await original();
       };
@@ -826,7 +783,13 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
     root.style.cursor = '';
     delete root.dataset.live;
     delete root.dataset.ready;
-    if (!released) freeGpu();
+    if (gpu) {
+      gl.deleteTexture(gpu.texture);
+      gpu.buffers.forEach((b) => gl.deleteBuffer(b));
+      gl.deleteVertexArray(gpu.vao);
+      gl.deleteProgram(gpu.program);
+    }
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
     canvas.remove();
     box.hidden = true;
   };

@@ -514,10 +514,6 @@ export const GALLERY_DOME = {
   wheel: 0.5, // a sideways wheel / trackpad swipe; the vertical wheel is left to the page
   segments: 14, // the lens is calculated on a grid this fine, per photo
   dpr: 2, // top device pixel ratio
-  // a phone or a tablet: the page transition needs the GPU's memory for its pictures, so the wall takes less of it (a smaller canvas, a
-  // smaller atlas of the photos); the photos are small on a phone anyway
-  phone: { dpr: 1.5, cell: 400, maxAtlas: 2048 },
-  near: '50% 0px', // the wall is built when it comes this close to the screen, and taken down (its GPU memory given back) when it goes further
 } as const;
 
 // ---- gallery hero (a photo opens from a window to the whole screen and fades, photos float up below it; scripts/gallery-hero.ts) ----

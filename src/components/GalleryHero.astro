@@ -41,11 +41,10 @@ const { title, image, alt = '', photos } = Astro.props;
 <script>
   import { mount } from '../scripts/lifecycle';
   import { initGalleryHero } from '../scripts/gallery-hero';
-  import { off } from '../scripts/bisect';
 
   mount(() => {
     const root = document.querySelector<HTMLElement>('[data-gallery-hero]');
-    return root && !off('hero') ? initGalleryHero(root) : undefined;
+    return root ? initGalleryHero(root) : undefined;
   }, '[data-gallery-hero]');
 </script>
 
@@ -110,13 +109,6 @@ const { title, image, alt = '', photos } = Astro.props;
     .gh-center { clip-path: inset(25% 25% 25% 25%); }
     .gh-media { transform: scale(1.7); }
   }
-
-  /* TEMPORARY (scripts/bisect.ts): ?off=herofx / heroimg / imgs, to find what breaks the page transition on a phone */
-  :global(html.lroff-herofx) .gh-center { clip-path: none !important; will-change: auto !important; }
-  :global(html.lroff-herofx) .gh-media { transform: none !important; will-change: auto !important; }
-  :global(html.lroff-herofx) .gh-img :global(img) { will-change: auto !important; }
-  :global(html.lroff-heroimg) .gh-media { display: none !important; }
-  :global(html.lroff-imgs) .gh-imgs { display: none !important; }
 
   /* the floating photos come after the photo's screen, over it: a column of photos in their own proportions, no gaps (as in the original) */
   .gh-imgs {

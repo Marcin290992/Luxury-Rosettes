@@ -40,7 +40,6 @@ const { stripes = 5, color = '#FAF8F3', pin = 1, duration = 1.8, hold = 0.5 } = 
   import gsap from 'gsap';
   import { mount } from '../scripts/lifecycle';
   import { drawStripes } from '../scripts/stripes';
-  import { off } from '../scripts/bisect';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -48,7 +47,7 @@ const { stripes = 5, color = '#FAF8F3', pin = 1, duration = 1.8, hold = 0.5 } = 
     const root = document.querySelector<HTMLElement>('[data-stripe-reveal]');
     const screen = root?.querySelector<HTMLElement>('.sr-pin');
     const content = root?.querySelector<HTMLElement>('.sr-content');
-    if (!root || !screen || !content || off('stripes')) return;
+    if (!root || !screen || !content) return;
     const stripes = Array.from(root.querySelectorAll<HTMLElement>('.sr-stripe'));
     const pin = parseFloat(root.dataset.pin ?? '1');
     const ease = gsap.parseEase('sine.inOut'); // the stripes ease in and out of their rise instead of starting and stopping at full speed

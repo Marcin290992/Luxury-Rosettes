@@ -24,7 +24,7 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
     {
       photos.map((p, i) => (
         <li>
-          <Image src={p.src} alt={p.alt} widths={[400, 700]} sizes="(min-width:769px) 30vw, 46vw" loading="lazy" decoding="async" draggable="false" data-full={fulls[i].src} />
+          <Image src={p.src} alt={p.alt} widths={[500, 800]} sizes="(min-width:769px) 30vw, 46vw" loading="eager" draggable="false" data-full={fulls[i].src} />
         </li>
       ))
     }
@@ -58,60 +58,37 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
 <script>
   import { mount } from '../scripts/lifecycle';
   import { initGalleryDome } from '../scripts/gallery-dome';
-  import { scrollBox } from '../scripts/scroller';
-  import { GALLERY_DOME } from '../scripts/settings';
-  import { off } from '../scripts/bisect';
 
-  // The wall (a WebGL context, a texture of the photos) is heavy for a phone's GPU, and the page transition needs that memory for its pictures:
-  // with the wall alive the transition broke half way (to the gallery and from it). So the wall only exists while it is near the screen:
-  //  - it is built when it comes within GALLERY_DOME.near of the screen, never during a page transition (it waits for the end of one),
-  //  - it is taken down (the GPU memory given back) when it goes further away, and before a page transition (gallery-dome.ts `freeze`),
-  //  - its photos are lazy: nothing of it is loaded while the page arrives. Until it is built, the markup's grid of photos stands in for it.
+  // The wall (a WebGL context, a texture atlas, the photos decoded) is only built once the page transition has finished: it is a heavy piece
+  // of work, and on a phone it held up the transition (it stopped half way, or did not play). The wall is far down the page (after the
+  // opening and the stripes), so nobody sees it being built a moment later; the fallback grid is in the page until then.
   mount(() => {
     const root = document.querySelector<HTMLElement>('[data-gallery-dome]');
-    if (!root || off('dome')) return;
+    if (!root) return;
     const html = document.documentElement;
     let destroy: (() => void) | undefined;
-    let near = false;
-    let gone = false;
-    const moving = () => html.hasAttribute('data-astro-transition');
-
-    const build = () => {
-      if (gone || destroy || !near || moving()) return;
-      destroy = initGalleryDome(root, () => {
-        // a page transition took it down and then did not happen: built again
-        destroy?.();
-        destroy = undefined;
-        build();
-      });
-    };
-    const takeDown = () => {
-      destroy?.();
-      destroy = undefined;
-    };
-
-    // the end of a page transition (the router removes the attribute); it also blinks during the swap, so it is read again, not trusted
+    let started = false;
+    let safety = 0;
     const watch = new MutationObserver(() => {
-      if (!moving()) build();
+      if (!html.hasAttribute('data-astro-transition')) start();
     });
-    watch.observe(html, { attributes: true, attributeFilter: ['data-astro-transition'] });
-
-    // on a phone the page scrolls in its own box: the margin only reaches beyond the screen when the box is the observer's root
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        near = entry.isIntersecting;
-        if (near) build();
-        else takeDown();
-      },
-      { root: scrollBox(), rootMargin: GALLERY_DOME.near },
-    );
-    io.observe(root);
-
-    return () => {
-      gone = true;
-      io.disconnect();
+    const start = () => {
+      if (started) return;
+      started = true;
       watch.disconnect();
-      takeDown();
+      window.clearTimeout(safety);
+      destroy = initGalleryDome(root);
+    };
+    if (!html.hasAttribute('data-astro-transition')) start();
+    else {
+      watch.observe(html, { attributes: true, attributeFilter: ['data-astro-transition'] });
+      safety = window.setTimeout(start, 3000); // never wait longer than this
+    }
+    return () => {
+      started = true;
+      watch.disconnect();
+      window.clearTimeout(safety);
+      destroy?.();
     };
   }, '[data-gallery-dome]');
 </script>
@@ -258,12 +235,6 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
     color: var(--ink);
     outline: none;
   }
-
-  /* TEMPORARY (scripts/bisect.ts): ?off=imgs */
-  :global(html.lroff-imgs) .gd-list { display: none !important; }
-  :global(html.lroff-wallhtml) .gd-wrap { display: none !important; }
-  :global(html.lroff-wallbox) .gd-box,
-  :global(html.lroff-wallbox) .gd-plate { display: none !important; }
 
   /* fallback: a plain grid of the photos */
   .gd-list {

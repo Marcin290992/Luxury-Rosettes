@@ -154,7 +154,10 @@ const STRIPES = 5;
       title.innerHTML = toForm ? 'Write to <em>us</em>' : titleList;
       status.textContent = '';
       status.dataset.state = '';
-      if (toForm) form.querySelector<HTMLElement>('input')?.focus({ preventScroll: true });
+      // on a phone or a tablet the first field is not focused for the visitor: the keyboard would rise at once and cover the form
+      if (toForm) {
+        if (!matchMedia('(pointer: coarse)').matches) form.querySelector<HTMLElement>('input')?.focus({ preventScroll: true });
+      }
       else listView.querySelector<HTMLElement>('[data-contact-form]')?.focus({ preventScroll: true });
     };
 
@@ -279,11 +282,43 @@ const STRIPES = 5;
       }
     };
 
+    // The on-screen keyboard (phone, tablet) is drawn OVER the page: the layout does not shrink (iOS Safari, and Chrome Android since v108),
+    // so the lower fields and the Send button sat behind it. The screen follows the visual viewport (the part that is really visible) while
+    // the keyboard is up, and the field being written in is kept in view inside it.
+    const vv = window.visualViewport;
+    const field = () => {
+      const a = document.activeElement as HTMLElement | null;
+      return a && form.contains(a) && a.matches('input, textarea') ? a : null;
+    };
+    const keepInView = () => field()?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const followViewport = () => {
+      if (!vv) return;
+      const up = !root.hidden && window.innerHeight - vv.height > 120;
+      root.classList.toggle('kb', up);
+      if (up) {
+        root.style.setProperty('--vv-h', `${vv.height}px`);
+        root.style.setProperty('--vv-top', `${vv.offsetTop}px`);
+        keepInView();
+      } else {
+        root.style.removeProperty('--vv-h');
+        root.style.removeProperty('--vv-top');
+      }
+    };
+    const onFocusIn = () => {
+      window.setTimeout(keepInView, 350); // after the keyboard has come up and the screen has been resized
+    };
+    vv?.addEventListener('resize', followViewport);
+    vv?.addEventListener('scroll', followViewport);
+    form.addEventListener('focusin', onFocusIn);
+
     document.addEventListener('click', onClick);
     form.addEventListener('submit', onSubmit);
     document.addEventListener('open-contact-modal', onEvent);
     document.addEventListener('keydown', onKey);
     return () => {
+      vv?.removeEventListener('resize', followViewport);
+      vv?.removeEventListener('scroll', followViewport);
+      form.removeEventListener('focusin', onFocusIn);
       document.removeEventListener('click', onClick);
       form.removeEventListener('submit', onSubmit);
       document.removeEventListener('open-contact-modal', onEvent);
@@ -308,6 +343,12 @@ const STRIPES = 5;
   }
   .contact[hidden] {
     display: none;
+  }
+  /* the on-screen keyboard is up: the screen is only the part of the page that is really visible (set from visualViewport, see the script) */
+  .contact.kb {
+    inset: auto 0 auto 0;
+    top: var(--vv-top, 0px);
+    height: var(--vv-h, 100%);
   }
 
   /* the five dark stripes (the colour of the closing screen and the footer): the lowest rises first, the top one last; they sink top first */
@@ -342,6 +383,7 @@ const STRIPES = 5;
     padding: clamp(1.25rem, 3.4vw, 2.5rem);
     padding-bottom: calc(clamp(1.25rem, 3.4vw, 2.5rem) + env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
+    overscroll-behavior: contain;
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -794,6 +836,11 @@ const STRIPES = 5;
       grid-template-columns: 1fr;
       align-items: start;
       gap: 0;
+      flex: none; /* its own height, so the screen scrolls with its bottom padding (the form can be taller than the screen above a keyboard) */
+    }
+    /* room under the form, so that the last field and the Send button can be scrolled clear of the keyboard's edge */
+    .contact-form {
+      padding-bottom: 1rem;
     }
     /* a tablet or a phone: the portrait is a dim backdrop behind the words, not a column */
     .contact-photo {

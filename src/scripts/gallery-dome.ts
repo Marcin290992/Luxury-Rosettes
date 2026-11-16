@@ -325,6 +325,7 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
   let destroyed = false;
   let lost = false;
   let shown = false; // the first frame has been drawn
+  let frozen = false; // a still picture lies over the canvas (a page transition is starting): the wall stops drawing
   let lightboxOpen = false;
   // the page can play the wall's entrance (StripeReveal publishes 0..1 on its track); without one the wall is simply there
   const host = root.closest<HTMLElement>('[data-stripe-reveal]');
@@ -371,7 +372,7 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
   };
 
   const schedule = () => {
-    if (destroyed || lost || !visible || raf) return;
+    if (destroyed || lost || frozen || !visible || raf) return;
     raf = requestAnimationFrame(frame);
   };
 
@@ -699,6 +700,50 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
   );
   observer.observe(root);
 
+  // When a page transition starts while the wall is on the screen, the live WebGL canvas is swapped for a still picture of its last frame.
+  // A WebGL canvas inside the transition's snapshot is composited on its own and, on phones (Chrome and Safari), comes out with another
+  // height than the rest of the page, which breaks the transition (the same thing as on the Awards spiral, see awards-spiral.ts `freeze`).
+  // A plain image is part of the page like everything else. Only the picture is lost: the page is leaving. The order matters:
+  //  1. all of it in the same task as the event (the router reads `loader` right after it, and the buffer still holds the frame);
+  //  2. the picture goes OVER the canvas and the canvas is hidden once the picture is decoded, so no frame has neither;
+  //  3. the wall stops drawing from the moment of the picture, so the two stay the same picture.
+  let still: HTMLImageElement | undefined;
+  let unfreeze = 0;
+  const thaw = () => {
+    frozen = false;
+    still?.remove();
+    still = undefined;
+    canvas.style.visibility = '';
+    schedule();
+  };
+  const freeze = (event: Event) => {
+    if (!shown || !visible || still || lost || destroyed) return;
+    try {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      frozen = true; // first, so that the frame below does not schedule another one
+      frame(performance.now()); // draws now, in this task: the buffer holds this frame until the task ends
+      const img = new Image();
+      img.alt = '';
+      img.src = canvas.toDataURL('image/webp', 0.92);
+      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;';
+      canvas.after(img);
+      still = img;
+      const nav = event as Event & { loader: () => Promise<void> };
+      const original = nav.loader;
+      nav.loader = async () => {
+        await img.decode().catch(() => {});
+        if (still === img) canvas.style.visibility = 'hidden';
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        await original();
+      };
+      unfreeze = window.setTimeout(thaw, 5000); // the navigation never happened (cancelled): the live canvas comes back
+    } catch {
+      thaw();
+    }
+  };
+  document.addEventListener('astro:before-preparation', freeze);
+
   root.dataset.live = ''; // the markup's own grid steps aside (visually hidden, still there for screen readers)
   readSize();
   settle();
@@ -706,6 +751,9 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
 
   return () => {
     destroyed = true;
+    document.removeEventListener('astro:before-preparation', freeze);
+    window.clearTimeout(unfreeze);
+    still?.remove();
     if (raf) cancelAnimationFrame(raf);
     observer.disconnect();
     resizer.disconnect();

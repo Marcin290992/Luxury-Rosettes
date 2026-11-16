@@ -136,7 +136,8 @@ const kittens = [
   .row:nth-child(even) .photo { order: 2; }
   .kp-defs { position: absolute; width: 0; height: 0; }
   /* cut to a spot of the home page (the same shapes as "Your Bengal") */
-  .photo { aspect-ratio: 1; clip-path: var(--clip); }
+  /* overflow: clip, because the photo is scaled up while closed and clip-path does not stop that from widening the page (a sideways scroll on a phone) */
+  .photo { aspect-ratio: 1; clip-path: var(--clip); overflow: clip; }
   .photo :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; will-change: transform; }
   /* closed (a small copy of the spot) until the script opens it as the photo comes up: no flash of the full photo */
   @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {

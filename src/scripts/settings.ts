@@ -306,7 +306,8 @@ export const LINE_REVEAL = {
   start: 'top 88%', // the line starts when the text is this far up the screen
   duration: 1.1, // s
   stagger: 0.09, // s between lines
-  ease: 'power3.out',
+  ease: 'house', // the site's signature curve (HOUSE_EASE below, registered by scripts/house-ease.ts)
+  char: { stagger: 0.018, duration: 1.0 }, // a big title (data-char-reveal): letters rise one after another instead of lines
 };
 
 // ---- preloader (every real load of the home page: a counter, a frame of cycling photos that opens to the hero) --------
@@ -471,6 +472,19 @@ export const CLOSE_TO = {
   phone: { gapFrom: 25, start: 'top 82%', scrub: 1, mediaAt: 0.5 },
   gapDuration: 1.5, // the words' move, against a picture that opens in 1
   gapEase: 'power2.inOut',
+} as const;
+
+// ---- one signature curve for every reveal of the site, and the About page's opening (a statement, photos arriving around it; scripts/about-hero.ts) ----
+export const HOUSE_EASE = { name: 'house', curve: 'M0,0 C0.625,0.05 0,1 1,1' }; // slow start, hard pick-up, long settle
+export const ABOUT_HERO = {
+  delay: 0.25, // s after the page is there
+  title: { duration: 1.1, stagger: 0.02 }, // s a letter takes to rise / s between letters
+  photos: { duration: 0.9, stagger: 0.08, from: 0.6 }, // s a photo takes / s between photos / s into the intro the first one starts
+  slide: 64, // px a photo slides in from its side
+  drift: { lo: 60, hi: 160, phoneLo: 24, phoneHi: 70 }, // px a photo rises while the screen scrolls away: the smallest and the biggest one
+  copyDrift: 40, // px the statement rises: less than the photos, so they seem to be in front of it
+  scrub: 0.55,
+  mouse: 14, // px a photo leans towards the pointer (times its own weight)
 } as const;
 
 // ---- gallery dome (an endless wall of photos seen through a lens; drag to move; plain WebGL2, scripts/gallery-dome.ts) ----

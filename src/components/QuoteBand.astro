@@ -35,6 +35,8 @@ const { quote, by, source = 'Facebook review', image, alt = '' } = Astro.props;
   import { mount } from '../scripts/lifecycle';
   import { WORD_HIDDEN } from '../scripts/settings';
 
+  const EDGE = 10; // % pulled in on every side while the band enters / leaves
+
   gsap.registerPlugin(ScrollTrigger, SplitText);
 
   mount(() => {
@@ -50,6 +52,26 @@ const { quote, by, source = 'Facebook review', image, alt = '' } = Astro.props;
       gsap.set(photo, { scale: 1.12 });
       gsap.fromTo(photo, { yPercent: -6 }, { yPercent: 6, ease: 'none', scrollTrigger: { trigger: root, start: 'top bottom', end: 'bottom top', scrub: true } });
 
+      // the edges are pulled in by a tenth on every side while the band enters, open to the full width, and close again as it leaves
+      const edge = { v: EDGE };
+      const paint = () => gsap.set(root, { clipPath: `inset(${edge.v}%)` });
+      paint();
+      const follow = gsap.quickTo(edge, 'v', { duration: 0.2, ease: 'none', onUpdate: paint });
+      const frame = ScrollTrigger.create({
+        trigger: root,
+        start: 'top bottom',
+        end: 'bottom top',
+        onUpdate: (self) => {
+          const y = self.scroll();
+          const inEnd = self.start + 0.4 * window.innerHeight; // open by the time 40% of a screen of it is in view
+          const outStart = self.end - 0.6 * root.offsetHeight; // and starts closing over its last 60%
+          let v = 0;
+          if (y <= inEnd) v = gsap.utils.mapRange(self.start, inEnd, EDGE, 0, y);
+          else if (y >= outStart) v = gsap.utils.mapRange(outStart, self.end, 0, EDGE, y);
+          follow(gsap.utils.clamp(0, EDGE, v));
+        },
+      });
+
       // the words of the review, then the name, rise out of their windows
       const quote = SplitText.create(root.querySelector('.qb-quote')!, { type: 'words', mask: 'words' });
       const by = SplitText.create(root.querySelector('.qb-by')!, { type: 'words', mask: 'words' });
@@ -58,7 +80,11 @@ const { quote, by, source = 'Facebook review', image, alt = '' } = Astro.props;
       gsap.from(quote.words, { yPercent: WORD_HIDDEN, duration: 1.1, stagger: 0.02, ease: 'power3.out', scrollTrigger: arrive });
       gsap.from(by.words, { yPercent: WORD_HIDDEN, duration: 0.9, stagger: 0.05, delay: 0.4, ease: 'power3.out', scrollTrigger: arrive });
 
-      return () => splits.splice(0).forEach((s) => s.revert());
+      return () => {
+        frame.kill();
+        gsap.set(root, { clearProps: 'clipPath' });
+        splits.splice(0).forEach((x) => x.revert());
+      };
     });
 
     return () => mm.revert();

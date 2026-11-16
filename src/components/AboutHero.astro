@@ -1,0 +1,168 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+/**
+ * The opening of the About page: a statement and, around it, photos that arrive one by one (see scripts/about-hero.ts). The main photo is sharp,
+ * the others are faint, like memories. `d` is the photo's place and size on a wide screen, `m` the same on a phone (top, left, width).
+ * Without the script, or with reduced motion, everything simply stands in place.
+ */
+interface Slot {
+  src: ImageMetadata;
+  alt: string;
+  aspect: string;
+  d: [string, string, string];
+  m: [string, string, string];
+  opacity: number;
+  reveal: 'left' | 'right' | 'center';
+  scale: boolean;
+  mouse: number;
+  z: number;
+}
+interface Props {
+  eyebrow: string;
+  title: string;
+  photos: Slot[];
+}
+const { eyebrow, title, photos } = Astro.props;
+---
+
+<section class="ah" data-about-hero>
+  <div class="ah-copy">
+    <p class="ah-eyebrow">{eyebrow}</p>
+    <h1 class="ah-title" set:html={title} />
+  </div>
+  <div class="ah-layer">
+    {
+      photos.map((p, i) => (
+        <div
+          class="ah-slot"
+          data-reveal={p.reveal}
+          data-opacity={p.opacity}
+          data-scale={p.scale ? 'true' : 'false'}
+          style={`--t:${p.d[0]};--l:${p.d[1]};--w:${p.d[2]};--mt:${p.m[0]};--ml:${p.m[1]};--mw:${p.m[2]};--z:${p.z};--o:${p.opacity};aspect-ratio:${p.aspect}`}
+        >
+          <div class="ah-drift">
+            <div class="ah-mouse" data-mouse={p.mouse}>
+              <div class="ah-pic">
+                <Image src={p.src} alt={i === 0 ? p.alt : ''} widths={[400, 800, 1200]} sizes={i === 0 ? '(min-width:769px) 36vw, 90vw' : '(min-width:769px) 16vw, 40vw'} loading="eager" draggable="false" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initAboutHero } from '../scripts/about-hero';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('[data-about-hero]');
+    return root ? initAboutHero(root) : undefined;
+  }, '[data-about-hero]');
+</script>
+
+<style>
+  .ah {
+    position: relative;
+    box-sizing: border-box;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow: clip;
+    background: var(--paper);
+    color: var(--ink);
+    padding: clamp(6rem, 14vh, 9rem) clamp(1.25rem, 6vw, 6rem) 3rem;
+    display: flex;
+    align-items: center;
+  }
+  .ah-copy {
+    position: relative;
+    z-index: 4;
+    max-width: 36rem;
+  }
+  .ah-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 0 0 1.5rem;
+  }
+  .ah-eyebrow::before {
+    content: '';
+    width: 2.5rem;
+    border-top: 1px solid var(--gold-deep);
+  }
+  .ah-title {
+    font-family: var(--font-heading);
+    font-weight: 300;
+    font-size: clamp(3rem, 7.2vw, 6.6rem);
+    line-height: 0.98;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+  .ah-title :global(em) {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold-deep);
+  }
+
+  /* the photos lie on one layer over the whole screen, each placed by percentages (a wide screen / a phone) */
+  .ah-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .ah-slot {
+    position: absolute;
+    top: var(--t);
+    left: var(--l);
+    width: var(--w);
+    z-index: var(--z);
+  }
+  .ah-drift,
+  .ah-mouse,
+  .ah-pic {
+    width: 100%;
+    height: 100%;
+  }
+  .ah-pic {
+    overflow: hidden;
+    border-radius: 2px;
+    opacity: var(--o);
+    will-change: transform, opacity;
+  }
+  .ah-pic :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  @media (max-width: 768px) {
+    .ah {
+      align-items: flex-start;
+    }
+    .ah-slot {
+      top: var(--mt);
+      left: var(--ml);
+      width: var(--mw);
+    }
+  }
+
+  /* with the script the title waits (hidden) and the photos wait (away) from the first frame; the script sets them */
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    .ah-title,
+    .ah-eyebrow {
+      visibility: hidden;
+    }
+    .ah-pic {
+      visibility: hidden;
+    }
+  }
+</style>

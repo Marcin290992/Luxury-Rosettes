@@ -1,0 +1,355 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NavPill from '../components/NavPill.astro';
+import AboutHero from '../components/AboutHero.astro';
+import Closing from '../components/Closing.astro';
+import Footer from '../components/Footer.astro';
+import { Image } from 'astro:assets';
+import aboutPhoto from '../assets/img/story/about.webp';
+import closingPhoto from '../assets/img/cats/draco.webp'; // placeholder: swap for the real closing photo
+import kita from '../assets/img/cats/kita.webp';
+import candy from '../assets/img/cats/candy.webp';
+import cosmo from '../assets/img/cats/cosmo.webp';
+import chester from '../assets/img/cats/chester.webp';
+import charlie from '../assets/img/cats/charlie.webp';
+import draco from '../assets/img/cats/draco.webp';
+
+// Two of the beats carry a photo (PLACEHOLDERS: the breeder's two new photos replace charlie and chester; give them an alt when real).
+// The words of the statements are the breeder's own (the About text of the original site), cut into the beats of the story.
+// PLACEHOLDERS: the milestones (the breeder fills in the real years and events) and the closing photo.
+// The opening: the breeder's photo is the sharp one (first), the cats of the site are faint around it (PLACEHOLDERS: the breeder swaps in her own photos).
+// d = top, left, width on a wide screen; m = the same on a phone.
+const heroPhotos = [
+  { src: aboutPhoto, alt: 'The breeder with a Bengal cat and show rosettes', aspect: '4 / 3', d: ['20%', '50%', 'min(38%, 580px)'] as [string, string, string], m: ['47%', '6%', '88%'] as [string, string, string], opacity: 1, reveal: 'right' as const, scale: false, mouse: 0.8, z: 3 },
+  { src: kita, alt: '', aspect: '4 / 5', d: ['64%', '70%', 'min(15%, 230px)'] as [string, string, string], m: ['84%', '66%', '30%'] as [string, string, string], opacity: 0.95, reveal: 'right' as const, scale: true, mouse: 1, z: 4 },
+  { src: draco, alt: '', aspect: '4 / 5', d: ['7%', '82%', 'min(13%, 200px)'] as [string, string, string], m: ['2%', '70%', '26%'] as [string, string, string], opacity: 0.32, reveal: 'right' as const, scale: true, mouse: 1.2, z: 1 },
+  { src: candy, alt: '', aspect: '4 / 5', d: ['80%', '5%', 'min(12%, 190px)'] as [string, string, string], m: ['86%', '4%', '26%'] as [string, string, string], opacity: 0.3, reveal: 'left' as const, scale: true, mouse: 1.1, z: 1 },
+  { src: cosmo, alt: '', aspect: '4 / 5', d: ['82%', '36%', 'min(13%, 200px)'] as [string, string, string], m: ['90%', '36%', '24%'] as [string, string, string], opacity: 0.28, reveal: 'center' as const, scale: true, mouse: 0.6, z: 1 },
+  { src: chester, alt: '', aspect: '4 / 5', d: ['5%', '40%', 'min(11%, 170px)'] as [string, string, string], m: ['40%', '78%', '22%'] as [string, string, string], opacity: 0.26, reveal: 'left' as const, scale: true, mouse: 1.3, z: 1 },
+  { src: charlie, alt: '', aspect: '4 / 5', d: ['50%', '90%', 'min(11%, 170px)'] as [string, string, string], m: ['30%', '-6%', '24%'] as [string, string, string], opacity: 0.3, reveal: 'right' as const, scale: false, mouse: 0.9, z: 1 },
+];
+
+const beats = [
+  { eyebrow: 'The beginning', lines: 'Fifteen years ago,<br>a gift from my <em>husband</em>.' },
+  { eyebrow: 'The passion', lines: 'What started as one special moment became a <em>lifelong passion</em>.', photo: { src: charlie, alt: '' } },
+  { eyebrow: 'The family', lines: 'Their wild elegance and affectionate character quickly made them <em>part of our family</em>.' },
+  { eyebrow: 'At home', lines: 'We do not just breed Bengals. We <em>live with them</em>, love them and admire them every day.', photo: { src: chester, alt: '' } },
+  { eyebrow: 'The rosettes', lines: 'Their intelligence, playful spirit and breathtaking rosettes make them <em>inseparable from our home</em>.' },
+];
+
+const milestones = [
+  { when: '15 years ago', title: 'A gift', text: 'Placeholder text. The first Bengal, and the moment that started everything.' },
+  { when: 'Year 1', title: 'The first litter', text: 'Placeholder text. A few words about the first kittens born at home.' },
+  { when: 'Year 5', title: 'The show ring', text: 'Placeholder text. The first show, the first rosette, the first title.' },
+  { when: 'Year 10', title: 'Champion bloodlines', text: 'Placeholder text. How the line grew and what it stands for today.' },
+  { when: 'Today', title: 'Still at home', text: 'Placeholder text. The family as it is now: every kitten still raised among people.' },
+];
+
+const pillars = [
+  { title: 'Champion bloodlines', text: 'TICA registered parents with proven show records.' },
+  { title: 'Raised at home', text: 'Born in our family home and well socialised from the first days.' },
+  { title: 'Cared for, for life', text: 'Health guarantees and lifetime breeder support.' },
+];
+---
+
+<Layout title="About — Luxury Rosettes">
+  <NavPill />
+  <main>
+    <!-- a statement, and photos that arrive around it one by one (the breeder's own is the sharp one) -->
+    <AboutHero eyebrow="Our story" title="Fifteen years<br>of wild <em>elegance</em>" photos={heroPhotos} />
+
+    <section class="beats" aria-label="Our story">
+      {
+        beats.map((b) => (
+          <div class={`beat${b.photo ? ' beat--photo' : ''}`}>
+            <div class="beat-text">
+              <p class="eyebrow" data-line-reveal>{b.eyebrow}</p>
+              <p class="statement" data-line-reveal set:html={b.lines} />
+            </div>
+            {b.photo && (
+              <figure class="beat-fig" data-beat-photo>
+                <div class="beat-frame">
+                  <Image class="beat-img" src={b.photo.src} alt={b.photo.alt} widths={[500, 800, 1100]} sizes="(min-width:900px) 34vw, 86vw" loading="lazy" draggable="false" />
+                </div>
+              </figure>
+            )}
+          </div>
+        ))
+      }
+    </section>
+
+    <section class="path">
+      <div class="path-head">
+        <p class="eyebrow" data-line-reveal>The way here</p>
+        <h2 data-line-reveal data-char-reveal>Fifteen years, <em>one family</em></h2>
+      </div>
+      <ol class="path-list">
+        {
+          milestones.map((m) => (
+            <li class="path-item">
+              <span class="path-when" data-line-reveal>{m.when}</span>
+              <h3 data-line-reveal>{m.title}</h3>
+              <p data-line-reveal>{m.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="pillars">
+      <ul class="pillar-list">
+        {
+          pillars.map((p) => (
+            <li class="pillar">
+              <h3 data-line-reveal>{p.title}</h3>
+              <p data-line-reveal>{p.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </main>
+  <!-- the last screen, as on the home page: the photo shrinks as the footer rises -->
+  <div class="ending">
+    <Closing photo={closingPhoto} eyebrow="Come and meet them" heading={['The cats behind', 'our story']} cta={{ label: 'Our cats', href: '/our-cats' }} />
+    <Footer />
+  </div>
+</Layout>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initFooterZoom } from '../scripts/footer-zoom';
+  import { initLineReveal } from '../scripts/line-reveal';
+  import gsap from 'gsap';
+  import { HOUSE } from '../scripts/house-ease';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  mount(initFooterZoom, '.ending');
+  // the two photos: the frame opens from the middle while the picture settles from a zoom, then it drifts a little against the page (the house curve)
+  mount(() => {
+    const figs = Array.from(document.querySelectorAll<HTMLElement>('[data-beat-photo]'));
+    const mm = gsap.matchMedia();
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      const tweens = figs.flatMap((fig) => {
+        const frame = fig.querySelector<HTMLElement>('.beat-frame')!;
+        const img = fig.querySelector<HTMLElement>('.beat-img')!;
+        gsap.set(frame, { clipPath: 'inset(30% 30% 30% 30%)' });
+        gsap.set(img, { scale: 1.3 });
+        const open = gsap
+          .timeline({ defaults: { ease: HOUSE, duration: 1.3 }, scrollTrigger: { trigger: fig, start: 'top 80%', toggleActions: 'play none none reverse' } })
+          .to(frame, { clipPath: 'inset(0% 0% 0% 0%)' }, 0)
+          .to(img, { scale: 1 }, 0);
+        const drift = gsap.fromTo(frame, { y: 40 }, { y: -40, ease: 'none', scrollTrigger: { trigger: fig, start: 'top bottom', end: 'bottom top', scrub: 0.55 } });
+        return [open, drift];
+      });
+      return () => {
+        tweens.forEach((t) => {
+          t.scrollTrigger?.kill();
+          t.kill();
+        });
+        figs.forEach((fig) => gsap.set([fig.querySelector('.beat-frame'), fig.querySelector('.beat-img')], { clearProps: 'all' }));
+      };
+    });
+    return () => mm.revert();
+  }, '[data-beat-photo]');
+  // every line of the story rises out of its mask as it comes up the screen (the same reveal as the other pages)
+  mount(() => initLineReveal(Array.from(document.querySelectorAll<HTMLElement>('main [data-line-reveal]'))), '.beats');
+</script>
+
+<style>
+  .ending {
+    position: relative;
+    z-index: 5;
+    background: #0d0b09;
+  }
+  /* with the effect on, the footer's top part overlaps the photo's lower edge (the footer is clear there) */
+  .ending[data-fx] > :global(footer) {
+    margin-top: -30svh;
+  }
+
+  main {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 0 0 1.5rem;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 2.5rem;
+    border-top: 1px solid var(--gold-deep);
+  }
+
+  /* the story: one beat after another, each a large line of the breeder's own words on a quiet screen */
+  .beats {
+    padding: var(--space) 1.5rem 0;
+  }
+  .beat {
+    max-width: 64rem;
+    margin: 0 auto;
+    min-height: 70vh;
+    min-height: 70svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  /* a beat with a photo: the words and the picture side by side on a wide screen (the picture alternates sides), stacked on a phone */
+  .beat--photo {
+    min-height: 90vh;
+    min-height: 90svh;
+    gap: 2.5rem;
+  }
+  .beat-fig {
+    margin: 0;
+    width: min(100%, 26rem);
+  }
+  .beat-frame {
+    overflow: hidden;
+    border-radius: 2px;
+    aspect-ratio: 4 / 5;
+  }
+  .beat-frame :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  @media (min-width: 900px) {
+    .beat--photo {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4rem;
+    }
+    .beat--photo .beat-text {
+      flex: 1;
+    }
+    .beat--photo ~ .beat--photo {
+      flex-direction: row-reverse;
+    }
+    .beat-fig {
+      flex: none;
+      width: min(34%, 26rem);
+    }
+  }
+  .statement {
+    font-family: var(--font-heading);
+    font-weight: 300;
+    font-size: clamp(2.2rem, 5.6vw, 5rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0;
+    max-width: 22em;
+  }
+  .statement :global(em) {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold-deep);
+  }
+
+  /* the way here: five milestones along a dashed rule */
+  .path {
+    padding: var(--space) 1.5rem;
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+  .path-head {
+    margin-bottom: clamp(3rem, 7vh, 5rem);
+  }
+  .path h2 {
+    font-family: var(--font-heading);
+    font-weight: 300;
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .path h2 :global(em) {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold-deep);
+  }
+  .path-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2.5rem;
+  }
+  .path-item {
+    border-top: var(--dash-divider);
+    padding-top: 1.5rem;
+  }
+  .path-when {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-bottom: 1rem;
+  }
+  .path-item h3 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: 1.7rem;
+    line-height: 1.1;
+    margin: 0 0 0.8rem;
+  }
+  .path-item p {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    line-height: 1.75;
+    opacity: 0.65;
+    margin: 0;
+  }
+  @media (min-width: 900px) {
+    .path-list {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 2rem;
+    }
+  }
+
+  .pillars {
+    padding: 0 1.5rem var(--space);
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+  .pillar-list {
+    list-style: none;
+    margin: 0;
+    padding: clamp(2rem, 5vh, 3.5rem) 0 0;
+    border-top: var(--dash-divider);
+    display: grid;
+    gap: 2rem;
+  }
+  .pillar h3 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    font-size: 1.5rem;
+    margin: 0 0 0.6rem;
+  }
+  .pillar p {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    line-height: 1.75;
+    opacity: 0.65;
+    margin: 0;
+  }
+  @media (min-width: 900px) {
+    .pillar-list {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem;
+    }
+  }
+</style>

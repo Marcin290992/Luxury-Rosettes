@@ -63,7 +63,8 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
 <script>
   import { mount } from '../scripts/lifecycle';
   import { initGalleryDome } from '../scripts/gallery-dome';
-  import { scrollBox } from '../scripts/scroller';
+  import { initGalleryCssWall } from '../scripts/gallery-wall-css';
+  import { innerScroll, scrollBox } from '../scripts/scroller';
 
   // The wall only exists while it is near the screen. Its parts (the photos, the canvas's stage, the photo viewer) wait in a <template> and are put
   // into the page when the wall comes within half a screen, and the wall is built at once (so its photo list never shows as a grid). Further away,
@@ -99,6 +100,12 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
       dropPicture();
       built = true;
       root.append(parts.content.cloneNode(true));
+      // a phone or a tablet: the wall without WebGL (plain images on one sliding track, gallery-wall-css.ts); it is light, so it stays in the
+      // page through a page transition
+      if (innerScroll()) {
+        destroy = initGalleryCssWall(root);
+        return;
+      }
       // without WebGL2 the photos simply stay as the plain grid
       destroy = initGalleryDome(root, (still) => {
         takeDown();
@@ -355,6 +362,45 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
     opacity: 1;
   }
 
+
+  /* the wall on a phone or a tablet, without WebGL (scripts/gallery-wall-css.ts): one track of photo tiles sliding sideways. It comes in on the
+     stripes as the WebGL wall does: after the plate, growing out of a slightly smaller wall (--sr-intro, 0..1). */
+  .gd :global(.gd-css) {
+    --wall: clamp(0, calc((var(--sr-intro, 1) - 0.3) / 0.7), 1);
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    opacity: var(--wall);
+    scale: calc(0.88 + 0.12 * var(--wall));
+  }
+  .gd :global(.gd-track) {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+  }
+  /* during a page transition the track is no layer of its own (it stands still then) */
+  :global(html[data-astro-transition]) .gd :global(.gd-track) {
+    will-change: auto;
+  }
+  .gd :global(.gd-tile) {
+    position: absolute;
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--placeholder, #e9e4d9);
+  }
+  .gd :global(.gd-tile img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
 
   /* the photo opened large */
   .gd-box {

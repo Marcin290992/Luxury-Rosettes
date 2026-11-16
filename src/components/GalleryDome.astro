@@ -244,6 +244,9 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
     outline: none;
   }
 
+  /* TEMPORARY (scripts/bisect.ts): ?off=imgs */
+  :global(html.lroff-imgs) .gd-list { display: none !important; }
+
   /* fallback: a plain grid of the photos */
   .gd-list {
     list-style: none;

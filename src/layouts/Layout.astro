@@ -70,6 +70,11 @@ const {
   import { settleLayout } from '../scripts/scroller';
   import { refreshWhenSettled } from '../scripts/refresh-when-settled';
   import { prefetch } from 'astro:prefetch';
+  import { markOff } from '../scripts/bisect';
+
+  // TEMPORARY (bisect.ts): the ?off= switches that work in CSS
+  markOff();
+  document.addEventListener('astro:after-swap', markOff);
 
   // After a page transition the nav is already on screen: the home hero must not hide it and run its intro for it again (see Hero.astro).
   // The router rewrites <html>'s classes on a swap, so `intro-ready` is put back at once.

@@ -41,10 +41,11 @@ const { title, image, alt = '', photos } = Astro.props;
 <script>
   import { mount } from '../scripts/lifecycle';
   import { initGalleryHero } from '../scripts/gallery-hero';
+  import { off } from '../scripts/bisect';
 
   mount(() => {
     const root = document.querySelector<HTMLElement>('[data-gallery-hero]');
-    return root ? initGalleryHero(root) : undefined;
+    return root && !off('hero') ? initGalleryHero(root) : undefined;
   }, '[data-gallery-hero]');
 </script>
 

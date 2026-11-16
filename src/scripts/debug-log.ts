@@ -84,7 +84,13 @@ function watchTransition() {
   document.addEventListener('astro:before-swap', (e) => {
     dbg('--- before-swap (the update callback starts)');
     const vt = (e as Event & { viewTransition?: ViewTransition }).viewTransition;
-    vt?.ready.then(() => dbg('--- ready (the transition layers are up)')).catch(() => {});
+    const s = performance.now();
+    const ms = () => Math.round(performance.now() - s);
+    // when the browser skips the transition it says why (the reason is the rejection): it is written down, not swallowed
+    const why = (e: unknown) => (e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+    vt?.updateCallbackDone.then(() => dbg(`--- update callback done +${ms()}`), (e) => dbg(`!!! update callback FAILED +${ms()} ${why(e)}`));
+    vt?.ready.then(() => dbg(`--- ready +${ms()} (the transition layers are up)`), (e) => dbg(`!!! SKIPPED +${ms()} ${why(e)}`));
+    vt?.finished.then(() => dbg(`--- finished +${ms()}`), () => {});
   });
   document.addEventListener('astro:after-swap', () => start('after-swap'));
 

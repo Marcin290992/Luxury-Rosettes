@@ -63,10 +63,11 @@ const domePhotos = [
   import { mount } from '../scripts/lifecycle';
   import { initFooterZoom } from '../scripts/footer-zoom';
   import { initLineReveal } from '../scripts/line-reveal';
+  import { off } from '../scripts/bisect';
 
-  mount(initFooterZoom, '.ending');
+  mount(() => (off('footer') ? undefined : initFooterZoom()), '.ending');
   // the words of the note rise out of their masks, like the texts of the other pages
-  mount(() => initLineReveal(Array.from(document.querySelectorAll<HTMLElement>('.note [data-line-reveal]'))), '.note');
+  mount(() => (off('lines') ? undefined : initLineReveal(Array.from(document.querySelectorAll<HTMLElement>('.note [data-line-reveal]')))), '.note');
 </script>
 
 <style>

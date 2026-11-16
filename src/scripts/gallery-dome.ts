@@ -144,7 +144,8 @@ const unlens = (x: number, y: number, width: number, height: number) => {
   return { x: ((nx * k) / aspect + 0.5) * width, y: (ny * k + 0.5) * height };
 };
 
-export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
+// `onCancelled`: the wall gave its GPU memory back for a page transition that then did not happen; the caller builds it again.
+export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): (() => void) | undefined {
   const stage = root.querySelector<HTMLElement>('.gd-stage');
   const list = root.querySelector<HTMLElement>('.gd-list');
   const box = root.querySelector<HTMLElement>('.gd-box');
@@ -177,7 +178,9 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
   const atlas = doc.createElement('canvas');
   atlas.width = cellWidth * columns;
   atlas.height = cellHeight * rows;
-  const actx = atlas.getContext('2d');
+  // willReadFrequently keeps the atlas in the main memory: a canvas this big is otherwise kept on the GPU (Chrome on Android), next to the
+  // WebGL texture made from it, and a phone's GPU memory is what the page transition needs for its pictures
+  const actx = atlas.getContext('2d', { willReadFrequently: true });
   if (!actx) return;
   let painted = 0;
 
@@ -707,9 +710,37 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
   //  1. all of it in the same task as the event (the router reads `loader` right after it, and the buffer still holds the frame);
   //  2. the picture goes OVER the canvas and the canvas is hidden once the picture is decoded, so no frame has neither;
   //  3. the wall stops drawing from the moment of the picture, so the two stay the same picture.
+  // 4. Then the wall gives its GPU memory back (the WebGL context, the texture, the canvas's buffers, the atlas): on a phone the transition's
+  //    pictures of the old and the new page did not fit next to it, and the transition did not play (to the gallery and from it).
   let still: HTMLImageElement | undefined;
   let unfreeze = 0;
+  let released = false;
+  const freeGpu = () => {
+    if (gpu) {
+      gl.deleteTexture(gpu.texture);
+      gpu.buffers.forEach((b) => gl.deleteBuffer(b));
+      gl.deleteVertexArray(gpu.vao);
+      gl.deleteProgram(gpu.program);
+      gpu = undefined;
+    }
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+  };
+  const release = () => {
+    if (released) return;
+    released = true;
+    lost = true; // nothing draws any more
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0;
+    freeGpu();
+    canvas.width = canvas.height = 0;
+    atlas.width = atlas.height = 0;
+    canvas.style.visibility = 'hidden';
+  };
   const thaw = () => {
+    if (released) {
+      onCancelled?.(); // the wall is gone: it is built again from the start
+      return;
+    }
     frozen = false;
     still?.remove();
     still = undefined;
@@ -721,7 +752,7 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
     if (!shown || !visible) {
       // the wall is not on the screen: nothing to keep, but the canvas stays out of the transition's picture and the wall stops drawing
       frozen = true;
-      canvas.style.visibility = 'hidden';
+      release();
       unfreeze = window.setTimeout(thaw, 5000);
       return;
     }
@@ -740,7 +771,7 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
       const original = nav.loader;
       nav.loader = async () => {
         await img.decode().catch(() => {});
-        if (still === img) canvas.style.visibility = 'hidden';
+        if (still === img) release();
         await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
         await original();
       };
@@ -783,13 +814,7 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
     root.style.cursor = '';
     delete root.dataset.live;
     delete root.dataset.ready;
-    if (gpu) {
-      gl.deleteTexture(gpu.texture);
-      gpu.buffers.forEach((b) => gl.deleteBuffer(b));
-      gl.deleteVertexArray(gpu.vao);
-      gl.deleteProgram(gpu.program);
-    }
-    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    if (!released) freeGpu();
     canvas.remove();
     box.hidden = true;
   };

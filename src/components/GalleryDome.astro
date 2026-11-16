@@ -78,7 +78,14 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
       started = true;
       watch.disconnect();
       window.clearTimeout(safety);
-      destroy = initGalleryDome(root);
+      build();
+    };
+    // the wall gives its GPU memory back when a page transition starts; if the navigation does not happen after all, it is built again
+    const build = () => {
+      destroy = initGalleryDome(root, () => {
+        destroy?.();
+        build();
+      });
     };
     if (!html.hasAttribute('data-astro-transition')) start();
     else {

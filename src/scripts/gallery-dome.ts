@@ -15,6 +15,7 @@
 import { GALLERY_DOME } from './settings';
 import { getLenis } from './lenis';
 import { clamp } from './math';
+import { innerScroll } from './scroller';
 
 const o = GALLERY_DOME;
 
@@ -103,7 +104,7 @@ void main() {
   float d = roundBox(vLocal - ext, ext, r);
   float aa = max(fwidth(d), 0.0001);
   float shape = 1.0 - smoothstep(-aa, aa, d);
-  // the edges fade into the page (the canvas is see-through), not into black
+  // the edges fade into the page's colour (the canvas is cleared to it), not into black
   float fade = smoothstep(uReach * 0.35, uReach, vEdge);
   // the entrance: the photos appear from the middle outwards
   float bloom = 1.0 - smoothstep(uIntro * 1.9 * uReach - 0.9 * uReach, uIntro * 1.9 * uReach, vEdge);
@@ -163,16 +164,22 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
   const doc = root.ownerDocument;
   const view = doc.defaultView ?? window;
 
+  const phone = innerScroll(); // touch: phones and tablets (the same test as the page's scroll box)
+  // The canvas is opaque, painted in the page's colour (the wall's background): less work for the compositor than a see-through canvas,
+  // and its still picture for a page transition can be a JPEG (fast to make; Safari cannot make a WebP and made a slow, large PNG instead).
+  const paper = (getComputedStyle(root).backgroundColor.match(/[\d.]+/g) ?? ['250', '248', '243']).slice(0, 3).map((v) => parseFloat(v) / 255);
+
   const canvas = doc.createElement('canvas');
   canvas.className = 'gd-canvas';
-  const context = canvas.getContext('webgl2', { alpha: true, antialias: false, premultipliedAlpha: true, powerPreference: 'high-performance' });
+  const context = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: phone ? 'low-power' : 'high-performance' });
   if (!context) return;
   const gl: WebGL2RenderingContext = context; // (a const of the plain type: the null check does not carry into the functions below)
 
   // ---- the atlas: every photo cut to the shape of a tile, side by side on one canvas ----
   const columns = Math.ceil(Math.sqrt(images.length));
   const rows = Math.ceil(images.length / columns);
-  let cellWidth = Math.min(CELL_WIDTH, Math.floor(MAX_ATLAS / columns), Math.floor((MAX_ATLAS * o.aspect) / rows));
+  const maxAtlas = phone ? o.phone.maxAtlas : MAX_ATLAS;
+  let cellWidth = Math.min(phone ? o.phone.cell : CELL_WIDTH, Math.floor(maxAtlas / columns), Math.floor((maxAtlas * o.aspect) / rows));
   while (columns * rows * cellWidth * (cellWidth / o.aspect) > MAX_ATLAS_PIXELS && cellWidth > 128) cellWidth -= 32;
   const cellHeight = Math.round(cellWidth / o.aspect);
   const atlas = doc.createElement('canvas');
@@ -280,7 +287,7 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // the shader writes premultiplied colour
     gl.disable(gl.DEPTH_TEST);
-    gl.clearColor(0, 0, 0, 0);
+    gl.clearColor(paper[0], paper[1], paper[2], 1);
     instances = 0;
     uploaded = false;
   };
@@ -343,7 +350,7 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
     const w = Math.round(root.clientWidth);
     const h = Math.round(root.clientHeight);
     if (w < 2 || h < 2) return false;
-    const nextDpr = Math.min(view.devicePixelRatio || 1, Math.max(o.dpr, 0.5));
+    const nextDpr = Math.min(view.devicePixelRatio || 1, Math.max(phone ? o.phone.dpr : o.dpr, 0.5));
     if (w === width && h === height && nextDpr === dpr) return false;
     width = w;
     height = h;
@@ -465,6 +472,11 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
       schedule();
     }
   };
+  // the photos are lazy in the markup (nothing is loaded before the wall is near); the list is visually hidden once the wall is live, and a
+  // lazy image in it would never count as on the screen, so they are asked for now
+  images.forEach((image) => {
+    if (image.loading === 'lazy') image.loading = 'eager';
+  });
   images.forEach((image) => {
     const ready = () => {
       if (destroyed) return;
@@ -763,7 +775,7 @@ export function initGalleryDome(root: HTMLElement, onCancelled?: () => void): ((
       frame(performance.now()); // draws now, in this task: the buffer holds this frame until the task ends
       const img = new Image();
       img.alt = '';
-      img.src = canvas.toDataURL('image/webp', 0.92);
+      img.src = canvas.toDataURL('image/jpeg', 0.88);
       img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;';
       canvas.after(img);
       still = img;

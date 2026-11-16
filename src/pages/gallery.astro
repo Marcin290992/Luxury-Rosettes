@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
 import GalleryHero from '../components/GalleryHero.astro';
-// import GalleryDome from '../components/GalleryDome.astro'; // TEMPORARY: the wall is off
+import GalleryDome from '../components/GalleryDome.astro';
 import StripeReveal from '../components/StripeReveal.astro';
 import Closing from '../components/Closing.astro';
 import closingPhoto from '../assets/img/story/premium-care.webp'; // placeholder: swap for the real closing photo
@@ -43,8 +43,7 @@ const domePhotos = [
     <GalleryHero title="Gallery" image={heroPhoto} alt="A Bengal cat" photos={photos} />
     <!-- paper-coloured stripes rise over the opening, which stands still at its end; the gallery comes out on them by itself once they have closed -->
     <StripeReveal pin={2.2} duration={1.8} hold={0.8}>
-      {/* TEMPORARY: the photo wall is off, to see if the page transition on a phone works without it */}
-      {/* <GalleryDome photos={domePhotos} label="Photos of our Bengal cats, drag to explore" /> */}
+      <GalleryDome photos={domePhotos} label="Photos of our Bengal cats, drag to explore" />
     </StripeReveal>
     <!-- a quiet word after the wall; its own space also keeps the wall (a whole screen with the stripes) from running into the closing photo -->
     <section class="note">

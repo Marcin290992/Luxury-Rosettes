@@ -144,7 +144,10 @@ const unlens = (x: number, y: number, width: number, height: number) => {
   return { x: ((nx * k) / aspect + 0.5) * width, y: (ny * k + 0.5) * height };
 };
 
-export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
+// `onRelease`: when given, a page transition takes the wall away instead of only hiding it: it is called (in the router's loader, before the
+// picture of the old page is taken) with the still picture of the wall's last frame, or nothing when the wall is not on the screen; the
+// caller takes the wall down then (see GalleryDome.astro: on a phone the wall next to the gallery's opening broke the page transition).
+export function initGalleryDome(root: HTMLElement, onRelease?: (still?: HTMLImageElement) => void): (() => void) | undefined {
   const stage = root.querySelector<HTMLElement>('.gd-stage');
   const list = root.querySelector<HTMLElement>('.gd-list');
   const box = root.querySelector<HTMLElement>('.gd-box');
@@ -721,6 +724,10 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
     if (!shown || !visible) {
       // the wall is not on the screen: nothing to keep, but the canvas stays out of the transition's picture and the wall stops drawing
       frozen = true;
+      if (onRelease) {
+        onRelease();
+        return;
+      }
       canvas.style.visibility = 'hidden';
       unfreeze = window.setTimeout(thaw, 5000);
       return;
@@ -740,7 +747,10 @@ export function initGalleryDome(root: HTMLElement): (() => void) | undefined {
       const original = nav.loader;
       nav.loader = async () => {
         await img.decode().catch(() => {});
-        if (still === img) canvas.style.visibility = 'hidden';
+        if (still === img && onRelease) {
+          still = undefined; // the picture is the caller's now (it stays in the page while the wall is taken down)
+          onRelease(img);
+        } else if (still === img) canvas.style.visibility = 'hidden';
         await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
         await original();
       };

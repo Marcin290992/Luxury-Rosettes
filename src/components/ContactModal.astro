@@ -9,10 +9,10 @@ import kita from '../assets/img/cats/kita.webp'; // placeholder: swap for the re
  * breeder are large serif names that slide to gold, letter by letter, like the menu and every button. A form can be added as one more row (see `ways`).
  * Closes with Escape, the Close word, or the stripes' own screen. It is in the layout, so every page has it.
  */
-// `href` is what the row opens; `note` is the small line beside the name. PLACEHOLDER: a form would be one more row.
+// `href` is what the row opens; `form` opens the message form in this screen instead; `note` is the small line beside the name.
 const ways = [
   { name: 'WhatsApp', note: '+44 7514 951289', href: 'https://wa.me/447514951289', external: true },
-  { name: 'Email', note: 'luxuryrosettes@yahoo.com', href: 'mailto:luxuryrosettes@yahoo.com', external: false },
+  { name: 'Email', note: 'Write to us here', form: true },
   { name: 'Facebook', note: 'Luxuryrosettes Bengal cattery', href: 'https://www.facebook.com/people/Luxuryrosettes-Bengal-cattery/100091469460702/', external: true },
 ];
 const STRIPES = 5;
@@ -45,11 +45,14 @@ const STRIPES = 5;
       <div class="contact-main">
         <p class="contact-eyebrow rv"><span>Get in touch</span></p>
         <h2 id="contact-title" class="contact-title rv"><span>Tell us about <em>your Bengal</em></span></h2>
+        <div class="contact-view" data-view="list">
         <ul class="contact-list">
           {
-            ways.map((w, i) => (
+            ways.map((w, i) => {
+              const Row = w.form ? 'button' : 'a';
+              return (
               <li style={`--i:${i}`}>
-                <a href={w.href} target={w.external ? '_blank' : undefined} rel={w.external ? 'noopener noreferrer' : undefined}>
+                <Row class="row" {...(w.form ? { type: 'button', 'data-contact-form': '' } : { href: w.href, target: w.external ? '_blank' : undefined, rel: w.external ? 'noopener noreferrer' : undefined })}>
                   <span class="contact-no">{String(i + 1).padStart(2, '0')}</span>
                   <span class="contact-name" aria-hidden="true">
                     {[...w.name].map((ch, n) => <span class="lc" style={`--n:${n}`} data-ch={ch}>{ch}</span>)}
@@ -57,11 +60,44 @@ const STRIPES = 5;
                   <span class="visually-hidden">{w.name}</span>
                   <span class="contact-note">{w.note}</span>
                   <svg class="contact-arrow" width="30" height="12" viewBox="0 0 30 12" fill="none" aria-hidden="true"><path d="M0 6H29M24 1L29 6L24 11" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                </a>
+                </Row>
               </li>
-            ))
+              );
+            })
           }
         </ul>
+        </div>
+
+        <div class="contact-view" data-view="form" hidden>
+          <button type="button" class="contact-back" data-contact-back>
+            <svg width="30" height="12" viewBox="0 0 30 12" fill="none" aria-hidden="true"><path d="M30 6H1M6 1L1 6L6 11" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span>Back</span>
+          </button>
+          <form class="contact-form" novalidate>
+            <div class="field">
+              <label for="cf-name">Your name</label>
+              <input id="cf-name" name="name" type="text" autocomplete="name" required />
+            </div>
+            <div class="field">
+              <label for="cf-email">Your email</label>
+              <input id="cf-email" name="email" type="email" autocomplete="email" required />
+            </div>
+            <div class="field">
+              <label for="cf-message">Your message</label>
+              <textarea id="cf-message" name="message" rows="4" required></textarea>
+            </div>
+            <input class="cf-trap" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <div class="contact-send">
+              <button type="submit" class="send">
+                <span class="send-word" aria-hidden="true">
+                  {[...'Send message'].map((ch, n) => <span class="lc" style={`--n:${n}`} data-ch={ch}>{ch}</span>)}
+                </span>
+                <span class="visually-hidden">Send message</span>
+              </button>
+              <p class="contact-status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -70,11 +106,18 @@ const STRIPES = 5;
 <script>
   import { mount } from '../scripts/lifecycle';
   import { getLenis } from '../scripts/lenis';
+  import { CONTACT_FORM } from '../scripts/settings';
 
   mount(() => {
     const root = document.querySelector<HTMLElement>('.contact');
     if (!root) return;
     const closeBtn = root.querySelector<HTMLButtonElement>('.contact-close')!;
+    const listView = root.querySelector<HTMLElement>('[data-view="list"]')!;
+    const formView = root.querySelector<HTMLElement>('[data-view="form"]')!;
+    const form = root.querySelector<HTMLFormElement>('.contact-form')!;
+    const status = root.querySelector<HTMLElement>('.contact-status')!;
+    const title = root.querySelector<HTMLElement>('.contact-title > span')!;
+    const titleList = title.innerHTML;
     let opener: HTMLElement | null = null;
     let lenisStopped = false;
     let hideTimer = 0;
@@ -90,13 +133,65 @@ const STRIPES = 5;
       lenisStopped = true;
       closeBtn.focus({ preventScroll: true });
     };
+    // the Email row turns the list into the message form (and the Back arrow turns it back), in the same screen
+    const view = (name: 'list' | 'form') => {
+      const toForm = name === 'form';
+      const next = toForm ? formView : listView;
+      listView.hidden = toForm;
+      formView.hidden = !toForm;
+      next.classList.remove('enter');
+      void next.offsetWidth;
+      next.classList.add('enter');
+      title.innerHTML = toForm ? 'Write to <em>us</em>' : titleList;
+      status.textContent = '';
+      status.dataset.state = '';
+      if (toForm) form.querySelector<HTMLElement>('input')?.focus({ preventScroll: true });
+      else listView.querySelector<HTMLElement>('[data-contact-form]')?.focus({ preventScroll: true });
+    };
+
+    const say = (text: string, state: 'info' | 'ok' | 'error') => {
+      status.textContent = text;
+      status.dataset.state = state;
+    };
+    const onSubmit = async (e: SubmitEvent) => {
+      e.preventDefault();
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      const data = new FormData(form);
+      if (data.get('company')) return; // the hidden field a person never fills: a robot did
+      const name = String(data.get('name')).trim();
+      const email = String(data.get('email')).trim();
+      const message = String(data.get('message')).trim();
+      if (!CONTACT_FORM.endpoint) {
+        // not connected to a service yet: the visitor's own mail app opens with the message written in it (nothing is sent from here)
+        const body = `${message}\n\n${name}\n${email}`;
+        window.location.href = `mailto:${CONTACT_FORM.to}?subject=${encodeURIComponent(CONTACT_FORM.subject)}&body=${encodeURIComponent(body)}`;
+        say('Your mail app is opening with the message written.', 'info');
+        return;
+      }
+      say('Sending…', 'info');
+      try {
+        const res = await fetch(CONTACT_FORM.endpoint, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
+        if (!res.ok) throw new Error(String(res.status));
+        form.reset();
+        say('Thank you. Your message is on its way.', 'ok');
+      } catch {
+        say(`It did not go through. Please write to ${CONTACT_FORM.to}.`, 'error');
+      }
+    };
+
     const close = () => {
       if (root.hidden || !root.classList.contains('is-open')) return;
       root.classList.remove('is-open');
       document.documentElement.classList.remove('contact-open');
       if (lenisStopped) getLenis()?.start();
       lenisStopped = false;
-      hideTimer = window.setTimeout(() => (root.hidden = true), 1500); // after the stripes have gone down
+      hideTimer = window.setTimeout(() => {
+        root.hidden = true;
+        if (!formView.hidden) view('list'); // it opens on the list next time
+      }, 1500); // after the stripes have gone down
       opener?.focus?.({ preventScroll: true });
     };
 
@@ -108,17 +203,20 @@ const STRIPES = 5;
         open(trigger);
         return;
       }
-      if (target.closest('[data-contact-close]')) close();
+      if (target.closest('[data-contact-form]')) view('form');
+      else if (target.closest('[data-contact-back]')) view('list');
+      else if (target.closest('[data-contact-close]')) close();
     };
     const onEvent = () => open();
     const onKey = (e: KeyboardEvent) => {
       if (root.hidden) return;
       if (e.key === 'Escape') {
         e.preventDefault();
-        close();
+        if (!formView.hidden) view('list');
+        else close();
       } else if (e.key === 'Tab') {
         // the focus stays inside the screen
-        const items = Array.from(root.querySelectorAll<HTMLElement>('a[href], button')).filter((n) => n.offsetParent !== null);
+        const items = Array.from(root.querySelectorAll<HTMLElement>('a[href], button, input:not(.cf-trap), textarea')).filter((n) => n.offsetParent !== null);
         const first = items[0];
         const last = items[items.length - 1];
         const active = document.activeElement;
@@ -133,10 +231,12 @@ const STRIPES = 5;
     };
 
     document.addEventListener('click', onClick);
+    form.addEventListener('submit', onSubmit);
     document.addEventListener('open-contact-modal', onEvent);
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('click', onClick);
+      form.removeEventListener('submit', onSubmit);
       document.removeEventListener('open-contact-modal', onEvent);
       document.removeEventListener('keydown', onKey);
       window.clearTimeout(hideTimer);
@@ -226,7 +326,7 @@ const STRIPES = 5;
     color: var(--cream);
   }
   .contact-close:focus-visible,
-  .contact-list a:focus-visible {
+  .contact-list .row:focus-visible {
     outline: 1px solid var(--gold);
     outline-offset: 4px;
   }
@@ -254,8 +354,8 @@ const STRIPES = 5;
   @media (hover: hover) {
     .contact-close:hover .lc,
     .contact-close:focus-visible .lc,
-    .contact-list a:hover .lc,
-    .contact-list a:focus-visible .lc {
+    .contact-list .row:hover .lc,
+    .contact-list .row:focus-visible .lc {
       transform: translateY(-100%);
     }
   }
@@ -393,7 +493,7 @@ const STRIPES = 5;
     transform: none;
     transition: opacity 0.8s ease calc(1.55s + var(--i) * 0.08s), transform 1.1s var(--ease) calc(1.55s + var(--i) * 0.08s);
   }
-  .contact-list a {
+  .contact-list .row {
     display: grid;
     grid-template-columns: 2.4rem 1fr auto auto;
     align-items: center;
@@ -426,14 +526,153 @@ const STRIPES = 5;
     transition: transform 0.5s var(--ease), color 0.35s ease;
   }
   @media (hover: hover) {
-    .contact-list a:hover .contact-arrow,
-    .contact-list a:focus-visible .contact-arrow {
+    .contact-list .row:hover .contact-arrow,
+    .contact-list .row:focus-visible .contact-arrow {
       color: var(--gold);
       transform: translateX(8px);
     }
-    .contact-list a:hover .contact-note {
+    .contact-list .row:hover .contact-note {
       opacity: 0.9;
     }
+  }
+  /* the list and the form take turns in the same place; each arrives by rising a little */
+  .contact-view[hidden] {
+    display: none;
+  }
+  .contact-view.enter {
+    animation: view-in 0.9s var(--ease) both;
+  }
+  @keyframes view-in {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+  }
+  .contact-back {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: clamp(1rem, 3vh, 2rem);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--cream);
+    opacity: 0.75;
+    transition: opacity 0.3s ease, color 0.3s ease;
+  }
+  .contact-back:hover,
+  .contact-back:focus-visible {
+    opacity: 1;
+    color: var(--gold);
+  }
+  .contact-back:focus-visible,
+  .send:focus-visible {
+    outline: 1px solid var(--gold);
+    outline-offset: 4px;
+  }
+  /* fields: no boxes, only a line under the words, which turns gold when it is the one being written in */
+  .contact-form {
+    display: grid;
+    gap: clamp(1.1rem, 3vh, 1.8rem);
+  }
+  .field {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .field label {
+    font-size: 0.68rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .field input,
+  .field textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.5rem 0 0.7rem;
+    border: 0;
+    border-bottom: 1px dashed rgba(239, 233, 220, 0.38);
+    border-radius: 0;
+    background: transparent;
+    color: var(--cream);
+    font-family: var(--font-heading);
+    font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+    line-height: 1.25;
+    outline: none;
+    resize: none;
+    transition: border-color 0.35s ease;
+  }
+  .field textarea {
+    min-height: 5.5rem;
+  }
+  .field input:focus,
+  .field textarea:focus {
+    border-bottom-style: solid;
+    border-bottom-color: var(--gold);
+  }
+  .field input:-webkit-autofill {
+    -webkit-text-fill-color: var(--cream);
+    box-shadow: 0 0 0 1000px #0d0b09 inset;
+  }
+  .cf-trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .contact-send {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem 1.6rem;
+    margin-top: 0.4rem;
+  }
+  .send {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    padding: 1rem 1.75rem;
+    border: 1px solid color-mix(in srgb, var(--cream) 60%, transparent);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cream);
+    transition: border-color var(--hover-time, 0.32s) cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .send-word {
+    display: block;
+    overflow: hidden;
+    white-space: pre;
+    line-height: 1.5;
+  }
+  @media (hover: hover) {
+    .send:hover {
+      border-color: var(--gold);
+    }
+    .send:hover .lc,
+    .send:focus-visible .lc {
+      transform: translateY(-100%);
+    }
+  }
+  .contact-status {
+    margin: 0;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    color: var(--cream);
+    opacity: 0.8;
+  }
+  .contact-status[data-state='ok'] {
+    color: var(--gold);
+    opacity: 1;
+  }
+  .contact-status[data-state='error'] {
+    color: #e0907a;
+    opacity: 1;
   }
   .visually-hidden {
     position: absolute;
@@ -479,7 +718,7 @@ const STRIPES = 5;
     .contact-title {
       font-size: clamp(2.4rem, 11vw, 3.4rem);
     }
-    .contact-list a {
+    .contact-list .row {
       grid-template-columns: 1.8rem 1fr auto;
       grid-template-areas: 'no name arrow' '. note arrow';
       row-gap: 0.15rem;

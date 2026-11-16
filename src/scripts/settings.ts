@@ -474,6 +474,15 @@ export const CLOSE_TO = {
   gapEase: 'power2.inOut',
 } as const;
 
+// ---- the contact form (the Email row of the contact screen; components/ContactModal.astro) ----
+// `endpoint`: where the form is posted (a form service, e.g. Formspree / Netlify Forms / the mail service the breeder chooses). While it is empty
+// the form does not pretend to send: it opens the visitor's own mail app with the message written in it.
+export const CONTACT_FORM = {
+  endpoint: '',
+  to: 'luxuryrosettes@yahoo.com', // where the mail-app fallback addresses the message
+  subject: 'Message from the website',
+} as const;
+
 // ---- one signature curve for every reveal of the site, and the About page's opening (a statement, photos arriving around it; scripts/about-hero.ts) ----
 export const HOUSE_EASE = { name: 'house', curve: 'M0,0 C0.625,0.05 0,1 1,1' }; // slow start, hard pick-up, long settle
 export const ABOUT_HERO = {

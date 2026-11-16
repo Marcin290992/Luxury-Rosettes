@@ -20,8 +20,16 @@ export const off = (part: string) => {
 
 // CSS parts are switched off by a class on <html> (lroff-<part>), put back after every swap (the router rewrites <html>'s classes):
 // herofx = the opening without its clip-path, zoom and will-change; heroimg = the opening's photo hidden; imgs = the floating photos and
-// the wall's photo grid hidden. `all` switches these off too.
-const CSS_PARTS = ['herofx', 'heroimg', 'imgs'];
+// the wall's photo grid hidden; wallhtml = the whole wall section hidden (markup and all); wallbox = the wall's photo viewer and its plate
+// hidden. `all` switches these off too.
+const CSS_PARTS = ['herofx', 'heroimg', 'imgs', 'wallhtml', 'wallbox'];
+export const offList = () => {
+  try {
+    return sessionStorage.getItem(KEY) || 'none';
+  } catch {
+    return '?';
+  }
+};
 export function markOff() {
   const html = document.documentElement;
   CSS_PARTS.forEach((p) => html.classList.toggle(`lroff-${p}`, off(p)));

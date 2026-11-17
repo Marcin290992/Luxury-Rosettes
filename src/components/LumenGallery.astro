@@ -1,5 +1,4 @@
 ---
-import LumenMenu from './LumenMenu.astro';
 import Closing from './Closing.astro';
 import Footer from './Footer.astro';
 import type { ImageMetadata } from 'astro';
@@ -27,13 +26,6 @@ const first = gallery.photos[0];
 ---
 
 <div class="lg-root" data-lumen-gallery data-bg={gallery.background} data-accent={gallery.accent} data-start={start} data-intro={intro.join('|')}>
-  <header class="lg-header">
-    <div class="lg-bar">
-      <button type="button" class="lg-logo-btn" aria-label="Open menu">{gallery.name}</button>
-      <button type="button" class="lg-menu-btn" aria-label="Open menu">Menu</button>
-    </div>
-  </header>
-
   <div class="lg-hero" aria-hidden="true" style={`background:${gallery.background}`}>
     <div class="lg-hero-inner">
       <p class="lg-hero-label"><span>Scroll to explore</span></p>
@@ -95,7 +87,6 @@ const first = gallery.photos[0];
     </button>
   </div>
 
-  <LumenMenu galleries={galleries} text="bottom" closable topBarName={gallery.name} />
 </div>
 
 <style>
@@ -106,58 +97,6 @@ const first = gallery.photos[0];
   .lg-root {
     --lg-label: clamp(12px, 0.1vw + 11.5px, 14px);
     color: #000;
-  }
-
-  /* header: slides in once the hero is mostly scrolled away */
-  .lg-header {
-    position: fixed;
-    inset: 0 0 auto 0;
-    z-index: 40;
-    transform: translateY(-100%);
-  }
-  .lg-bar {
-    position: relative;
-    display: flex;
-    height: 52px;
-    align-items: center;
-    justify-content: space-between;
-    background: transparent;
-    color: #000;
-    transition: background-color 0.3s;
-  }
-  .lg-bar.is-solid {
-    background: #fff;
-  }
-  .lg-logo-btn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    display: flex;
-    height: 52px;
-    transform: translate(-50%, -50%);
-    align-items: center;
-    justify-content: center;
-    padding: 0 20px;
-    border: 0;
-    background: none;
-    color: inherit;
-    cursor: pointer;
-    font-family: var(--font-heading);
-    font-size: 22px;
-    letter-spacing: 0.2em;
-  }
-  .lg-menu-btn {
-    margin-left: auto;
-    display: flex;
-    height: 52px;
-    align-items: center;
-    padding: 0 20px 0 0;
-    border: 0;
-    background: none;
-    color: inherit;
-    cursor: pointer;
-    font-family: var(--font-body);
-    font-size: 15px;
   }
 
   /* hero */

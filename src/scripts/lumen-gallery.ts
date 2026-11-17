@@ -17,7 +17,6 @@ import { QUART, SINE } from './lumen-ease';
 import { createLerp, scrollGestures } from './lumen-scroll';
 import { neighbourZoom, placeItem, spacingFor, type Level } from './lumen-grid';
 import { initPaperHover } from './lumen-paper';
-import { initLumenMenu } from './lumen-menu';
 import { getLenis } from './lenis';
 import { disposeLayer } from './lumen-layer';
 import { createSpiral, type Spiral } from './lumen-spiral';
@@ -30,8 +29,6 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), h
 
 export function initLumenGallery(root: HTMLElement): () => void {
   const q = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
-  const header = q<HTMLElement>('.lg-header');
-  const bar = q<HTMLElement>('.lg-bar');
   const hero = q<HTMLElement>('.lg-hero');
   const heroLabel = q<HTMLElement>('.lg-hero-label');
   const logoBox = q<HTMLElement>('.lg-logo-box');
@@ -54,8 +51,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
   const endFooter = ending.querySelector<HTMLElement>('[data-footer]');
   const endContent = ending.querySelector<HTMLElement>('[data-footer-content]');
   const ghost = q<HTMLImageElement>('.lg-box-ghost');
-  const menuRoot = q<HTMLElement>('[data-lumen-menu]');
-  const openers = [q<HTMLElement>('.lg-logo-btn'), q<HTMLElement>('.lg-menu-btn')];
 
   // start="grid" (the /gallery page): no hero and no chooser: the page is white, the spiral of photos flies (data-intro lists them), and when it
   // lands the grid is there at once, its pictures blurring in, the numbers, the header and the zoom buttons with them
@@ -72,19 +67,12 @@ export function initLumenGallery(root: HTMLElement): () => void {
   let introPlaying = true; // scrolling is ignored until the hero has settled
   let heroDismissed = false;
   let heroAnimating = false;
-  let headerVisible = false;
-  let menuOpen = false;
   let lightboxOpen = false;
   let zoom: Level = 'intro';
   let zooming = false;
   let zoomedByHero = false;
   let heroH = 0;
   let lastHero = 0;
-  let downAccumulator = 0;
-
-  const setHeader = () => {
-    gsap.to(header, { yPercent: headerVisible && !menuOpen ? 0 : -100, duration: 0.8, ease: QUART, overwrite: 'auto' });
-  };
 
   // ---- the page takes the gallery's colour (no flash of another one between pages) and the page's own scroll is off ----
   const previousBackground = document.documentElement.style.backgroundColor;
@@ -185,7 +173,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
   };
 
   const onGridUpdate = (v: number) => {
-    const delta = v - position;
     position = v;
     const speed = Math.abs(v - lastForScale);
     lastForScale = v;
@@ -194,27 +181,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
     scaler.style.transform = `scale(${scale})`;
     track.style.transform = `translate3d(0, ${-clamp(v, 0, maxScroll())}px, 0)`;
     updateEnding();
-    if (delta !== 0) onGridScroll(delta);
   };
   const vlerp = createLerp({ lerpFactor: 0.1, onUpdate: onGridUpdate });
-
-  // once the grid has taken over, the header hides when scrolling down and returns when scrolling up
-  function onGridScroll(delta: number) {
-    if (!heroDismissed) return;
-    if (delta > 0) {
-      downAccumulator += delta;
-      if (downAccumulator > 60 && headerVisible) {
-        headerVisible = false;
-        setHeader();
-      }
-    } else {
-      downAccumulator = 0;
-      if (!headerVisible) {
-        headerVisible = true;
-        setHeader();
-      }
-    }
-  }
 
   const measureGrid = () => {
     sizes.content = track.offsetHeight; // the grid and the closing block under it
@@ -245,10 +213,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
     if (H > 0) {
       const progress = Math.min(v / H, 1);
       if (v > 0) heroAnimating = heroAnimating || phase !== 'grid';
-      if (progress >= 0.8 && !headerVisible && phase !== 'grid') {
-        headerVisible = true;
-        setHeader();
-      }
       // at 80 % the grid leaves its big intro layout for zoom level 2
       if (progress >= 0.8 && !zoomedByHero) {
         zoomedByHero = true;
@@ -266,7 +230,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
       heroDismissed = true;
       heroAnimating = false;
       hero.style.opacity = '0';
-      bar.classList.add('is-solid');
     }
   }
 
@@ -296,7 +259,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
     zoomedByHero = true;
     hero.style.display = 'none';
     content.style.transform = 'translate3d(0, 0, 0)';
-    bar.classList.add('is-solid');
   }
 
   // ---- index labels and zoom buttons appear once the grid has taken over ----
@@ -698,32 +660,12 @@ export function initLumenGallery(root: HTMLElement): () => void {
   };
   document.addEventListener('keydown', onKey);
 
-  // ---- the menu ----
-  const menu = initLumenMenu(menuRoot, {
-    onOpen: () => {
-      menuOpen = true;
-      setHeader();
-    },
-    onClose: () => {
-      menuOpen = false;
-      setHeader();
-    },
-  });
-  const openMenu = () => {
-    if (!heroDismissed && phase === 'hero' && introPlaying) return;
-    menu.open();
-  };
-  openers.forEach((button) => button.addEventListener('click', openMenu));
-
   // the grid is at its top and the person scrolls up: the hero comes back under it (the same move as on the way in, backwards)
   function returnToHero(delta: number) {
     phase = 'hero';
     heroDismissed = false;
     heroAnimating = false;
     hero.style.opacity = '1';
-    bar.classList.remove('is-solid');
-    headerVisible = false;
-    setHeader();
     lastHero = heroH + 1; // so the jump to the full height counts as a move up and does not dismiss the hero again
     heroLerp.jump(heroH);
     heroLerp.setTarget(clamp(heroH + delta, 0, heroH));
@@ -731,7 +673,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
 
   // ---- gestures: before the hero is gone they move the hero, afterwards the grid ----
   const stopGestures = scrollGestures({
-    enabled: () => !menuOpen && !lightboxOpen && revealOn,
+    enabled: () => !lightboxOpen && revealOn,
     onDelta: (delta) => {
       if (phase === 'grid') {
         // at the very top of the grid a further scroll up brings the hero back
@@ -779,10 +721,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
       );
     });
     window.setTimeout(() => (firstBatch = false), 5200);
-    headerTimer = window.setTimeout(() => {
-      headerVisible = true;
-      setHeader();
-    }, 3300);
   };
   let spiral: Spiral | undefined;
   let alive = true;
@@ -791,7 +729,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
   let glideTimer = 0;
   let interactiveTimer = 0;
   const folds: Array<() => void> = [];
-  let headerTimer = 0;
   if (startGrid) {
     if (!waiting) enterGrid();
     else {
@@ -819,7 +756,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
     window.clearTimeout(interactiveTimer);
     folds.splice(0).forEach((d) => d());
     turns.splice(0).forEach((d) => d());
-    window.clearTimeout(headerTimer);
     spiral?.dispose();
     stopGestures();
     heroLerp.destroy();
@@ -828,7 +764,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     gridResizer.disconnect();
     heroResizer.disconnect();
     entrance.kill();
-    gsap.killTweensOf([header, hero, logo, logoBox, heroLabel, content, items, boxImg, boxBg]);
+    gsap.killTweensOf([hero, logo, logoBox, heroLabel, content, items, boxImg, boxBg]);
     desktopQuery.removeEventListener('change', onDesktopChange);
     images.forEach((img, i) => {
       img.removeEventListener('pointerenter', hoverEnters[i]);
@@ -844,9 +780,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     thumbs.forEach((t, i) => t.removeEventListener('click', thumbClicks[i]));
     strip.removeEventListener('click', stopStrip);
     document.removeEventListener('keydown', onKey);
-    openers.forEach((button) => button.removeEventListener('click', openMenu));
     paper.destroy();
-    menu.destroy();
     disposeLayer('top');
     getLenis()?.start();
     document.documentElement.style.backgroundColor = previousBackground;

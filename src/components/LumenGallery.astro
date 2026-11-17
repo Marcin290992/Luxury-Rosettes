@@ -36,7 +36,7 @@ const first = gallery.photos[0];
           <svg xmlns="http://www.w3.org/2000/svg" viewBox={gallery.italic ? '0 0 680 100' : '0 0 280 100'} fill="currentColor" aria-hidden="true">
             {
               gallery.italic ? (
-                <text x="340" y="84" text-anchor="middle" textLength="640" lengthAdjust="spacing" style="font-family:var(--font-heading),Georgia,serif;font-style:italic;font-weight:600" font-size="112">
+                <text x="340" y="84" text-anchor="middle" textLength="600" lengthAdjust="spacingAndGlyphs" style="font-family:var(--font-heading),Georgia,serif;font-style:italic;font-weight:600" font-size="112">
                   {gallery.name.charAt(0) + gallery.name.slice(1).toLowerCase()}
                 </text>
               ) : (
@@ -210,6 +210,15 @@ const first = gallery.photos[0];
     display: block;
     height: 100%;
     width: 100%;
+  }
+  /* phone: the site's pill sits at the top and its dock at the bottom, so the hero starts below the pill and the zoom buttons sit above the dock */
+  @media (max-width: 1023px) {
+    .lg-hero-inner {
+      padding-top: 96px;
+    }
+    .lg-zoom {
+      bottom: 84px;
+    }
   }
   @media (min-width: 1024px) {
     .lg-hero-inner {

@@ -392,12 +392,32 @@ export function initLumenGallery(root: HTMLElement): () => void {
   };
   openers.forEach((button) => button.addEventListener('click', openMenu));
 
+  // the grid is at its top and the person scrolls up: the hero comes back under it (the same move as on the way in, backwards)
+  function returnToHero(delta: number) {
+    phase = 'hero';
+    heroDismissed = false;
+    heroAnimating = false;
+    hero.style.opacity = '1';
+    bar.classList.remove('is-solid');
+    zoomBox.hidden = true;
+    headerVisible = false;
+    setHeader();
+    gsap.set(indexes, { opacity: 0 });
+    lastHero = heroH + 1; // so the jump to the full height counts as a move up and does not dismiss the hero again
+    heroLerp.jump(heroH);
+    heroLerp.setTarget(clamp(heroH + delta, 0, heroH));
+  }
+
   // ---- gestures: before the hero is gone they move the hero, afterwards the grid ----
   const stopGestures = scrollGestures({
     enabled: () => !menuOpen && !lightboxOpen,
-    shouldHandle: (delta) => (phase === 'grid' ? delta >= 0 || position > 4 : true),
     onDelta: (delta) => {
       if (phase === 'grid') {
+        // at the very top of the grid a further scroll up brings the hero back
+        if (delta < 0 && position <= 4) {
+          returnToHero(delta);
+          return;
+        }
         vlerp.setTarget((target) => clamp(target + delta, 0, maxScroll()));
         return;
       }

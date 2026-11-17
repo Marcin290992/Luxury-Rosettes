@@ -5,6 +5,12 @@
 type Destroy = () => void;
 import './scroller'; // on touch devices ScrollTrigger must know the scroll box before any component creates a trigger
 
+// Resolves when the page transition that brought this page in has finished (at once on a first load or without view transitions). A page
+// whose intro starts by itself waits for it, or the intro would run under the slide-in of the page.
+export function transitionDone(): Promise<unknown> {
+  return (window as unknown as { __lrVT?: Promise<unknown> }).__lrVT ?? Promise.resolve();
+}
+
 // `only`: a selector of the element the setup is for; on a page without it the setup is skipped (a swap to another page, e.g. the awards,
 // used to run every component of the home page there and throw)
 export function mount(init: () => Destroy | void, only?: string) {

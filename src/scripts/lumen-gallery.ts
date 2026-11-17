@@ -18,6 +18,7 @@ import { createLerp, scrollGestures } from './lumen-scroll';
 import { neighbourZoom, placeItem, spacingFor, type Level } from './lumen-grid';
 import { initPaperHover } from './lumen-paper';
 import { getLenis } from './lenis';
+import { transitionDone } from './lifecycle';
 import { disposeLayer } from './lumen-layer';
 import { createSpiral, type Spiral } from './lumen-spiral';
 import { foldIn } from './lumen-fold';
@@ -750,7 +751,13 @@ export function initLumenGallery(root: HTMLElement): () => void {
           }
           spiral = s;
           // the last photo of the spiral is gone at about 6.5 s: the grid follows a moment after, when the screen has been empty for a breath
-          s.play(() => (gridTimer = window.setTimeout(enterGrid, 1700)));
+          // the intro starts only when the page transition has ended (it used to run under the page still sliding in)
+          void transitionDone().then(() => {
+            if (!alive) return;
+            window.clearTimeout(safety);
+            safety = window.setTimeout(enterGrid, 11000);
+            s.play(() => (gridTimer = window.setTimeout(enterGrid, 1700)));
+          });
         },
         enterGrid, // the photos or WebGL failed: the grid at once
       );

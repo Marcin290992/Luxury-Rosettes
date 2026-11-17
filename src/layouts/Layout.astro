@@ -110,11 +110,18 @@ const {
   // replaces it at the end of the transition (a blink).
   if (typeof document.startViewTransition === 'function') {
     const start = document.startViewTransition.bind(document);
-    document.startViewTransition = ((callback?: () => void | Promise<void>) =>
-      start(async () => {
+    document.startViewTransition = ((callback?: () => void | Promise<void>) => {
+      const transition = start(async () => {
         await callback?.();
         settleLayout();
-      })) as typeof document.startViewTransition;
+      });
+      // pages with an intro (the gallery's) wait for this before they start it: see transitionDone() in scripts/lifecycle.ts
+      (window as unknown as { __lrVT?: Promise<unknown> }).__lrVT = Promise.race([
+        transition.ready.then(() => new Promise((r) => setTimeout(r, 1000))), // the new page stands in place at 1.2 s of 1.8: only its last growing is left
+        transition.finished,
+      ]).catch(() => {});
+      return transition;
+    }) as typeof document.startViewTransition;
   }
 
   // The smooth scroll (the "weight" of the page) belongs to every page: it is built with the page and taken away before the browser takes

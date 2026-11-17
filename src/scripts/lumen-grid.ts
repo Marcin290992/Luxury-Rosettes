@@ -51,9 +51,9 @@ export const GRID_LAYOUTS: Record<Level, LayoutSpec> = {
   },
   3: { pattern: largeCycle, rowsPerCycle: 30, mobile: mobile(1), desktop: desktop(80) },
   intro: {
-    pattern: [slot(1, 1, 4, 3, R), slot(5, 1, 4, 3, R), ...largeCycle.slice(2)],
+    pattern: [slot(2, 1, 3, 3, R), slot(5, 1, 3, 3, R), ...largeCycle.slice(2)], // the two large pictures, a little narrower than half the screen each
     rowsPerCycle: 30,
-    mobile: mobile(1, 10, 20),
+    mobile: { ...mobile(1, 10, 20), paddingLeft: 56, paddingRight: 56 },
     desktop: desktop(20, 20),
   },
 };

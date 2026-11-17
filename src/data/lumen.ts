@@ -36,7 +36,18 @@ async function optimise() {
     SOURCES.map(async (src) => {
       const small = await getImage({ src, width: 1000 });
       const full = await getImage({ src, width: 2000 });
-      return { src: small.src, full: full.src, width: small.attributes.width as number, height: small.attributes.height as number };
+      // the first two pictures of a gallery are shown large and side by side (and turned over like pages): they are cut to the same 4:3, so they are
+      // exactly the same size and what is turned over is exactly the picture that stays
+      const crop = await getImage({ src, width: 1000, height: 750, fit: 'cover' });
+      const cropFull = await getImage({ src, width: 2000, height: 1500, fit: 'cover' });
+      return {
+        src: small.src,
+        full: full.src,
+        cropFull: cropFull.src,
+        width: small.attributes.width as number,
+        height: small.attributes.height as number,
+        crop: { src: crop.src, width: 1000, height: 750 },
+      };
     }),
   );
 }
@@ -50,7 +61,10 @@ function makePhotos(count: number, offset: number, prefix: string, optimised: Aw
       title: `Sample Portrait ${n}`,
       time: `${MONTHS[(i + offset) % MONTHS.length]} ${2018 + ((i + offset) % 8)}`,
       credit: 'PHOTO: PLACEHOLDER',
-      ...o,
+      src: i < 2 ? o.crop.src : o.src,
+      full: i < 2 ? o.cropFull : o.full,
+      width: i < 2 ? o.crop.width : o.width,
+      height: i < 2 ? o.crop.height : o.height,
       alt: `${prefix} ${String(n).padStart(2, '0')}`,
     };
   });

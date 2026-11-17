@@ -1,15 +1,17 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import NavPill from '../../components/NavPill.astro';
-import LumenIntro from '../../components/LumenIntro.astro';
+import LumenGallery from '../../components/LumenGallery.astro';
 import { getLumenGalleries } from '../../data/lumen';
 
-// The gallery's start: the intro (a title, a spiral of paper photos), then the chooser of two galleries (/gallery/one/, /gallery/two/).
-// Placeholder photos and names (see data/lumen.ts). The earlier version of this page (opening + stripes + photo wall) is in git history (070d923).
+// The gallery page: on white, a spiral of paper photos flies, and when it lands the photo grid is there (no hero, no chooser).
+// Placeholder photos (see data/lumen.ts). Earlier versions are in git history: the opening + stripes + photo wall (070d923), the intro
+// with the chooser of two galleries (f8ae37f ... in this working tree: components/LumenIntro.astro, pages /gallery/one and /gallery/two).
 const { galleries, spiral } = await getLumenGalleries();
+const gallery = { ...galleries[0], background: '#ffffff' };
 ---
 
 <Layout title="Gallery — Luxury Rosettes">
   <NavPill />
-  <LumenIntro galleries={galleries} spiral={spiral} />
+  <LumenGallery gallery={gallery} galleries={galleries} start="grid" intro={spiral} />
 </Layout>

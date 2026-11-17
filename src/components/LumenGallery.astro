@@ -15,12 +15,14 @@ import type { LumenGallery } from '../data/lumen';
 interface Props {
   gallery: LumenGallery;
   galleries: LumenGallery[];
+  start?: 'hero' | 'grid'; // 'grid': no hero, the grid at once (the /gallery page)
+  intro?: string[]; // with start 'grid': the photos of a spiral that flies before the grid comes in
 }
-const { gallery, galleries } = Astro.props;
+const { gallery, galleries, start = 'hero', intro = [] } = Astro.props;
 const first = gallery.photos[0];
 ---
 
-<div class="lg-root" data-lumen-gallery data-bg={gallery.background} data-accent={gallery.accent}>
+<div class="lg-root" data-lumen-gallery data-bg={gallery.background} data-accent={gallery.accent} data-start={start} data-intro={intro.join('|')}>
   <header class="lg-header">
     <div class="lg-bar">
       <button type="button" class="lg-logo-btn" aria-label="Open menu">{gallery.name}</button>
@@ -60,7 +62,6 @@ const first = gallery.photos[0];
               {
                 gallery.photos.map((p, i) => (
                   <div class="lg-item" data-index={i}>
-                    <span class="lg-index" aria-hidden="true">[{p.id}]</span>
                     <button type="button" class="lg-link" aria-label={`Open picture ${p.id}: ${p.title}`}>
                       <img src={p.src} width={p.width} height={p.height} alt={p.title} data-full={p.full} data-id={p.id} data-title={p.title} data-time={p.time} data-credit={p.credit} draggable="false" loading={i < 10 ? 'eager' : 'lazy'} />
                     </button>
@@ -74,25 +75,14 @@ const first = gallery.photos[0];
     </div>
   </div>
 
-  <div class="lg-zoom" hidden>
-    <button type="button" class="lg-zoom-btn" data-dir="in" aria-label="Zoom in">
-      <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1V15M1 8H15" stroke="currentColor" stroke-width="1.5" /></svg>
-    </button>
-    <button type="button" class="lg-zoom-btn" data-dir="out" aria-label="Zoom out">
-      <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8H15" stroke="currentColor" stroke-width="1.5" /></svg>
-    </button>
-  </div>
-
   <div class="lg-box" role="dialog" aria-label="Photo" hidden>
     <div class="lg-box-bg"></div>
+    <div class="lg-strip" role="listbox" aria-label="Pictures"></div>
     <img class="lg-box-img" src={first.full} alt="" />
-    <div class="lg-box-caption">
-      <span class="lg-label"></span>
-      <strong></strong>
-      <span class="lg-label"></span>
-    </div>
+    <img class="lg-box-img lg-box-ghost" src={first.full} alt="" aria-hidden="true" />
     <button type="button" class="lg-box-close" aria-label="Close">
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="1.5" /></svg>
+      <span>Close</span>
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="1.5" /></svg>
     </button>
   </div>
 
@@ -211,13 +201,17 @@ const first = gallery.photos[0];
     height: 100%;
     width: 100%;
   }
-  /* phone: the site's pill sits at the top and its dock at the bottom, so the hero starts below the pill and the zoom buttons sit above the dock */
+  /* phone: the site's pill sits at the top and its dock at the bottom, so the hero starts below the pill */
   @media (max-width: 1023px) {
     .lg-hero-inner {
       padding-top: 96px;
     }
-    .lg-zoom {
-      bottom: 84px;
+    .lg-strip,
+    .lg-strip :global(.lg-thumb) {
+      width: 54px;
+    }
+    .lg-strip :global(.lg-thumb) {
+      height: 72px;
     }
   }
   @media (min-width: 1024px) {
@@ -284,77 +278,6 @@ const first = gallery.photos[0];
     user-select: none;
     -webkit-user-drag: none;
   }
-  .lg-index {
-    position: absolute;
-    top: -8px;
-    left: 0;
-    z-index: 10;
-    display: block;
-    margin-bottom: 4px;
-    font-family: var(--font-body);
-    font-size: var(--lg-label);
-    line-height: 1;
-    letter-spacing: 0.03em;
-    transform: translateY(-100%);
-    white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-  }
-  @media (min-width: 1024px) {
-    .lg-index {
-      margin-bottom: 0;
-    }
-    .lg-index.top-right {
-      top: 8px;
-      left: auto;
-      right: -8px;
-      transform: translateX(100%);
-    }
-    .lg-index.top-left {
-      top: 8px;
-      left: -8px;
-      transform: translateX(-100%);
-    }
-  }
-
-  /* zoom buttons */
-  .lg-zoom {
-    position: fixed;
-    bottom: 16px;
-    left: 50%;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transform: translateX(-50%);
-  }
-  .lg-zoom[hidden] {
-    display: none;
-  }
-  .lg-zoom-btn {
-    display: flex;
-    width: 32px;
-    height: 32px;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: 1px solid #000;
-    border-radius: 9999px;
-    background: transparent;
-    color: #000;
-    cursor: pointer;
-    transition: opacity 0.3s;
-  }
-  .lg-zoom-btn:disabled {
-    opacity: 0.3;
-    cursor: default;
-  }
-  @media (min-width: 1024px) {
-    .lg-zoom {
-      bottom: 20px;
-    }
-  }
-
   /* the photo opened large (it grows from its place in the grid) */
   .lg-box {
     position: fixed;
@@ -374,47 +297,106 @@ const first = gallery.photos[0];
     background: #fff;
   }
   .lg-box-img {
-    position: relative;
+    position: absolute;
+    will-change: transform;
     max-height: 80vh;
     max-height: 80svh;
     max-width: 80vw;
     width: auto;
     height: auto;
   }
-  .lg-box-caption {
+  /* the strip of small pictures down the left side of the opened one: the current one is clear, the others faded; a click shows that one */
+  .lg-box-ghost {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .lg-strip {
     position: absolute;
-    left: 20px;
-    bottom: 20px;
-    font-family: var(--font-body);
-    line-height: 1.4;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    width: 76px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    opacity: 0;
   }
-  .lg-box-caption strong {
+  .lg-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .lg-strip :global(.lg-thumb) {
     display: block;
-    font-family: var(--font-heading);
-    font-weight: 300;
-    font-size: clamp(35px, 1.6vw + 29px, 60px);
-    line-height: 1;
-  }
-  .lg-label {
-    display: block;
-    font-size: var(--lg-label);
-    letter-spacing: 0.03em;
-  }
-  .lg-box-close {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    width: 44px;
-    height: 44px;
-    align-items: center;
-    justify-content: center;
+    width: 76px;
+    height: 100px;
     padding: 0;
     border: 0;
-    border-radius: 9999px;
-    background: #000;
-    color: #fff;
+    background: none;
     cursor: pointer;
+    opacity: 0.32;
+    transition: opacity 0.4s ease;
+  }
+  .lg-strip :global(.lg-thumb:hover),
+  .lg-strip :global(.lg-thumb.is-active) {
+    opacity: 1;
+  }
+  .lg-strip :global(.lg-thumb img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+  }
+  /* the close button, in the style of the site's pill (dark, warm, gold line), at the right where the eye goes after the picture, level with the pill */
+  .lg-box-close {
+    position: absolute;
+    z-index: 3;
+    top: 22px;
+    right: 28px;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    height: 52px;
+    padding: 0 1.3rem 0 1.5rem;
+    border: 1px solid rgba(212, 175, 55, 0.55);
+    border-radius: 9999px;
+    background: rgba(26, 20, 16, 0.92);
+    color: var(--cream, #efe9dc);
+    box-shadow: 0 14px 34px -14px rgba(26, 20, 16, 0.55);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      transform 0.35s ease;
+  }
+  .lg-box-close svg {
+    color: var(--gold, #d4af37);
+    transition: transform 0.4s ease;
+  }
+  .lg-box-close:hover,
+  .lg-box-close:focus-visible {
+    background: rgba(26, 20, 16, 1);
+    border-color: var(--gold, #d4af37);
+    outline: none;
+  }
+  .lg-box-close:hover svg,
+  .lg-box-close:focus-visible svg {
+    transform: rotate(90deg);
+  }
+  /* phone: bottom right (the site's pill is across the top and its dock in the middle at the bottom) */
+  @media (max-width: 1023px) {
+    .lg-box-close {
+      top: auto;
+      bottom: 24px;
+      right: 16px;
+      height: 46px;
+      padding: 0 1.1rem 0 1.2rem;
+    }
   }
 </style>
 

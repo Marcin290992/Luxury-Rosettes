@@ -34,7 +34,10 @@ function fitCards(width: number, height: number) {
 }
 
 export interface LumenMenu {
-  open(): void;
+  /** `fold: false`: the covers are not turned over; they stay hidden until revealCards() (the intro's cover sheets land on them first). */
+  open(options?: { fold?: boolean }): void;
+  cardRects(): Array<{ left: number; top: number; width: number; height: number }>;
+  revealCards(): void;
   close(): void;
   isOpen(): boolean;
   destroy(): void;
@@ -178,7 +181,7 @@ export function initLumenMenu(root: HTMLElement, hooks: { onOpen?: () => void; o
   cards.forEach((card, i) => card.addEventListener('click', clicks[i]));
 
   // ---- open / close ----
-  const open = () => {
+  const open = ({ fold = true }: { fold?: boolean } = {}) => {
     if (opened) return;
     opened = true;
     hooks.onOpen?.();
@@ -202,6 +205,7 @@ export function initLumenMenu(root: HTMLElement, hooks: { onOpen?: () => void; o
     gsap.set(cards, { scale: 1, xPercent: 0, opacity: 1 });
     cards.forEach((card, i) => {
       card.style.visibility = 'hidden';
+      if (!fold) return;
       const img = card.querySelector('img')!;
       const run = async () => {
         if (!img.complete) await new Promise((r) => img.addEventListener('load', r, { once: true }));
@@ -247,6 +251,17 @@ export function initLumenMenu(root: HTMLElement, hooks: { onOpen?: () => void; o
       },
     });
   };
+  const cardRects = () =>
+    cards.map((card) => {
+      const r = card.getBoundingClientRect();
+      return { left: r.left, top: r.top, width: r.width, height: r.height };
+    });
+  const revealCards = () => {
+    if (!opened) return;
+    cards.forEach((card) => (card.style.visibility = 'visible'));
+    cardsReady = true;
+    backdrop.disabled = !closeX;
+  };
   const onBackdrop = () => {
     if (cardsReady) close();
   };
@@ -259,6 +274,8 @@ export function initLumenMenu(root: HTMLElement, hooks: { onOpen?: () => void; o
 
   return {
     open,
+    cardRects,
+    revealCards,
     close,
     isOpen: () => opened,
     destroy() {

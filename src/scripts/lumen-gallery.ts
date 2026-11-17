@@ -20,6 +20,9 @@ import { initPaperHover } from './lumen-paper';
 import { initLumenMenu } from './lumen-menu';
 import { getLenis } from './lenis';
 import { disposeLayer } from './lumen-layer';
+import { createSpiral, type Spiral } from './lumen-spiral';
+import { foldIn } from './lumen-fold';
+import { WEBGL_ENABLED } from './settings';
 
 gsap.registerPlugin(Flip);
 
@@ -40,17 +43,20 @@ export function initLumenGallery(root: HTMLElement): () => void {
   const grid = q<HTMLElement>('.lg-grid');
   const items = Array.from(grid.querySelectorAll<HTMLElement>('.lg-item'));
   const images = items.map((item) => item.querySelector<HTMLImageElement>('img')!);
-  const indexes = items.map((item) => item.querySelector<HTMLElement>('.lg-index')!);
-  const zoomBox = q<HTMLElement>('.lg-zoom');
-  const zoomIn = q<HTMLButtonElement>('.lg-zoom-btn[data-dir="in"]');
-  const zoomOut = q<HTMLButtonElement>('.lg-zoom-btn[data-dir="out"]');
   const box = q<HTMLElement>('.lg-box');
   const boxBg = q<HTMLElement>('.lg-box-bg');
   const boxImg = q<HTMLImageElement>('.lg-box-img');
-  const boxCaption = q<HTMLElement>('.lg-box-caption');
   const boxClose = q<HTMLButtonElement>('.lg-box-close');
+  const strip = q<HTMLElement>('.lg-strip');
+  const ghost = q<HTMLImageElement>('.lg-box-ghost');
   const menuRoot = q<HTMLElement>('[data-lumen-menu]');
   const openers = [q<HTMLElement>('.lg-logo-btn'), q<HTMLElement>('.lg-menu-btn')];
+
+  // start="grid" (the /gallery page): no hero and no chooser: the page is white, the spiral of photos flies (data-intro lists them), and when it
+  // lands the grid is there at once, its pictures blurring in, the numbers, the header and the zoom buttons with them
+  const startGrid = root.dataset.start === 'grid';
+  const introSources = (root.dataset.intro ?? '').split('|').filter(Boolean);
+  const waiting = startGrid && introSources.length > 0 && !matchMedia('(prefers-reduced-motion: reduce)').matches && WEBGL_ENABLED;
 
   const desktopQuery = matchMedia('(min-width: 1024px)');
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
@@ -94,15 +100,30 @@ export function initLumenGallery(root: HTMLElement): () => void {
       const place = placeItem(i, level, isDesktop);
       item.style.gridColumn = place.gridColumn;
       item.style.gridRow = place.gridRow;
-      indexes[i].className = `lg-index ${isDesktop && place.side !== 'bottom-left' ? place.side : ''}`;
     });
   };
+  // the grid page starts in the big "intro" layout (two large pictures side by side) and glides to level 2 by itself once they are there
+  if (startGrid) zoom = 'intro';
   applyLayout(zoom);
+  if (startGrid) grid.style.paddingTop = isDesktop ? '110px' : '100px'; // below the site's pill
 
   // ---- the pictures blur in the first time 10 % of them is on screen (the first ones 0.08 s apart) ----
   let revealer: IntersectionObserver | undefined;
+  // the first pictures (when the grid comes in after the intro) arrive slowly, one after another, from the top of the screen down; later ones, as
+  // they scroll into view, quickly
+  // the pictures react to the pointer (the paper lift) and open on a click only when the entrance is over: until then they may not even be there yet
+  let interactive = !startGrid;
+  let firstBatch = false;
+  let pagesDone = false;
   const reveal = (item: HTMLElement) => {
     const index = Number(item.dataset.index);
+    if (startGrid && index < 2) return; // the two large pictures come in turned over like pages (see enterGrid)
+    if (firstBatch) {
+      const top = item.getBoundingClientRect().top;
+      const order = Math.max(0, Math.min(top / window.innerHeight, 1)) * 0.7 + index * 0.025;
+      gsap.to(item, { opacity: 1, filter: 'blur(0px)', duration: 1.3, delay: order, ease: SINE, overwrite: 'auto' });
+      return;
+    }
     gsap.to(item, { opacity: 1, filter: 'blur(0px)', duration: 0.6, delay: Math.min(0.08 * index, 0.2), ease: SINE, overwrite: 'auto' });
   };
   const observeItems = () => {
@@ -111,6 +132,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
+          // on the grid page nothing but the two large pictures shows until they have turned over; the rest is let in as the grid forms
+          if (startGrid && !pagesDone) continue;
           reveal(entry.target as HTMLElement);
           revealer?.unobserve(entry.target);
         }
@@ -119,7 +142,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
     );
     items.forEach((item) => revealer!.observe(item));
   };
-  observeItems();
+  let revealOn = !startGrid;
+  if (revealOn) observeItems();
 
   // ---- the grid: its own scroll (by transform) ----
   const sizes = { content: 0, container: 0 };
@@ -209,8 +233,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
       heroAnimating = false;
       hero.style.opacity = '0';
       bar.classList.add('is-solid');
-      showIndexes();
-      showZoomControls();
     }
   }
 
@@ -219,28 +241,31 @@ export function initLumenGallery(root: HTMLElement): () => void {
     onHeroUpdate(heroLerp.getValue());
   };
   const heroResizer = new ResizeObserver(measureHero);
-  heroResizer.observe(hero);
-  measureHero();
+  if (!startGrid) {
+    heroResizer.observe(hero);
+    measureHero();
+  }
 
   // the hero's own entrance: it opens at the full height and settles to 75 % (a long, soft settle)
   const entrance = gsap.timeline();
+  if (!startGrid) {
   entrance.fromTo(hero, { height: window.innerHeight }, { height: window.innerHeight * 0.75, duration: 2.4, delay: 0.9, ease: 'power3.out', onComplete: () => (introPlaying = false) }, 0);
   entrance.fromTo(logoBox, { opacity: 0 }, { opacity: 1, duration: 1.5, ease: 'none', delay: 0.9 }, 0);
   entrance.fromTo(heroLabel.firstElementChild, { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1.4, delay: 1.6, ease: 'power3.out' }, 0);
+  }
+
+  // the grid page: no hero at all (it never returns), the grid is where it will stay
+  if (startGrid) {
+    phase = 'grid';
+    heroDismissed = true;
+    introPlaying = false;
+    zoomedByHero = true;
+    hero.style.display = 'none';
+    content.style.transform = 'translate3d(0, 0, 0)';
+    bar.classList.add('is-solid');
+  }
 
   // ---- index labels and zoom buttons appear once the grid has taken over ----
-  function showIndexes() {
-    gsap.to(indexes, { opacity: 1, filter: 'blur(0px)', duration: 0.6, ease: SINE, stagger: 0 });
-  }
-  function showZoomControls() {
-    zoomBox.hidden = false;
-    gsap.fromTo(zoomBox, { opacity: 0, filter: 'blur(6px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.6, ease: SINE });
-    updateZoomButtons();
-  }
-  function updateZoomButtons() {
-    zoomIn.disabled = neighbourZoom(zoom, 'in') === null;
-    zoomOut.disabled = neighbourZoom(zoom, 'out') === null;
-  }
 
   // ---- zoom ----
   // 'flip': the pictures glide to their new places. 'fade': the ones on screen blur out one after another, the grid is laid out again, they blur back in.
@@ -250,7 +275,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
       zoom = level;
       applyLayout(level);
       Flip.from(state, { duration: 1.2, ease: QUART, overwrite: 'auto' });
-      updateZoomButtons();
       return;
     }
     zooming = true;
@@ -273,19 +297,9 @@ export function initLumenGallery(root: HTMLElement): () => void {
         measureGrid();
         observeItems();
         zooming = false;
-        updateZoomButtons();
       },
     });
   }
-  const zoomStep = (direction: 'in' | 'out') => {
-    const next = neighbourZoom(zoom, direction);
-    if (next === null || zooming || !heroDismissed) return;
-    changeLevel(next, 'fade');
-  };
-  const onZoomIn = () => zoomStep('in');
-  const onZoomOut = () => zoomStep('out');
-  zoomIn.addEventListener('click', onZoomIn);
-  zoomOut.addEventListener('click', onZoomOut);
 
   const onDesktopChange = () => {
     isDesktop = desktopQuery.matches;
@@ -300,8 +314,10 @@ export function initLumenGallery(root: HTMLElement): () => void {
   const hoverMoves: Array<(e: PointerEvent) => void> = [];
   const hoverLeaves: Array<(e: PointerEvent) => void> = [];
   images.forEach((img, i) => {
-    hoverEnters[i] = (e) => finePointer.matches && isDesktop && !lightboxOpen && paper.enter(e, img);
-    hoverMoves[i] = (e) => finePointer.matches && isDesktop && paper.move(e, img);
+    // not on a picture that is still coming in (faded, blurred): the lifted copy is drawn in full colour and would show it before its time
+    const shown = () => Number(getComputedStyle(items[i]).opacity) > 0.97;
+    hoverEnters[i] = (e) => interactive && finePointer.matches && isDesktop && !lightboxOpen && shown() && paper.enter(e, img);
+    hoverMoves[i] = (e) => interactive && finePointer.matches && isDesktop && paper.move(e, img);
     hoverLeaves[i] = (e) => paper.leave(e, img);
     img.addEventListener('pointerenter', hoverEnters[i]);
     img.addEventListener('pointermove', hoverMoves[i]);
@@ -311,52 +327,235 @@ export function initLumenGallery(root: HTMLElement): () => void {
   // ---- the photo opened large ----
   let closing = false;
   let source: HTMLImageElement | undefined;
+  // ---- the strip of small pictures down the left of the opened one ----
+  let currentIndex = 0;
+  let boxReady = false; // the strip and the arrows work once the picture has finished growing, and not while it is closing
+  let switching = false;
+  let wanted = 0; // the picture asked for last (it may be ahead of the one shown while a switch is running)
+  const thumbs = images.map((img, i) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'lg-thumb';
+    button.setAttribute('aria-label', `Show picture ${img.dataset.id}: ${img.dataset.title}`);
+    const small = document.createElement('img');
+    small.src = img.currentSrc || img.src;
+    small.alt = '';
+    small.loading = 'lazy';
+    small.decoding = 'async';
+    small.draggable = false;
+    button.appendChild(small);
+    button.dataset.i = String(i);
+    strip.appendChild(button);
+    return button;
+  });
+  const markActive = (index: number, smooth = true) => {
+    thumbs.forEach((t, i) => t.classList.toggle('is-active', i === index));
+    const t = thumbs[index];
+    strip.scrollTo({ top: t.offsetTop - strip.clientHeight / 2 + t.clientHeight / 2, behavior: smooth ? 'smooth' : 'auto' });
+  };
+  // another picture (from the strip, the keys or the wheel): the opened one is a page of a book that turns over and the next is under it. The page is
+  // made over the picture first (flat, exactly over it) and only then the picture under it is changed, so there is no frame without a picture.
+  // (The grid moves behind the box so that the one the box will fly back to on closing is on the screen.)
+  const select = (index: number) => {
+    if (!lightboxOpen || !boxReady || closing || index < 0 || index >= images.length) return;
+    if (switching) {
+      wanted = index; // the person is going faster than the pictures change: the last one asked for is shown when this one is done
+      return;
+    }
+    if (index === currentIndex) return;
+    switching = true;
+    wanted = index;
+    const next = images[index];
+    const forward = index > currentIndex;
+    markActive(index);
+    const finish = () => {
+      switching = false;
+      if (wanted !== currentIndex) {
+        select(wanted);
+        return;
+      }
+      const full = next.dataset.full;
+      if (!full) return;
+      const big = new Image();
+      big.src = full;
+      big.decode().then(
+        () => {
+          if (lightboxOpen && source === next && !switching) boxImg.src = full;
+        },
+        () => {},
+      );
+    };
+    const change = async () => {
+      const nextSrc = next.currentSrc || next.src;
+      // the next picture waits in the second image (not drawn: opacity 0) where it will stand; the turn-over sheet follows it
+      const preload = new Image();
+      preload.src = nextSrc;
+      try {
+        await preload.decode();
+      } catch {
+        /* it shows when it is there */
+      }
+      if (!lightboxOpen) {
+        switching = false;
+        return;
+      }
+      const r = next.getBoundingClientRect();
+      vlerp.jump(clamp(position + r.top - (window.innerHeight - r.height) / 2, 0, maxScroll()));
+      ghost.src = nextSrc;
+      const nextRect = fitBox(next, ghost);
+      try {
+        await ghost.decode();
+      } catch {
+        /* it shows when it is there */
+      }
+      const land = async () => {
+        // the next picture stands where the sheet turned (the second image shows it); the shown one takes its place once it has the new picture
+        // loaded, and only then the second image goes: there is never a frame with the old one
+        gsap.set(ghost, { opacity: 1 });
+        gsap.killTweensOf(boxImg);
+        natural = fitBox(next);
+        boxImg.src = nextSrc;
+        boxImg.alt = next.alt;
+        try {
+          await boxImg.decode();
+        } catch {
+          /* it shows when it is there */
+        }
+        gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });
+        gsap.set(ghost, { opacity: 0 });
+        if (source) source.style.visibility = '';
+        source = next;
+        next.style.visibility = 'hidden';
+        currentIndex = index;
+        navIndex = index;
+        finish();
+      };
+      // the one shown fades away under the sheet while it turns over (it may be a different size)
+      gsap.to(boxImg, { opacity: 0, duration: 0.7, delay: 0.55, ease: 'power1.inOut' });
+      void nextRect;
+      foldIn({ container: ghost, image: ghost, direction: forward ? 1 : -1, delay: 0, duration: 1.3, onComplete: land }).then(
+        (dispose) => {
+          if (lightboxOpen) turns.push(dispose);
+          else dispose();
+        },
+        land, // no WebGL: the picture is simply changed
+      );
+    };
+    void change();
+  };
+  const thumbClicks = thumbs.map((_, i) => (event: Event) => {
+    event.stopPropagation(); // a click in the strip does not close the box
+    select(i);
+  });
+  thumbs.forEach((t, i) => t.addEventListener('click', thumbClicks[i]));
+  const stopStrip = (event: Event) => event.stopPropagation();
+  strip.addEventListener('click', stopStrip);
+
+  type Box = { left: number; top: number; width: number; height: number };
+  const turns: Array<() => void> = [];
+  let natural: Box | undefined; // where the large picture rests (measured once it is in the box, before any move)
+  // the large picture fills the box as far as it goes (80 % of the window each way) in the proportions of the grid's picture; its size is set from
+  // those proportions, so it is known before the file is loaded and the move can start at once (and the file that replaces the small one later has
+  // the same size, whatever the screen)
+  const fitBox = (source: HTMLImageElement, el: HTMLImageElement = boxImg): Box => {
+    const aspect = (source.naturalWidth || source.width) / (source.naturalHeight || source.height) || 4 / 3;
+    // the area under the site's pill (it is about 100 px from the top) and clear of the strip on the left
+    const top = window.innerWidth >= 1024 ? 104 : 96;
+    const bottom = 28;
+    const left = window.innerWidth >= 1024 ? 100 : 66;
+    const areaW = window.innerWidth - left - 24;
+    const areaH = window.innerHeight - top - bottom;
+    const width = Math.min(areaW * 0.94, areaH * aspect);
+    const height = width / aspect;
+    el.style.width = `${width}px`;
+    el.style.height = `${height}px`;
+    const x = left + (areaW - width) / 2;
+    const y = top + (areaH - height) / 2;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    return { left: x, top: y, width, height };
+  };
   const openPicture = (img: HTMLImageElement) => {
-    if (lightboxOpen || closing || !heroDismissed) return;
+    if (lightboxOpen || closing || !heroDismissed || !interactive) return;
     paper.leave();
     source = img;
     lightboxOpen = true;
+    currentIndex = images.indexOf(img);
+    navIndex = currentIndex;
+    markActive(currentIndex, false);
+    gsap.set(boxImg, { opacity: 1 });
     const from = img.getBoundingClientRect();
-    boxImg.src = img.dataset.full || img.currentSrc || img.src;
+    // the picture the grid already has (cached, so it is there at once) grows first; the large file is fetched and decoded in the background and
+    // takes its place when the move is over (same proportions, so nothing shifts)
+    boxImg.src = img.currentSrc || img.src;
     boxImg.alt = img.alt;
-    const labels = boxCaption.querySelectorAll<HTMLElement>('.lg-label');
-    labels[0].textContent = `[${img.dataset.id}]`;
-    boxCaption.querySelector('strong')!.textContent = img.dataset.title ?? '';
-    labels[1].textContent = `${img.dataset.time} — ${img.dataset.credit}`;
+    gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 0 }); // placed over its tile by start() below
+    gsap.set(boxBg, { opacity: 0 });
+    gsap.set(strip, { opacity: 0 });
+    natural = fitBox(img);
     box.hidden = false;
-    const play = () => {
+    // the grid stays exactly as it is while the white comes in over it
+    gsap.to(boxBg, { opacity: 1, duration: 0.55, ease: 'power2.out' });
+    gsap.to(strip, { opacity: 1, duration: 0.8, delay: 0.6, ease: 'power1.out' });
+    const shown = () => {
       if (!lightboxOpen) return;
-      const to = boxImg.getBoundingClientRect();
-      gsap.fromTo(
-        boxImg,
-        { x: from.left + from.width / 2 - (to.left + to.width / 2), y: from.top + from.height / 2 - (to.top + to.height / 2), scale: from.width / to.width },
-        { x: 0, y: 0, scale: 1, duration: 1, ease: 'power3.inOut' },
+      gsap.set(boxImg, { opacity: 1, borderRadius: 0 });
+      boxReady = true;
+      const full = img.dataset.full;
+      if (!full) return;
+      const big = new Image();
+      big.src = full;
+      big.decode().then(
+        () => {
+          if (lightboxOpen && source === img) boxImg.src = full;
+        },
+        () => {},
       );
-      gsap.fromTo(boxBg, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out' });
-      gsap.fromTo(boxCaption, { opacity: 0, filter: 'blur(6px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.6, delay: 0.7 });
     };
-    // the large file may not be there yet: the grid's own picture stands in until it is (the box measures the image once it has a size)
-    if (boxImg.complete && boxImg.naturalWidth) play();
-    else boxImg.addEventListener('load', play, { once: true });
+    const start = async () => {
+      try {
+        await boxImg.decode();
+      } catch {
+        /* it shows when it is there */
+      }
+      if (!lightboxOpen) return;
+      // the same turn-over as the two pictures of the intro: the picture is turned onto the page (WebGL), and shown when the turn is done
+      foldIn({ container: boxImg, image: boxImg, direction: 1, delay: 0.15, duration: 1.4, onComplete: () => {
+        img.style.visibility = 'hidden';
+        shown();
+      } }).then(
+        (dispose) => {
+          if (lightboxOpen) turns.push(dispose);
+          else dispose();
+        },
+        () => {
+          img.style.visibility = 'hidden';
+          shown(); // no WebGL: the picture simply appears
+        },
+      );
+    };
+    void start();
   };
   const closePicture = () => {
-    if (!lightboxOpen || closing || !source) return;
+    if (!lightboxOpen || closing || !source || !natural) return;
     closing = true;
+    boxReady = false;
     const to = source.getBoundingClientRect();
-    const from = boxImg.getBoundingClientRect();
-    gsap.to(boxCaption, { opacity: 0, duration: 0.3 });
+    const rest = natural;
+    gsap.killTweensOf(boxImg);
+    gsap.set(boxImg, { opacity: 1 });
+    gsap.to([strip], { opacity: 0, duration: 0.3 });
+    // the white goes at once, so the grid is in full colour while the picture flies back to its tile (it was washed out until the white had gone)
+    gsap.to(boxBg, { opacity: 0, duration: 0.35, ease: 'power1.out' });
     gsap.to(boxImg, {
-      x: `+=${to.left + to.width / 2 - (from.left + from.width / 2)}`,
-      y: `+=${to.top + to.height / 2 - (from.top + from.height / 2)}`,
-      scale: (gsap.getProperty(boxImg, 'scale') as number) * (to.width / from.width),
-      duration: 0.9,
+      x: to.left + to.width / 2 - (rest.left + rest.width / 2),
+      y: to.top + to.height / 2 - (rest.top + rest.height / 2),
+      scale: to.width / rest.width,
+      duration: 0.8,
       ease: 'power3.inOut',
-    });
-    gsap.to(boxBg, {
-      opacity: 0,
-      duration: 0.5,
-      delay: 0.4,
+      force3D: true,
       onComplete: () => {
+        if (source) source.style.visibility = '';
         box.hidden = true;
         closing = false;
         lightboxOpen = false;
@@ -370,8 +569,98 @@ export function initLumenGallery(root: HTMLElement): () => void {
     link.addEventListener('click', linkClicks[i]);
   });
   box.addEventListener('click', closePicture);
+  // ---- going through the pictures with the wheel, the swipe or the keys: at once, with no animation (the turn-over is only for a click on a
+  // picture of the grid or of the strip) ----
+  let navIndex = 0; // the picture asked for last (the one shown follows it as fast as it is loaded)
+  let navToken = 0;
+  let upgradeTimer = 0;
+  const jumpTo = (index: number) => {
+    if (!lightboxOpen || !boxReady || closing || switching) return;
+    const target = ((index % images.length) + images.length) % images.length; // round and round: after the last comes the first
+    if (target === navIndex) return;
+    navIndex = target;
+    markActive(target, false);
+    const token = ++navToken;
+    const next = images[target];
+    const nextSrc = next.currentSrc || next.src;
+    const preload = new Image();
+    preload.src = nextSrc;
+    const apply = () => {
+      if (token !== navToken || !lightboxOpen || closing || switching) return; // a later one has been asked for since
+      const r = next.getBoundingClientRect();
+      vlerp.jump(clamp(position + r.top - (window.innerHeight - r.height) / 2, 0, maxScroll()));
+      gsap.killTweensOf(boxImg);
+      natural = fitBox(next);
+      boxImg.src = nextSrc;
+      boxImg.alt = next.alt;
+      gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });
+      if (source) source.style.visibility = '';
+      source = next;
+      next.style.visibility = 'hidden';
+      currentIndex = target;
+      // the large file replaces the small one when the going has stopped for a moment
+      window.clearTimeout(upgradeTimer);
+      upgradeTimer = window.setTimeout(() => {
+        const full = next.dataset.full;
+        if (!full || token !== navToken) return;
+        const big = new Image();
+        big.src = full;
+        big.decode().then(
+          () => {
+            if (lightboxOpen && token === navToken && !switching) boxImg.src = full;
+          },
+          () => {},
+        );
+      }, 350);
+    };
+    preload.decode().then(apply, apply);
+  };
+
+  // the mouse wheel over the opened picture: a picture for every notch (about 90 px of wheel), as many as the person turns, with no end (after the last comes the first)
+  let wheelAcc = 0;
+  let wheelAt = 0;
+  const onBoxWheel = (event: WheelEvent) => {
+    if (!lightboxOpen) return;
+    if ((event.target as Element | null)?.closest('.lg-strip')) return; // over the strip the wheel scrolls the strip itself
+    event.preventDefault();
+    if (!boxReady) return;
+    const unit = event.deltaMode === 1 ? 40 : event.deltaMode === 2 ? window.innerHeight : 1;
+    const now = performance.now();
+    const delta = event.deltaY * unit;
+    let steps = 0;
+    if (Math.abs(delta) >= 60) {
+      // a notch of a wheel: exactly one picture (or one for every 100 px, if the wheel sends bigger steps)
+      steps = Math.sign(delta) * Math.max(1, Math.round(Math.abs(delta) / 100));
+      wheelAcc = 0;
+    } else {
+      // a trackpad's small movements add up (the sum starts again after a pause or a change of direction)
+      if (now - wheelAt > 250 || Math.sign(delta) !== Math.sign(wheelAcc)) wheelAcc = 0;
+      wheelAcc += delta;
+      steps = Math.trunc(wheelAcc / 90);
+      wheelAcc -= steps * 90;
+    }
+    wheelAt = now;
+    if (!steps) return;
+    jumpTo(navIndex + steps);
+  };
+  box.addEventListener('wheel', onBoxWheel, { passive: false });
+  // a vertical swipe over the opened picture does the same on a touch screen
+  let swipeY = 0;
+  const onBoxTouchStart = (event: TouchEvent) => {
+    swipeY = event.touches[0]?.clientY ?? 0;
+  };
+  const onBoxTouchEnd = (event: TouchEvent) => {
+    if (!lightboxOpen || !boxReady || switching) return;
+    if ((event.target as Element | null)?.closest('.lg-strip')) return;
+    const dy = (event.changedTouches[0]?.clientY ?? swipeY) - swipeY;
+    if (Math.abs(dy) > 60) jumpTo(navIndex + (dy < 0 ? 1 : -1));
+  };
+  box.addEventListener('touchstart', onBoxTouchStart, { passive: true });
+  box.addEventListener('touchend', onBoxTouchEnd, { passive: true });
   const onKey = (event: KeyboardEvent) => {
     if (event.key === 'Escape') closePicture();
+    else if (lightboxOpen && (event.key === 'ArrowDown' || event.key === 'ArrowRight')) jumpTo(navIndex + 1);
+    else if (lightboxOpen && (event.key === 'ArrowUp' || event.key === 'ArrowLeft')) jumpTo(navIndex - 1);
   };
   document.addEventListener('keydown', onKey);
 
@@ -399,10 +688,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
     heroAnimating = false;
     hero.style.opacity = '1';
     bar.classList.remove('is-solid');
-    zoomBox.hidden = true;
     headerVisible = false;
     setHeader();
-    gsap.set(indexes, { opacity: 0 });
     lastHero = heroH + 1; // so the jump to the full height counts as a move up and does not dismiss the hero again
     heroLerp.jump(heroH);
     heroLerp.setTarget(clamp(heroH + delta, 0, heroH));
@@ -410,11 +697,11 @@ export function initLumenGallery(root: HTMLElement): () => void {
 
   // ---- gestures: before the hero is gone they move the hero, afterwards the grid ----
   const stopGestures = scrollGestures({
-    enabled: () => !menuOpen && !lightboxOpen,
+    enabled: () => !menuOpen && !lightboxOpen && revealOn,
     onDelta: (delta) => {
       if (phase === 'grid') {
         // at the very top of the grid a further scroll up brings the hero back
-        if (delta < 0 && position <= 4) {
+        if (delta < 0 && position <= 4 && !startGrid) {
           returnToHero(delta);
           return;
         }
@@ -426,7 +713,80 @@ export function initLumenGallery(root: HTMLElement): () => void {
     },
   });
 
+  // the pictures, the numbers, the header and the zoom buttons come in (at once, or when the spiral of the intro lands)
+  const enterGrid = () => {
+    if (!startGrid || revealOn) return;
+    revealOn = true;
+    firstBatch = true;
+    observeItems(); // the pictures below blur in as they come into view
+    // the two large pictures are turned over onto the page, one after the other (the page-turn the chooser's covers had), then, by itself,
+    // the pictures part and the grid forms: the same glide as when the grid came up over the hero
+    const glide = () => {
+      pagesDone = true;
+      glideTimer = window.setTimeout(() => {
+        if (!alive) return;
+        changeLevel(2, 'flip');
+        observeItems(); // now the rest may come in, as the pictures glide to their places
+        interactiveTimer = window.setTimeout(() => (interactive = true), 1700); // the glide takes 1.2 s
+      }, 700);
+    };
+    let turned = 0;
+    const landed = (item: HTMLElement) => {
+      gsap.set(item, { opacity: 1, filter: 'blur(0px)' });
+      if (++turned === 2) glide();
+    };
+    items.slice(0, 2).forEach((item, i) => {
+      foldIn({ container: item, image: images[i], direction: -i, delay: 0.4 * i, duration: 1.4, onComplete: () => landed(item) }).then(
+        (dispose) => {
+          if (!alive) dispose();
+          else folds.push(dispose);
+        },
+        () => landed(item), // no WebGL texture: the picture simply appears
+      );
+    });
+    window.setTimeout(() => (firstBatch = false), 5200);
+    headerTimer = window.setTimeout(() => {
+      headerVisible = true;
+      setHeader();
+    }, 3300);
+  };
+  let spiral: Spiral | undefined;
+  let alive = true;
+  let safety = 0;
+  let gridTimer = 0;
+  let glideTimer = 0;
+  let interactiveTimer = 0;
+  const folds: Array<() => void> = [];
+  let headerTimer = 0;
+  if (startGrid) {
+    if (!waiting) enterGrid();
+    else {
+      createSpiral(introSources).then(
+        (s) => {
+          if (!alive) {
+            s.dispose();
+            return;
+          }
+          spiral = s;
+          // the last photo of the spiral is gone at about 6.5 s: the grid follows a moment after, when the screen has been empty for a breath
+          s.play(() => (gridTimer = window.setTimeout(enterGrid, 1700)));
+        },
+        enterGrid, // the photos or WebGL failed: the grid at once
+      );
+      safety = window.setTimeout(enterGrid, 11000);
+    }
+  }
+
   return () => {
+    alive = false;
+    window.clearTimeout(safety);
+    window.clearTimeout(gridTimer);
+    window.clearTimeout(glideTimer);
+    window.clearTimeout(interactiveTimer);
+    folds.splice(0).forEach((d) => d());
+    turns.splice(0).forEach((d) => d());
+    window.clearTimeout(headerTimer);
+    spiral?.dispose();
     stopGestures();
     heroLerp.destroy();
     vlerp.destroy();
@@ -434,9 +794,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     gridResizer.disconnect();
     heroResizer.disconnect();
     entrance.kill();
-    gsap.killTweensOf([header, hero, logo, logoBox, heroLabel, content, items, indexes, zoomBox, boxImg, boxBg, boxCaption]);
-    zoomIn.removeEventListener('click', onZoomIn);
-    zoomOut.removeEventListener('click', onZoomOut);
+    gsap.killTweensOf([header, hero, logo, logoBox, heroLabel, content, items, boxImg, boxBg]);
     desktopQuery.removeEventListener('change', onDesktopChange);
     images.forEach((img, i) => {
       img.removeEventListener('pointerenter', hoverEnters[i]);
@@ -445,6 +803,12 @@ export function initLumenGallery(root: HTMLElement): () => void {
     });
     items.forEach((item, i) => item.querySelector('.lg-link')?.removeEventListener('click', linkClicks[i]));
     box.removeEventListener('click', closePicture);
+    window.clearTimeout(upgradeTimer);
+    box.removeEventListener('wheel', onBoxWheel);
+    box.removeEventListener('touchstart', onBoxTouchStart);
+    box.removeEventListener('touchend', onBoxTouchEnd);
+    thumbs.forEach((t, i) => t.removeEventListener('click', thumbClicks[i]));
+    strip.removeEventListener('click', stopStrip);
     document.removeEventListener('keydown', onKey);
     openers.forEach((button) => button.removeEventListener('click', openMenu));
     paper.destroy();

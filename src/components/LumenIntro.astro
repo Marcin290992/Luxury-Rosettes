@@ -14,7 +14,7 @@ interface Props {
 const { galleries, spiral } = Astro.props;
 ---
 
-<section class="li-root" data-lumen-intro data-spiral={spiral.join('|')}>
+<section class="li-root" data-lumen-intro data-spiral={spiral.join('|')} data-covers={galleries.map((g) => g.coverSrc).join('|')}>
   <LumenMenu galleries={galleries} text="top" />
 </section>
 

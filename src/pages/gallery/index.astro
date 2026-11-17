@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import NavPill from '../../components/NavPill.astro';
 import LumenGallery from '../../components/LumenGallery.astro';
+import closingPhoto from '../../assets/img/story/premium-care.webp'; // placeholder: swap for the real closing photo
 import { getLumenGalleries } from '../../data/lumen';
 
 // The gallery page: on white, a spiral of paper photos flies, and when it lands the photo grid is there (no hero, no chooser).
@@ -13,5 +14,5 @@ const gallery = { ...galleries[0], background: '#ffffff' };
 
 <Layout title="Gallery — Luxury Rosettes">
   <NavPill />
-  <LumenGallery gallery={gallery} galleries={galleries} start="grid" intro={spiral} />
+  <LumenGallery gallery={gallery} galleries={galleries} start="grid" intro={spiral} closing={closingPhoto} />
 </Layout>

@@ -1,5 +1,8 @@
 ---
 import LumenMenu from './LumenMenu.astro';
+import Closing from './Closing.astro';
+import Footer from './Footer.astro';
+import type { ImageMetadata } from 'astro';
 import type { LumenGallery } from '../data/lumen';
 
 /**
@@ -17,8 +20,9 @@ interface Props {
   galleries: LumenGallery[];
   start?: 'hero' | 'grid'; // 'grid': no hero, the grid at once (the /gallery page)
   intro?: string[]; // with start 'grid': the photos of a spiral that flies before the grid comes in
+  closing?: ImageMetadata; // the photo of the closing block under the grid (with the footer, as on the home page)
 }
-const { gallery, galleries, start = 'hero', intro = [] } = Astro.props;
+const { gallery, galleries, start = 'hero', intro = [], closing } = Astro.props;
 const first = gallery.photos[0];
 ---
 
@@ -68,6 +72,11 @@ const first = gallery.photos[0];
                   </div>
                 ))
               }
+            </div>
+            <!-- under the grid, as on the home page: the closing photo, and the footer that rises over it (the effect follows the grid's scroll: scripts/lumen-gallery.ts) -->
+            <div class="lg-ending">
+              <Closing photo={closing} eyebrow="Like what you see?" heading={['Come and meet', 'them yourself']} cta={{ label: 'View available kittens', href: '/available-kittens' }} />
+              <Footer />
             </div>
           </div>
         </div>
@@ -252,6 +261,16 @@ const first = gallery.photos[0];
   }
   .lg-track {
     will-change: transform;
+  }
+  .lg-ending {
+    position: relative;
+    z-index: 5;
+    background: #0d0b09;
+  }
+  /* with the effect on, the footer's top part overlaps the photo's lower edge */
+  .lg-ending[data-fx] > :global(footer) {
+    margin-top: -30vh;
+    margin-top: -30svh;
   }
   .lg-grid {
     display: grid;

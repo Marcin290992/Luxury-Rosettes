@@ -48,6 +48,11 @@ export function initLumenGallery(root: HTMLElement): () => void {
   const boxImg = q<HTMLImageElement>('.lg-box-img');
   const boxClose = q<HTMLButtonElement>('.lg-box-close');
   const strip = q<HTMLElement>('.lg-strip');
+  const ending = q<HTMLElement>('.lg-ending');
+  const endClip = ending.querySelector<HTMLElement>('[data-footer-clip]');
+  const endPhoto = ending.querySelector<HTMLElement>('[data-footer-photo]');
+  const endFooter = ending.querySelector<HTMLElement>('[data-footer]');
+  const endContent = ending.querySelector<HTMLElement>('[data-footer-content]');
   const ghost = q<HTMLImageElement>('.lg-box-ghost');
   const menuRoot = q<HTMLElement>('[data-lumen-menu]');
   const openers = [q<HTMLElement>('.lg-logo-btn'), q<HTMLElement>('.lg-menu-btn')];
@@ -152,6 +157,33 @@ export function initLumenGallery(root: HTMLElement): () => void {
   let lastForScale = 0;
   let scale = 1;
 
+  // The closing photo and the footer under the grid, as on the home page: the photo drifts slowly; as the footer rises the photo is clipped inward
+  // and the footer's content scales from 75 % to 100 % while it fades in. The home page does this with the page's scroll; here it follows the
+  // grid's own (the position of the footer on the screen). Reduced motion: no effect, the footer simply follows the photo.
+  const endingFx = !matchMedia('(prefers-reduced-motion: reduce)').matches && !!endClip && !!endFooter && !!endContent;
+  if (endingFx) {
+    ending.dataset.fx = '';
+    endContent!.style.opacity = '0';
+  }
+  const updateEnding = () => {
+    if (!endingFx) return;
+    const vh = window.innerHeight;
+    const clip = endClip!.getBoundingClientRect();
+    if (clip.top > vh * 1.2 || clip.bottom < -vh) return; // not near the screen
+    const wide = window.innerWidth >= 992;
+    const foot = endFooter!.getBoundingClientRect();
+    const p = clamp((vh * 0.7 - foot.top) / (vh * 0.7), 0, 1);
+    const side = (wide ? 22 : 20) * p;
+    const edge = (wide ? 8 : 4) * p;
+    endClip!.style.clipPath = `inset(${edge}% ${side}% ${edge}% ${side}%)`;
+    endContent!.style.opacity = String(p);
+    endContent!.style.transform = `scale(${0.75 + 0.25 * p})`;
+    if (endPhoto) {
+      const q = clamp((vh - clip.top) / (vh + clip.height), 0, 1);
+      endPhoto.style.transform = `translate3d(0, ${(-5 + 10 * q).toFixed(2)}%, 0)`;
+    }
+  };
+
   const onGridUpdate = (v: number) => {
     const delta = v - position;
     position = v;
@@ -161,6 +193,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     scale += (goal - scale) * 0.15;
     scaler.style.transform = `scale(${scale})`;
     track.style.transform = `translate3d(0, ${-clamp(v, 0, maxScroll())}px, 0)`;
+    updateEnding();
     if (delta !== 0) onGridScroll(delta);
   };
   const vlerp = createLerp({ lerpFactor: 0.1, onUpdate: onGridUpdate });
@@ -184,12 +217,13 @@ export function initLumenGallery(root: HTMLElement): () => void {
   }
 
   const measureGrid = () => {
-    sizes.content = grid.offsetHeight;
+    sizes.content = track.offsetHeight; // the grid and the closing block under it
     sizes.container = vscroll.clientHeight;
     if (vlerp.getTarget() > maxScroll()) vlerp.jump(maxScroll());
   };
   const gridResizer = new ResizeObserver(measureGrid);
   gridResizer.observe(grid);
+  gridResizer.observe(ending);
   gridResizer.observe(vscroll);
   measureGrid();
 

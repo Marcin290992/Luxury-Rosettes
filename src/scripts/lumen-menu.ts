@@ -82,7 +82,7 @@ export function initLumenMenu(root: HTMLElement, hooks: { onOpen?: () => void; o
   // ---- the screen's colour follows the hovered cover ----
   const paint = (index: number) => {
     const card = cards[index];
-    gsap.to(root, { backgroundColor: card ? card.dataset.bg! : '#000000', color: card ? card.dataset.accent! : '#ffffff', duration: 0.6, ease: QUART, overwrite: 'auto' });
+    gsap.to(root, { backgroundColor: card ? card.dataset.bg! : '#ffffff', color: card ? card.dataset.accent! : '#000000', duration: 0.6, ease: QUART, overwrite: 'auto' });
   };
 
   const showWelcome = (index: number) => {
@@ -189,7 +189,7 @@ export function initLumenMenu(root: HTMLElement, hooks: { onOpen?: () => void; o
     backdrop.disabled = true;
     resizer.observe(area);
     size();
-    gsap.set(root, { opacity: 0, backgroundColor: '#000000', color: '#ffffff' });
+    gsap.set(root, { opacity: 0, backgroundColor: '#ffffff', color: '#000000' });
     gsap.to(root, { opacity: 1, duration: 0.6, ease: QUART });
     gsap.fromTo(
       heading,

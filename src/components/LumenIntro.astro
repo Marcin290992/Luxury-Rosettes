@@ -3,186 +3,28 @@ import LumenMenu from './LumenMenu.astro';
 import type { LumenGallery } from '../data/lumen';
 
 /**
- * The "Lumen" intro, in three acts (script: scripts/lumen-intro.ts):
- *  1. TITLE  - the words fade in one after another while a hand-written "and" draws itself,
- *  2. SPIRAL - 21 paper photos fly through a three.js spiral; a moment after it starts the title slides apart and blurs away,
- *  3. CHOOSER - the gallery chooser (LumenMenu) comes up, its two covers turning over onto the page.
- * Placeholder words and photos, to be replaced.
+ * The gallery's intro, without any text (script: scripts/lumen-intro.ts): the page is white, and the moment it is there 21 paper photos fly
+ * through a three.js spiral; when the spiral is over the gallery chooser (LumenMenu) comes up, its two covers turning over onto the page.
+ * Placeholder photos, to be replaced.
  */
 interface Props {
   galleries: LumenGallery[];
   spiral: string[]; // the photos that fly through the spiral
 }
 const { galleries, spiral } = Astro.props;
-
-// a hand-written "and" (a placeholder scribble)
-const AND_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 67 29" fill="none" aria-hidden="true">
-<path d="M9 17C10 13 7 12 4.5 14C1.5 16.5 1 21 4 21.5C7 22 9.5 18 10.5 15C10 18.5 9.5 21.5 12 21.5C14 21.5 16 18 18 16C19.5 14.5 20.5 15.5 19.5 18C18.8 20 18.6 21.5 19.8 21.5C21.5 21.5 23 17 25.5 15.3C27.5 14 28.3 15.5 27.6 18C27 20.3 27.5 21.6 29.5 21.2C32 20.7 34 18.5 36 17C38.5 15 41.5 14 42.5 15.6C43.5 17.2 41 21.5 38.5 21.6C36.5 21.7 36.8 18.6 39 17.2C42 15.3 45.5 13 49 9.5C53 5.5 57 2 59.5 1C57.5 4 53 11 50.5 17C49 20.5 49 22 50.6 22C53 22 57 19 61 16.5C62.6 15.5 64.5 14.6 66 14" stroke="currentColor" stroke-width="0.5" stroke-linecap="round"/>
-</svg>`;
 ---
 
 <section class="li-root" data-lumen-intro data-spiral={spiral.join('|')}>
-  <div class="li-title-layer">
-    <h1 class="li-h1" aria-label="The Lumen and Nocturne Rosettes gallery">
-      <span class="li-stack" aria-hidden="true">
-        <span class="li-row1">
-          <span class="li-w li-the" data-i="0" data-exit="-50">THE</span>
-          <span class="li-w li-big" data-i="1" data-exit="50">LUMEN</span>
-        </span>
-        <span class="li-row2">
-          <span class="li-w li-andw" data-i="2" data-exit="-50"><span class="li-and" set:html={AND_SVG} /></span>
-          <span class="li-w li-big" data-i="3" data-exit="50">NOCTURNE</span>
-        </span>
-        <span class="li-w li-last" data-i="5" data-exit="-10">ROSETTES</span>
-      </span>
-    </h1>
-  </div>
-
-  <div class="li-bottom">
-    <div class="li-bottom-inner">
-      <div class="li-bottom-text">
-        <p>Two galleries of our Bengal cats, located in</p>
-        <p>Your City</p>
-      </div>
-      <svg class="li-spin" width="25" height="25" viewBox="0 0 25 25" fill="none" aria-hidden="true">
-        <path d="M21 12.5A8.5 8.5 0 1 1 12.5 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"></path>
-      </svg>
-    </div>
-  </div>
-
   <LumenMenu galleries={galleries} text="top" />
 </section>
 
 <style>
-  .li-root,
-  .li-root :global(*) {
-    box-sizing: border-box;
-  }
   .li-root {
     position: fixed;
     inset: 0;
-    background: #000;
-    color: #fff;
+    background: #ffffff;
+    color: #000;
     overflow: hidden;
-  }
-  .li-title-layer {
-    pointer-events: none;
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 32px 20px;
-  }
-  .li-h1 {
-    margin: auto 0;
-    font-weight: 400;
-    font-size: inherit;
-  }
-  .li-stack {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .li-w {
-    display: block;
-    font-family: var(--font-heading);
-    font-weight: 300;
-    line-height: 1;
-    letter-spacing: 0.07em;
-    opacity: 0; /* the script fades the words in */
-    will-change: transform, opacity;
-  }
-  .li-row1 {
-    margin-left: -40%;
-    display: flex;
-    align-items: flex-start;
-    gap: 4px;
-  }
-  .li-the {
-    margin-top: 4%;
-    margin-bottom: auto;
-    font-size: clamp(20px, 0.65vw + 17.5px, 30px);
-  }
-  .li-big {
-    font-size: clamp(35px, 1.6vw + 29px, 60px);
-  }
-  .li-row2 {
-    margin-top: -2%;
-    margin-left: -10%;
-    display: flex;
-    align-items: flex-end;
-  }
-  .li-andw {
-    height: clamp(20px, 0.65vw + 17.5px, 30px);
-  }
-  .li-and {
-    display: block;
-    height: 100%;
-  }
-  .li-and :global(svg) {
-    display: block;
-    height: 100%;
-    width: auto;
-  }
-  .li-last {
-    margin: -2.3% auto 0;
-    font-size: clamp(50px, 3.2vw + 38px, 100px);
-  }
-  .li-bottom {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-bottom: 32px;
-    text-align: center;
-    opacity: 0;
-  }
-  .li-bottom-inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-  }
-  .li-bottom-text {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-family: var(--font-body);
-    font-weight: 300;
-    font-size: 12px;
-    line-height: 1.25;
-  }
-  .li-bottom-text p {
-    margin: 0;
-  }
-  .li-spin {
-    animation: li-spin 1s linear infinite;
-  }
-  @keyframes li-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  @media (min-width: 768px) {
-    .li-bottom-text {
-      font-size: 14px;
-    }
-  }
-  @media (min-width: 1024px) {
-    .li-title-layer {
-      padding: 80px 32px;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .li-spin {
-      animation: none;
-    }
   }
 </style>
 

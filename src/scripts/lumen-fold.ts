@@ -53,7 +53,7 @@ interface FoldOptions {
 
 /** Returns dispose(). The sheet follows `container` (it may move or resize) and takes the size of `image`. */
 export async function foldIn({ container, image, delay = 0, direction = 1, duration = 1.4, onComplete }: FoldOptions) {
-  const layer = getLayer('top', 10000);
+  const layer = getLayer('top', 900);
   const texture = await loadTexture(image.currentSrc || image.src);
   const uniforms = {
     uTexture: { value: texture },

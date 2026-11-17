@@ -110,7 +110,7 @@ interface Sheet {
 
 export async function createSpiral(sources: string[], covers: string[] = []): Promise<Spiral> {
   const heroCount = covers.length ? HEROES : 0; // without covers every sheet is an ordinary one that fades out
-  const layer = getLayer('top', 10000);
+  const layer = getLayer('top', 900);
   const urls = Array.from({ length: COUNT }, (_, i) => (i >= COUNT - heroCount ? covers[i - (COUNT - heroCount)] ?? sources[i % sources.length] : sources[i % sources.length]));
   const textures = await Promise.all(urls.map((u) => loadTexture(u)));
 

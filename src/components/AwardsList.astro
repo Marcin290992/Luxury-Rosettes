@@ -17,7 +17,7 @@ const { items } = Astro.props;
 const total = String(items.length).padStart(2, '0');
 ---
 
-<section class="al" aria-label="The awards" style={`--al-length:${S.length};--al-exit:${S.exit}`}>
+<section class="al" aria-label="The awards" style={`--al-length:${S.length}`}>
   <div class="al-pin">
     <p class="al-index" aria-hidden="true"><span class="al-mask"><span class="al-roll"><span class="al-num">01</span><span class="al-total">/{total}</span></span></span></p>
 
@@ -45,11 +45,6 @@ const total = String(items.length).padStart(2, '0');
           </article>
         ))
       }
-    </div>
-
-    <!-- the transition to the next section: after the last award a few paper-coloured stripes rise from the bottom and cover the screen (scripts/awards-list.ts) -->
-    <div class="al-stripes" aria-hidden="true">
-      {Array.from({ length: S.stripes }, () => <div></div>)}
     </div>
   </div>
 </section>
@@ -129,25 +124,7 @@ const total = String(items.length).padStart(2, '0');
 
   /* ---- with the script: one pinned screen in a tall track ---- */
   .al[data-live] {
-    height: calc((1 + var(--al-length) + var(--al-exit, 0)) * 100svh);
-  }
-  .al-stripes {
-    display: none;
-  }
-  .al[data-live] .al-stripes {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    pointer-events: none;
-  }
-  .al[data-live] .al-stripes div {
-    flex: 1;
-    margin-top: -1px;
-    background: #faf8f3; /* the paper colour of the page */
-    transform: scaleY(0);
-    transform-origin: bottom;
+    height: calc((1 + var(--al-length)) * 100svh);
   }
   /* The list comes up while the stripes of the spiral are still rising, not after them (that was a long empty dark stretch of scrolling):
      it is pulled up by one screen over the end of the spiral's pin, so it reaches the top of the screen exactly when the pin ends. Its own
@@ -204,7 +181,7 @@ const total = String(items.length).padStart(2, '0');
     width: 46%; /* the original has 35%; on the cream page that looks small */
     max-width: none;
     margin: 0;
-    padding: 50svh 0; /* the first photo starts at the middle of the screen and the last one ends there */
+    padding: calc(var(--al-mid, 0.5) * 100svh) 0 calc((1 - var(--al-mid, 0.5)) * 100svh); /* the first photo starts at the middle line of the screen and the last one ends there */
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -252,5 +229,70 @@ const total = String(items.length).padStart(2, '0');
   .al[data-live] .al-detail {
     grid-area: 1 / 1;
     will-change: transform, opacity;
+  }
+
+  /* ---- a tablet and a phone (upright): the same pinned screen, laid out in one column. The counter is at the top, the photo goes up through
+     the upper middle of the screen (its middle line is --al-mid), and the words of its award stand under it. The names are left out. The
+     photos above and below the current one fade into the dark at the top and the bottom of the screen. ---- */
+  @media (max-width: 1000px) {
+    .al[data-live] {
+      --al-mid: 0.38;
+    }
+    .al[data-live] .al-pin::before,
+    .al[data-live] .al-pin::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .al[data-live] .al-pin::before {
+      top: 0;
+      height: 22svh;
+      background: linear-gradient(var(--ink-warm) 35%, transparent);
+    }
+    .al[data-live] .al-pin::after {
+      bottom: 0;
+      height: 48svh;
+      background: linear-gradient(transparent, var(--ink-warm) 16%);
+    }
+    .al[data-live] .al-index {
+      top: 5.4rem;
+      left: 1.5rem;
+      font-size: clamp(2.6rem, 11vw, 4.6rem);
+    }
+    .al[data-live] .al-names {
+      display: none;
+    }
+    .al[data-live] .al-images {
+      width: min(88%, 52svh * 1.78);
+    }
+    .al[data-live] .al-details {
+      left: 1.5rem;
+      right: 1.5rem;
+      top: 62svh;
+      width: auto;
+      translate: none;
+    }
+    .al[data-live] .al-detail h3 {
+      font-size: clamp(1.7rem, 6.6vw, 2.6rem);
+    }
+    .al[data-live] .al-text {
+      font-size: clamp(0.92rem, 3.7vw, 1.05rem);
+      max-width: 34rem;
+    }
+  }
+  @media (min-width: 600px) and (max-width: 1000px) {
+    .al[data-live] .al-index {
+      left: 2.5rem;
+    }
+    .al[data-live] .al-images {
+      width: min(74%, 52svh * 1.78);
+    }
+    .al[data-live] .al-details {
+      left: 2.5rem;
+      right: 2.5rem;
+    }
   }
 </style>

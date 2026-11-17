@@ -390,8 +390,6 @@ export const AWARD_ORBIT = {
 // After the Codegrid "PrototypeStudio Scroll Animation". The pinned part is `length` screens long.
 export const AWARDS_LIST = {
   length: 5, // screens of scrolling the whole list takes
-  exit: 0.9, // screens of scrolling after the last award: paper-coloured stripes rise and cover the list (the next section follows)
-  stripes: 5, // how many stripes
   dim: 0.35, // opacity of a photo that is not the one at the middle of the screen
   detailFade: 2.2, // how fast the words of an award fade as the list moves on from it (higher = faster)
   detailShift: 24, // px the words of an award travel while they come in and go out

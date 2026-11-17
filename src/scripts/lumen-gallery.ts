@@ -82,7 +82,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
   // ---- the grid: layout ----
   const applyLayout = (level: Level) => {
     const s = spacingFor(level, isDesktop);
-    grid.style.paddingTop = `${s.paddingTop}px`;
+    // on the grid page the first row keeps clear of the site's pill
+    grid.style.paddingTop = `${startGrid ? Math.max(s.paddingTop, isDesktop ? 150 : 120) : s.paddingTop}px`;
     grid.style.paddingBottom = `${s.paddingBottom}px`;
     grid.style.paddingLeft = `${s.paddingLeft}px`;
     grid.style.paddingRight = `${s.paddingRight}px`;
@@ -98,7 +99,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
   // the grid page starts in the big "intro" layout (two large pictures side by side) and glides to level 2 by itself once they are there
   if (startGrid) zoom = 'intro';
   applyLayout(zoom);
-  if (startGrid) grid.style.paddingTop = isDesktop ? '110px' : '100px'; // below the site's pill
 
   // ---- the pictures blur in the first time 10 % of them is on screen (the first ones 0.08 s apart) ----
   let revealer: IntersectionObserver | undefined;
@@ -178,7 +178,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     lastForScale = v;
     const goal = speed < 0.1 ? 1 : 1 - 0.04 * Math.min(speed / 80, 1);
     scale += (goal - scale) * 0.15;
-    scaler.style.transform = `scale(${scale})`;
+    grid.style.transform = `scale(${scale})`; // only the grid breathes while scrolling, not the footer under it
     track.style.transform = `translate3d(0, ${-clamp(v, 0, maxScroll())}px, 0)`;
     updateEnding();
   };
@@ -493,6 +493,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
     // the grid stays exactly as it is while the white comes in over it
     gsap.to(boxBg, { opacity: 1, duration: 0.55, ease: 'power2.out' });
     gsap.to(strip, { opacity: 1, duration: 0.8, delay: 0.6, ease: 'power1.out' });
+    gsap.set(boxClose, { opacity: 0 });
+    gsap.to(boxClose, { opacity: 1, duration: 0.6, delay: 0.6, ease: 'power1.out' });
     const shown = () => {
       if (!lightboxOpen) return;
       gsap.set(boxImg, { opacity: 1, borderRadius: 0 });
@@ -540,21 +542,29 @@ export function initLumenGallery(root: HTMLElement): () => void {
     const rest = natural;
     gsap.killTweensOf(boxImg);
     gsap.set(boxImg, { opacity: 1 });
-    gsap.to([strip], { opacity: 0, duration: 0.3 });
-    // the white goes at once, so the grid is in full colour while the picture flies back to its tile (it was washed out until the white had gone)
-    gsap.to(boxBg, { opacity: 0, duration: 0.35, ease: 'power1.out' });
+    // everything leaves softly together: the strip and the Close pill fade first, the white thins out over the whole flight, the picture
+    // glides back on a gentle curve and, once at its tile, melts into it (no hard swap)
+    gsap.to([strip, boxClose], { opacity: 0, duration: 0.35, ease: 'power1.out' });
+    gsap.to(boxBg, { opacity: 0, duration: 0.75, delay: 0.05, ease: 'power1.inOut' });
     gsap.to(boxImg, {
       x: to.left + to.width / 2 - (rest.left + rest.width / 2),
       y: to.top + to.height / 2 - (rest.top + rest.height / 2),
       scale: to.width / rest.width,
-      duration: 0.8,
-      ease: 'power3.inOut',
+      duration: 1.05,
+      ease: 'power2.inOut',
       force3D: true,
       onComplete: () => {
         if (source) source.style.visibility = '';
-        box.hidden = true;
-        closing = false;
-        lightboxOpen = false;
+        gsap.to(boxImg, {
+          opacity: 0,
+          duration: 0.28,
+          ease: 'power1.out',
+          onComplete: () => {
+            box.hidden = true;
+            closing = false;
+            lightboxOpen = false;
+          },
+        });
       },
     });
   };

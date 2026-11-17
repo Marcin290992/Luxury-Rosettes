@@ -20,7 +20,7 @@ export const RISE = { text: 16, block: 24, card: 28, count: 12, leave: 40 }; // 
 export const ZOOM_IN = 1.3; // scale a photo starts at before it settles to 1
 export const LAYER_ZOOM_IN = 1.12; // same, for a layer arriving in a step transition
 export const LEAVE = { duration: 0.9, ease: 'power2.in' }; // the hero's opening text going away
-export const SMOOTH_WHEEL = { duration: 2.4, wheelMultiplier: 0.4 }; // Lenis: how long one wheel notch glides, and how far (shorter and less far = more control; longer = a heavier page)
+export const SMOOTH_WHEEL = { duration: 1.2, wheelMultiplier: 0.4 }; // Lenis: how long one wheel notch glides, and how far (shorter and less far = more control; longer = a heavier page)
 // a finger (phones, tablets): Lenis follows the finger with this much lag. Lower = heavier (its default is 0.075); touchMultiplier < 1 = the page moves less than the finger.
 // It used to be as heavy as the wheel (0.05 and 0.8) and felt stiff under a finger: the page lagged behind it and moved less than it. Now it follows the finger
 // closely (a finger wants the page right under it) and keeps only a little softness. For the native feel of the phone's own scrolling: syncTouch: false.

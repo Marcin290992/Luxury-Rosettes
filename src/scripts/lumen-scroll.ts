@@ -5,19 +5,37 @@
 //     target: current += (target - current) * factor. That is what gives the soft, slightly lagging glide.
 
 export interface Lerp {
-  setTarget(value: number | ((target: number) => number)): void;
+  setTarget(value: number | ((target: number) => number), kind?: 'wheel' | 'touch'): void;
   jump(value: number): void;
   getValue(): number;
   getTarget(): number;
   destroy(): void;
 }
 
-export function createLerp({ lerpFactor = 0.1, threshold = 0.01, onUpdate }: { lerpFactor?: number; threshold?: number; onUpdate: (value: number) => void }): Lerp {
+// glide: the way the rest of the site scrolls (Lenis): every wheel turn glides from where the page is to the new target over `glide` seconds, on an
+// exponential ease-out; a finger follows with `lerpFactor` (Lenis' syncTouchLerp). Without `glide` everything follows with the lerp.
+const lenisEase = (t: number) => Math.min(1, 1.001 - 2 ** (-10 * t));
+
+export function createLerp({ lerpFactor = 0.1, threshold = 0.01, glide = 0, onUpdate }: { lerpFactor?: number; threshold?: number; glide?: number; onUpdate: (value: number) => void }): Lerp {
   let current = 0;
   let target = 0;
   let frame = 0;
 
+  let gliding = false;
+  let from = 0;
+  let startedAt = 0;
+
   const tick = () => {
+    if (gliding) {
+      const t = Math.min(1, (performance.now() - startedAt) / (glide * 1000));
+      current = t >= 1 ? target : from + (target - from) * lenisEase(t);
+      onUpdate(current);
+      if (t >= 1) {
+        gliding = false;
+        frame = 0;
+      } else frame = requestAnimationFrame(tick);
+      return;
+    }
     const diff = target - current;
     if (Math.abs(diff) < threshold) {
       current = target;
@@ -31,8 +49,13 @@ export function createLerp({ lerpFactor = 0.1, threshold = 0.01, onUpdate }: { l
   };
 
   return {
-    setTarget(value) {
+    setTarget(value, kind = 'touch') {
       target = typeof value === 'function' ? value(target) : value;
+      gliding = glide > 0 && kind === 'wheel';
+      if (gliding) {
+        from = current;
+        startedAt = performance.now();
+      }
       if (!frame) frame = requestAnimationFrame(tick);
     },
     jump(value) {
@@ -55,7 +78,7 @@ const LINE_HEIGHT = 100 / 6;
 
 interface GestureOptions {
   enabled: () => boolean;
-  onDelta: (delta: number) => void;
+  onDelta: (delta: number, kind: 'wheel' | 'touch') => void;
   shouldHandle?: (delta: number) => boolean;
   touchMultiplier?: number;
   wheelMultiplier?: number;
@@ -65,15 +88,15 @@ interface GestureOptions {
 export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier = 2, wheelMultiplier = 1 }: GestureOptions) {
   let lastY = 0;
 
-  const handle = (delta: number, event: Event) => {
+  const handle = (delta: number, event: Event, kind: 'wheel' | 'touch' = 'touch') => {
     if (!delta || !enabled()) return;
     if (shouldHandle && !shouldHandle(delta)) return;
     event.preventDefault();
-    onDelta(delta);
+    onDelta(delta, kind);
   };
   const onWheel = (e: WheelEvent) => {
     const unit = e.deltaMode === 1 ? LINE_HEIGHT : e.deltaMode === 2 ? window.innerHeight : 1;
-    handle(e.deltaY * unit * wheelMultiplier, e);
+    handle(e.deltaY * unit * wheelMultiplier, e, 'wheel');
   };
   const onTouchStart = (e: TouchEvent) => {
     const t = e.targetTouches[0];
@@ -90,7 +113,7 @@ export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier
   const onKey = (e: KeyboardEvent) => {
     const map: Record<string, number> = { ArrowDown: 80, ArrowUp: -80, PageDown: window.innerHeight * 0.8, PageUp: -window.innerHeight * 0.8, ' ': window.innerHeight * 0.8 };
     const delta = map[e.key];
-    if (delta) handle(delta, e);
+    if (delta) handle(delta, e, 'wheel');
   };
 
   window.addEventListener('wheel', onWheel, { passive: false });

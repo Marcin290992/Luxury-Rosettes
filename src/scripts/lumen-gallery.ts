@@ -22,7 +22,7 @@ import { transitionDone } from './lifecycle';
 import { disposeLayer } from './lumen-layer';
 import { createSpiral, type Spiral } from './lumen-spiral';
 import { foldIn } from './lumen-fold';
-import { WEBGL_ENABLED } from './settings';
+import { WEBGL_ENABLED, SMOOTH_WHEEL, SMOOTH_TOUCH } from './settings';
 
 gsap.registerPlugin(Flip);
 
@@ -183,7 +183,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     track.style.transform = `translate3d(0, ${-clamp(v, 0, maxScroll())}px, 0)`;
     updateEnding();
   };
-  const vlerp = createLerp({ lerpFactor: 0.1, onUpdate: onGridUpdate });
+  const vlerp = createLerp({ lerpFactor: 0.15, glide: SMOOTH_WHEEL.duration, onUpdate: onGridUpdate });
 
   const measureGrid = () => {
     sizes.content = track.offsetHeight; // the grid and the closing block under it
@@ -684,15 +684,17 @@ export function initLumenGallery(root: HTMLElement): () => void {
 
   // ---- gestures: before the hero is gone they move the hero, afterwards the grid ----
   const stopGestures = scrollGestures({
+    wheelMultiplier: SMOOTH_WHEEL.wheelMultiplier, // the same weight as the rest of the site
+    touchMultiplier: SMOOTH_TOUCH.touchMultiplier,
     enabled: () => !lightboxOpen && revealOn,
-    onDelta: (delta) => {
+    onDelta: (delta, kind) => {
       if (phase === 'grid') {
         // at the very top of the grid a further scroll up brings the hero back
         if (delta < 0 && position <= 4 && !startGrid) {
           returnToHero(delta);
           return;
         }
-        vlerp.setTarget((target) => clamp(target + delta, 0, maxScroll()));
+        vlerp.setTarget((target) => clamp(target + delta, 0, maxScroll()), kind);
         return;
       }
       if (introPlaying || phase !== 'hero') return;

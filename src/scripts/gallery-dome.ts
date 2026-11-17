@@ -510,6 +510,7 @@ export function initGalleryDome(root: HTMLElement, onRelease?: (still?: HTMLImag
   const open = (index: number) => {
     if (!images[index]) return;
     showPhoto(index);
+    document.body.appendChild(box); // out of the section (its own layer sits under the nav pill), over the whole page
     box.hidden = false;
     requestAnimationFrame(() => box.classList.add('is-open'));
     lightboxOpen = true;
@@ -522,7 +523,9 @@ export function initGalleryDome(root: HTMLElement, onRelease?: (still?: HTMLImag
     lightboxOpen = false;
     box.classList.remove('is-open');
     view.setTimeout(() => {
-      if (!lightboxOpen) box.hidden = true;
+      if (lightboxOpen) return;
+      box.hidden = true;
+      root.appendChild(box);
     }, 300);
     if (lenisWas.stopped) getLenis()?.start();
     lenisWas.stopped = false;
@@ -802,5 +805,6 @@ export function initGalleryDome(root: HTMLElement, onRelease?: (still?: HTMLImag
     gl.getExtension('WEBGL_lose_context')?.loseContext();
     canvas.remove();
     box.hidden = true;
+    root.appendChild(box);
   };
 }

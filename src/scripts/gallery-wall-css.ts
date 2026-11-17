@@ -186,6 +186,7 @@ export function initGalleryCssWall(root: HTMLElement): (() => void) | undefined 
     if (!images[index]) return;
     showPhoto(index);
     openedAt = performance.now();
+    document.body.appendChild(box); // out of the section (its own layer sits under the nav pill), over the whole page
     box.hidden = false;
     requestAnimationFrame(() => box.classList.add('is-open'));
     lightboxOpen = true;
@@ -198,7 +199,9 @@ export function initGalleryCssWall(root: HTMLElement): (() => void) | undefined 
     lightboxOpen = false;
     box.classList.remove('is-open');
     window.setTimeout(() => {
-      if (!lightboxOpen) box.hidden = true;
+      if (lightboxOpen) return;
+      box.hidden = true;
+      root.appendChild(box);
     }, 300);
     if (lenisStopped) getLenis()?.start();
     lenisStopped = false;
@@ -290,6 +293,7 @@ export function initGalleryCssWall(root: HTMLElement): (() => void) | undefined 
     if (lenisStopped) getLenis()?.start();
     wall.remove();
     box.hidden = true;
+    root.appendChild(box);
     delete root.dataset.live;
     delete root.dataset.ready;
   };

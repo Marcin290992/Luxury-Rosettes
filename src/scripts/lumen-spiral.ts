@@ -59,6 +59,8 @@ void main() {
 const COUNT = 21;
 const PLANE_ASPECT = 1.6 / 2; // width / height of a sheet
 
+const RISE = 45; // world units a sheet starts below its place on the spiral (well under the bottom edge)
+const smooth = (t: number) => t * t * (3 - 2 * t);
 const range01 = (a: number, b: number, v: number) => Math.min(Math.max((v - a) / (b - a), 0), 1);
 
 export interface Spiral {
@@ -117,7 +119,9 @@ export async function createSpiral(sources: string[]): Promise<Spiral> {
       const radiusFade = 1 - range01(0.5, 1, travelled); // the spiral closes in at the end
       const radiusGrow = -(0.5 * range01(0, 0.3, travelled)) + 1.5;
 
-      mesh.position.y = y * radiusFade * radiusGrow + (1 - radiusFade) * 20;
+      // each sheet comes up from below the screen's bottom edge onto the spiral, so nothing is seen appearing in mid-air
+      const rise = 1 - smooth(range01(0, 0.4, travelled));
+      mesh.position.y = y * radiusFade * radiusGrow + (1 - radiusFade) * 20 - RISE * rise;
       mesh.position.x = -x * radiusFade * radiusGrow;
       mesh.position.z = 350 * turn - 150 - 0.01 * index + 100 + 380 * state.cameraZ;
       mesh.scale.setScalar(8 * state.cameraZ + 8 + (1 - range01(0, 0.3, travelled)) * 16);
@@ -135,7 +139,7 @@ export async function createSpiral(sources: string[]): Promise<Spiral> {
       timeline!.add(sheet, 0);
       sheet.to(state.angles, { [index]: 3.5 * Math.PI - ((2.5 * Math.PI) / COUNT) * index, duration: 6, ease: 'sine.inOut' }, 0.2 * index);
       sheet.fromTo(u.uFlip, { value: 1 }, { value: 0, delay: 0.2 * index, duration: 7, ease: 'sine.inOut' }, 0);
-      sheet.fromTo(u.uOpacity, { value: 0 }, { value: 1, duration: 1, ease: 'power2.out' }, 1 + 0.2 * index);
+      sheet.fromTo(u.uOpacity, { value: 0 }, { value: 1, duration: 0.3, ease: 'none' }, 0.2 * index);
       sheet.to(u.uOpacity, { value: 0, duration: 0.9, ease: 'power1.inOut' }, 0.04 * index + 3.4); // gone before the sheets grow huge: on the white page they would fill the screen with a wash
       sheet.to(state, { cameraZ: 0.4, duration: 3, ease: 'power2.inOut' }, 2.6);
       sheet.fromTo(u.uBend, { value: 2 }, { value: 0, delay: 0.2 * index, duration: 2, ease: 'power2.inOut' }, 0);

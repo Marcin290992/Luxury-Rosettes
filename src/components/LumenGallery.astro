@@ -1,0 +1,420 @@
+---
+import LumenMenu from './LumenMenu.astro';
+import type { LumenGallery } from '../data/lumen';
+
+/**
+ * A "Lumen" gallery page (script: scripts/lumen-gallery.ts), in two phases:
+ *  HERO - a coloured panel with the gallery's big wordmark. It opens at full height and settles to 75 % (after 0.9 s). The white photo grid waits
+ *         just below it. Scrolling (smoothed, 6 % of the gap per frame) pulls the grid up over the hero while the wordmark shrinks to 60 %,
+ *         blurs and fades. Past halfway the page finishes the move by itself; at 80 % the header slides in and the grid leaves its big
+ *         "intro" layout for zoom level 2 (the pictures glide to their new places).
+ *  GRID - the hero is gone; the grid scrolls by transform (no scrollbar), with + / - to change the zoom, a paper-like lift under the mouse
+ *         on a photo (desktop) and a photo that opens large from its place in the grid.
+ * Placeholder photos and captions, to be replaced.
+ */
+interface Props {
+  gallery: LumenGallery;
+  galleries: LumenGallery[];
+}
+const { gallery, galleries } = Astro.props;
+const first = gallery.photos[0];
+---
+
+<div class="lg-root" data-lumen-gallery data-bg={gallery.background} data-accent={gallery.accent}>
+  <header class="lg-header">
+    <div class="lg-bar">
+      <button type="button" class="lg-logo-btn" aria-label="Open menu">{gallery.name}</button>
+      <button type="button" class="lg-menu-btn" aria-label="Open menu">Menu</button>
+    </div>
+  </header>
+
+  <div class="lg-hero" aria-hidden="true" style={`background:${gallery.background}`}>
+    <div class="lg-hero-inner">
+      <p class="lg-hero-label"><span>Scroll to explore</span></p>
+      <div class="lg-logo-box">
+        <div class="lg-logo" style={`color:${gallery.accent}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox={gallery.italic ? '0 0 680 100' : '0 0 280 100'} fill="currentColor" aria-hidden="true">
+            {
+              gallery.italic ? (
+                <text x="340" y="84" text-anchor="middle" textLength="640" lengthAdjust="spacing" style="font-family:var(--font-heading),Georgia,serif;font-style:italic;font-weight:600" font-size="112">
+                  {gallery.name.charAt(0) + gallery.name.slice(1).toLowerCase()}
+                </text>
+              ) : (
+                <text x="140" y="94" text-anchor="middle" textLength="276" lengthAdjust="spacingAndGlyphs" style="font-family:var(--font-heading),serif;font-weight:500" font-size="132">
+                  {gallery.name}
+                </text>
+              )
+            }
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lg-content">
+    <div class="lg-gridwrap">
+      <div class="lg-vscroll">
+        <div class="lg-scaler">
+          <div class="lg-track">
+            <div class="lg-grid">
+              {
+                gallery.photos.map((p, i) => (
+                  <div class="lg-item" data-index={i}>
+                    <span class="lg-index" aria-hidden="true">[{p.id}]</span>
+                    <button type="button" class="lg-link" aria-label={`Open picture ${p.id}: ${p.title}`}>
+                      <img src={p.src} width={p.width} height={p.height} alt={p.title} data-full={p.full} data-id={p.id} data-title={p.title} data-time={p.time} data-credit={p.credit} draggable="false" loading={i < 10 ? 'eager' : 'lazy'} />
+                    </button>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lg-zoom" hidden>
+    <button type="button" class="lg-zoom-btn" data-dir="in" aria-label="Zoom in">
+      <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1V15M1 8H15" stroke="currentColor" stroke-width="1.5" /></svg>
+    </button>
+    <button type="button" class="lg-zoom-btn" data-dir="out" aria-label="Zoom out">
+      <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8H15" stroke="currentColor" stroke-width="1.5" /></svg>
+    </button>
+  </div>
+
+  <div class="lg-box" role="dialog" aria-label="Photo" hidden>
+    <div class="lg-box-bg"></div>
+    <img class="lg-box-img" src={first.full} alt="" />
+    <div class="lg-box-caption">
+      <span class="lg-label"></span>
+      <strong></strong>
+      <span class="lg-label"></span>
+    </div>
+    <button type="button" class="lg-box-close" aria-label="Close">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="1.5" /></svg>
+    </button>
+  </div>
+
+  <LumenMenu galleries={galleries} text="bottom" closable topBarName={gallery.name} />
+</div>
+
+<style>
+  .lg-root,
+  .lg-root :global(*) {
+    box-sizing: border-box;
+  }
+  .lg-root {
+    --lg-label: clamp(12px, 0.1vw + 11.5px, 14px);
+    color: #000;
+  }
+
+  /* header: slides in once the hero is mostly scrolled away */
+  .lg-header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 40;
+    transform: translateY(-100%);
+  }
+  .lg-bar {
+    position: relative;
+    display: flex;
+    height: 52px;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+    color: #000;
+    transition: background-color 0.3s;
+  }
+  .lg-bar.is-solid {
+    background: #fff;
+  }
+  .lg-logo-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    height: 52px;
+    transform: translate(-50%, -50%);
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 22px;
+    letter-spacing: 0.2em;
+  }
+  .lg-menu-btn {
+    margin-left: auto;
+    display: flex;
+    height: 52px;
+    align-items: center;
+    padding: 0 20px 0 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 15px;
+  }
+
+  /* hero */
+  .lg-hero {
+    pointer-events: none;
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 0;
+    height: 100vh;
+    height: 100svh;
+  }
+  .lg-hero-inner {
+    display: flex;
+    height: 75vh;
+    height: 75svh;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px;
+  }
+  .lg-hero-label {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: var(--lg-label);
+    line-height: 1;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #7d7676;
+  }
+  .lg-hero-label span {
+    display: inline-block;
+    will-change: transform, opacity;
+  }
+  .lg-logo-box {
+    position: relative;
+    min-height: 0;
+    width: 100%;
+    max-width: 1400px;
+    flex: 1;
+  }
+  .lg-logo {
+    position: absolute;
+    inset: 0;
+    will-change: transform, filter, opacity;
+  }
+  .lg-logo :global(svg) {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+  @media (min-width: 1024px) {
+    .lg-hero-inner {
+      gap: 160px;
+      padding: 20px 160px 160px;
+    }
+  }
+
+  /* the grid, sliding up over the hero */
+  .lg-content {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .lg-gridwrap {
+    position: relative;
+    background: #fff;
+    color: #000;
+    pointer-events: auto;
+  }
+  .lg-vscroll {
+    overflow: hidden;
+    height: 100vh;
+    height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .lg-scaler {
+    transform-origin: center;
+    will-change: transform;
+    width: 100%;
+    height: 100%;
+    flex-shrink: 0;
+  }
+  .lg-track {
+    will-change: transform;
+  }
+  .lg-grid {
+    display: grid;
+    grid-auto-rows: auto;
+  }
+  .lg-item {
+    position: relative;
+    opacity: 0;
+    filter: blur(6px);
+  }
+  .lg-link {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+  }
+  .lg-link img {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .lg-index {
+    position: absolute;
+    top: -8px;
+    left: 0;
+    z-index: 10;
+    display: block;
+    margin-bottom: 4px;
+    font-family: var(--font-body);
+    font-size: var(--lg-label);
+    line-height: 1;
+    letter-spacing: 0.03em;
+    transform: translateY(-100%);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+  }
+  @media (min-width: 1024px) {
+    .lg-index {
+      margin-bottom: 0;
+    }
+    .lg-index.top-right {
+      top: 8px;
+      left: auto;
+      right: -8px;
+      transform: translateX(100%);
+    }
+    .lg-index.top-left {
+      top: 8px;
+      left: -8px;
+      transform: translateX(-100%);
+    }
+  }
+
+  /* zoom buttons */
+  .lg-zoom {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transform: translateX(-50%);
+  }
+  .lg-zoom[hidden] {
+    display: none;
+  }
+  .lg-zoom-btn {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid #000;
+    border-radius: 9999px;
+    background: transparent;
+    color: #000;
+    cursor: pointer;
+    transition: opacity 0.3s;
+  }
+  .lg-zoom-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  @media (min-width: 1024px) {
+    .lg-zoom {
+      bottom: 20px;
+    }
+  }
+
+  /* the photo opened large (it grows from its place in the grid) */
+  .lg-box {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+  }
+  .lg-box[hidden] {
+    display: none;
+  }
+  .lg-box-bg {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+  }
+  .lg-box-img {
+    position: relative;
+    max-height: 80vh;
+    max-height: 80svh;
+    max-width: 80vw;
+    width: auto;
+    height: auto;
+  }
+  .lg-box-caption {
+    position: absolute;
+    left: 20px;
+    bottom: 20px;
+    font-family: var(--font-body);
+    line-height: 1.4;
+  }
+  .lg-box-caption strong {
+    display: block;
+    font-family: var(--font-heading);
+    font-weight: 300;
+    font-size: clamp(35px, 1.6vw + 29px, 60px);
+    line-height: 1;
+  }
+  .lg-label {
+    display: block;
+    font-size: var(--lg-label);
+    letter-spacing: 0.03em;
+  }
+  .lg-box-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 9999px;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  import { mount } from '../scripts/lifecycle';
+  import { initLumenGallery } from '../scripts/lumen-gallery';
+
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('[data-lumen-gallery]');
+    return root ? initLumenGallery(root) : undefined;
+  }, '[data-lumen-gallery]');
+</script>

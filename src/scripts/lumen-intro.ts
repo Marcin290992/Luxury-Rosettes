@@ -1,6 +1,6 @@
 // The gallery's intro (markup: LumenIntro.astro), no text, on white:
 //  1. SPIRAL  - the moment the page is there (as soon as the photos are loaded) 21 paper photos fly through a three.js spiral (lumen-spiral.ts),
-//  2. CHOOSER - 4.7 s into the spiral the gallery chooser (lumen-menu.ts) comes up.
+//  2. CHOOSER - 4.4 s into the spiral the gallery chooser (lumen-menu.ts) comes up.
 // If WebGL is off, or the visitor asked for less motion, the chooser comes up at once. initLumenIntro(root) returns destroy().
 
 import { createSpiral, type Spiral } from './lumen-spiral';

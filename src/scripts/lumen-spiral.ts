@@ -50,8 +50,8 @@ uniform float uOpacity;
 
 void main() {
   vec4 image = texture2D(uMap, vUv * uCrop.xy + uCrop.zw);
-  // the parts of the sheet that curl away are darker (a cheap shadow)
-  vec3 color = image.rgb - image.rgb * pow(vDepth, 2.0) * 0.8;
+  // a hint of shade where the sheet curls away; on the white page a stronger one showed as grey shapes
+  vec3 color = image.rgb - image.rgb * clamp(pow(vDepth, 2.0) * 0.8, 0.0, 0.12);
   gl_FragColor = vec4(color, uOpacity);
 }
 `;
@@ -128,7 +128,7 @@ export async function createSpiral(sources: string[]): Promise<Spiral> {
 
   const play = (onComplete?: () => void) => {
     timeline = gsap.timeline();
-    timeline.add(() => onComplete?.(), 4.7);
+    timeline.add(() => onComplete?.(), 4.4);
     meshes.forEach((mesh, index) => {
       const u = (mesh.material as THREE.ShaderMaterial).uniforms;
       const sheet = gsap.timeline();
@@ -136,8 +136,8 @@ export async function createSpiral(sources: string[]): Promise<Spiral> {
       sheet.to(state.angles, { [index]: 3.5 * Math.PI - ((2.5 * Math.PI) / COUNT) * index, duration: 6, ease: 'sine.inOut' }, 0.2 * index);
       sheet.fromTo(u.uFlip, { value: 1 }, { value: 0, delay: 0.2 * index, duration: 7, ease: 'sine.inOut' }, 0);
       sheet.fromTo(u.uOpacity, { value: 0 }, { value: 1, duration: 1, ease: 'power2.out' }, 1 + 0.2 * index);
-      sheet.to(u.uOpacity, { value: 0, duration: 0.5, ease: 'power2.out' }, 0.05 * index + 5);
-      sheet.to(state, { cameraZ: 1, duration: 3, ease: 'power2.inOut' }, 3);
+      sheet.to(u.uOpacity, { value: 0, duration: 0.9, ease: 'power1.inOut' }, 0.04 * index + 3.4); // gone before the sheets grow huge: on the white page they would fill the screen with a wash
+      sheet.to(state, { cameraZ: 0.4, duration: 3, ease: 'power2.inOut' }, 2.6);
       sheet.fromTo(u.uBend, { value: 2 }, { value: 0, delay: 0.2 * index, duration: 2, ease: 'power2.inOut' }, 0);
     });
   };

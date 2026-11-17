@@ -516,11 +516,3 @@ export const GALLERY_DOME = {
   dpr: 2, // top device pixel ratio
 } as const;
 
-// ---- gallery hero (a photo opens from a window to the whole screen and fades, photos float up below it; scripts/gallery-hero.ts) ----
-export const GALLERY_HERO = {
-  window: 25, // % of each side that is closed at the start (25 = a window of half the screen)
-  scrub: 0.5,
-  exit: 3, // screens the photo stands still after its opening, while the page's stripes cover it (gallery.astro: the stripes' `pin` is shorter than this, so they start later)
-  desktop: { section: 1500, fade: 500, zoom: 1.7, parallax: 1 }, // px of scroll the opening takes / the fade takes; the zoom at the start; the photos' travel
-  phone: { section: 1000, fade: 350, zoom: 1.5, parallax: 0.5 }, // a thumb-swipe is much longer than a wheel: shorter, and the photos travel less
-} as const;

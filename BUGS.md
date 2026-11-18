@@ -240,3 +240,15 @@ Po serii poprawek `awards-spiral.ts` i `AwardsSpiral.astro` zostały przepisane 
 ### Lenis na dotyku: próbnie wyłączony, przywrócony
 
 Na chwilę Lenis był wyłączony na dotyku (natywne przewijanie), ale wrócił. Żeby było mniej oporu, `SMOOTH_TOUCH` ma teraz `syncTouchLerp: 0.15` i `touchMultiplier: 1` (było 0.12, potem 0.25 i 1.15, za lekko). Za lekko → obniżyć `syncTouchLerp`, za ciężko → podnieść.
+
+## Okno kontaktu (Enquire): część sekcji nagle robiła się biała
+
+**Objaw:** po kliknięciu Inquire / Get in touch niektóre sekcje (np. „From first message to your kitten” na stronie głównej, karty Process) od razu robiły się białe, zamiast zostać widoczne, dopóki nie zakryją ich ciemne paski. Inne sekcje (przypięte przez ScrollTrigger) otwierały się dobrze.
+
+**Przyczyna:** `html.contact-open` ustawiał `overflow: hidden` jednocześnie na `<html>` i na `<body>`. Gdy oba mają `overflow: hidden`, `<body>` staje się własnym kontenerem przewijania, a elementy z `position: sticky` (karty Process, lista nagród) przestają się lepić do ekranu. Odjeżdżają i znikają, zanim paski je zakryją. Przypięcia ScrollTriggera (`position: fixed`) tego nie dotyczy, stąd „na niektórych sekcjach”.
+
+**Poprawka:** `<body>` dostaje `overflow: clip` zamiast `hidden` (`<html>` zostaje `hidden`). Strona dalej się nie przewija pod oknem, ale sticky działa. Zmierzone w emulacji laptopa: po otwarciu okna sekcja Process zostaje na miejscu, wcześniej była pusta.
+
+**Plik:** `src/components/ContactModal.astro` (reguły `html.contact-open` na końcu stylów).
+
+**Gdyby wracało:** nie dawać `overflow: hidden` na `body` razem z `html`. Sprawdzić każdą sekcję z `position: sticky` po otwarciu okna.

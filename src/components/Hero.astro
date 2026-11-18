@@ -150,7 +150,7 @@ import hero from '../assets/img/hero_img.webp';
       // after the intro the photo is already on screen (the preloader's last frame): no second zoom on top of it. The same after a click through from
       // another page: the page transition has just shown the photo, and zooming it in and settling it again looked like the hero loading twice.
       gsap.set(media, { scale: document.documentElement.classList.contains('preloading') || arrived ? 1 : HERO.mediaZoom });
-      if (nav && !arrived) gsap.set(nav, { '--intro': 0, visibility: 'hidden' });
+      if (nav && !arrived) gsap.set(nav, { '--intro': 0, visibility: 'hidden', y: -HERO.navRise });
     }
 
     // wait for the web font and the photo, but never longer than HERO.maxWait
@@ -181,7 +181,7 @@ import hero from '../assets/img/hero_img.webp';
         .to(chars, { yPercent: 0, duration: T.chars.dur, stagger: T.chars.stagger }, T.chars.at)
         .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at);
       // the nav only arrives with the very first intro; after a page transition it was already on screen
-      if (!arrived) opening.to(nav, { '--intro': 1, visibility: 'visible', duration: T.nav.dur, clearProps: '--intro,visibility' }, T.nav.at);
+      if (!arrived) opening.to(nav, { '--intro': 1, y: 0, visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, clearProps: '--intro,visibility,transform' }, T.nav.at);
     });
 
     return () => {

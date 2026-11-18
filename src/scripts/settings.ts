@@ -20,7 +20,7 @@ export const RISE = { text: 16, block: 24, card: 28, count: 12, leave: 40 }; // 
 export const ZOOM_IN = 1.3; // scale a photo starts at before it settles to 1
 export const LAYER_ZOOM_IN = 1.12; // same, for a layer arriving in a step transition
 export const LEAVE = { duration: 0.9, ease: 'power2.in' }; // the hero's opening text going away
-export const SMOOTH_WHEEL = { duration: 1.2, wheelMultiplier: 0.4 }; // Lenis: how long one wheel notch glides, and how far (shorter and less far = more control; longer = a heavier page)
+export const SMOOTH_WHEEL = { duration: 1.6, wheelMultiplier: 0.65 }; // Lenis: how long one wheel notch glides, and how far (shorter and less far = more control; longer = a heavier page)
 // a finger (phones, tablets): Lenis follows the finger with this much lag. Lower = heavier (its default is 0.075); touchMultiplier < 1 = the page moves less than the finger.
 // It used to be as heavy as the wheel (0.05 and 0.8) and felt stiff under a finger: the page lagged behind it and moved less than it. Now it follows the finger
 // closely (a finger wants the page right under it) and keeps only a little softness. For the native feel of the phone's own scrolling: syncTouch: false.
@@ -236,13 +236,14 @@ export const HERO = {
   eye: { x: 0.371, y: 0.442, mid: 0.46 },
   eyeAtHeight: 0.4, // the vertical crop puts the eyes at this share of the hero's height
   eyeWidth: 0.075, // the eye is about this share of the photo's width
+  navRise: 14, // px the menu pill settles down while it fades in after the intro
   railRise: 14, // px the keyword rail rises while fading in
   mediaZoom: 1.18, // the photo settles from this scale
   timeline: {
     zoom: 2.8,
     chars: { at: 0.45, dur: 1.3, stagger: 0.05 },
     rail: { at: 1.7, dur: 1 },
-    nav: { at: 1.2, dur: 1 },
+    nav: { at: 1.2, dur: 1.9, ease: 'power2.inOut' }, // the menu pill arrives slowly: it fades in and settles down a little (navRise), no sudden appearance
   },
 };
 

@@ -252,3 +252,23 @@ Na chwilę Lenis był wyłączony na dotyku (natywne przewijanie), ale wrócił.
 **Plik:** `src/components/ContactModal.astro` (reguły `html.contact-open` na końcu stylów).
 
 **Gdyby wracało:** nie dawać `overflow: hidden` na `body` razem z `html`. Sprawdzić każdą sekcję z `position: sticky` po otwarciu okna.
+
+## Ustawienia scrolla (Lenis): stan uznany za idealny
+
+Te wartości są dobrze dobrane i nie należy ich ruszać bez powodu. Wszystko jest w jednym miejscu: `src/scripts/settings.ts`. Zmiana tam zmienia przewijanie na całej stronie, razem z galerią.
+
+**Kółko myszy (laptop):** `SMOOTH_WHEEL = { duration: 1.6, wheelMultiplier: 0.65 }`
+- `duration: 1.6`: jedno kliknięcie kółka ślizga się 1,6 s. Krzywa wygaszania jest domyślna u Lenisa (`min(1, 1.001 - 2^(-10t))`, gwałtowny start, długie wygaszanie). Było 2,4 s i strona była za ciężka. 1,2 s było trochę za nerwowe.
+- `wheelMultiplier: 0.65`: jedno kliknięcie przesuwa około 65 px (domyślne Lenisa to 1, czyli około 100 px). Było 0,4 (40 px) i trzeba było za dużo przewijać; 0,7 przyspiesza zbyt mocno sceny spięte ze scrollem.
+
+**Palec (telefon, tablet):** `SMOOTH_TOUCH = { syncTouch: true, syncTouchLerp: 0.15, touchMultiplier: 1 }`
+- Strona idzie za palcem 1:1 (`touchMultiplier: 1`), z lekkim wygładzeniem (`syncTouchLerp: 0.15`; niższe = ciężej, wyższe = bliżej natywnego).
+- Natywne przewijanie telefonu zamiast Lenisa można włączyć na próbę przez `?native=1` w adresie (`?native=0` wyłącza; zapamiętane na sesję).
+
+**Reszta opcji** (`src/scripts/lenis.ts`): `smoothWheel: true`, `autoRaf: false` (klatki napędza ticker GSAP, żeby piny ScrollTrigger były zsynchronizowane), `stopInertiaOnNavigate: true`. Na dotyku Lenis wygładza pudełko `#scroll-root`, a nie okno (`wrapper` i `content` to to samo pudełko).
+
+**Galeria** (`/gallery`) ma własny scroll po transformie, ale używa tych samych liczb: `createLerp({ glide: SMOOTH_WHEEL.duration })` dla kółka (ta sama krzywa, ślizg od aktualnej pozycji), a dla palca `lerpFactor: 0.15`. Mnożniki kółka i palca w `scrollGestures` też są z `settings.ts`. Dzięki temu czuć ją tak samo jak resztę strony.
+
+**Porównanie z Belgrade Arbor** (odczytane z ich działającej strony): `duration: 2`, `wheelMultiplier: 1`, ta sama krzywa, **`syncTouch: false`** (na telefonie przewijanie natywne, bez Lenisa). Ich strona nie ma długich przypiętych scen, dlatego wystarcza im pełny mnożnik 1. U nas mnożnik 1 przyspieszałby wszystkie sceny ze scrollem.
+
+**Gdyby wracało:** za ciężko na myszy → `duration` niżej (np. 1,3). Za daleko po jednym kliknięciu → `wheelMultiplier` niżej (0,55). Telefon za ciężki → `syncTouchLerp` wyżej (0,2) albo `syncTouch: false`. Zmiany `wheelMultiplier` zmieniają tempo wszystkich scen spiętych ze scrollem (intro, opowieść, lista nagród), więc po zmianie przejść stronę główną i Awards.

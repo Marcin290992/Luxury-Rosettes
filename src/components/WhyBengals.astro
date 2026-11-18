@@ -191,7 +191,7 @@ const scenes = [
       const cover = { p: 0 }; // 0 = no stripe, 1 = all of them closed
 
       gsap.set(eyebrow, { autoAlpha: 0, y: 12 });
-      gsap.set(headLines, { yPercent: 115 }); // each line waits below its own window
+      gsap.set(headLines, { yPercent: 115, autoAlpha: 0 }); // each line waits below its own window
 
       tl.to({}, { duration: 0.3 }); // a beat on the full-screen photo
       tl.to(knock, { opacity: 1, duration: 0.6 }, '>');
@@ -207,9 +207,11 @@ const scenes = [
       const scrollLen = Math.max(1, track.offsetHeight - stage.clientHeight);
       const share = Math.min(0.6, pullUp / scrollLen);
       // the heading rises into its lines once the stripes have closed (scrubbed with the scroll, so scrolling back puts it away again)
-      tl.fromTo(eyebrow, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out', immediateRender: false }, 'cover+=2.05');
-      tl.fromTo(headLines, { yPercent: 115 }, { yPercent: 0, duration: 0.6, stagger: 0.12, ease: 'power3.out', immediateRender: false }, 'cover+=2.1');
-      tl.to({}, { duration: 0.35 }); // a beat on the finished heading before the first photo rises
+      // It arrives slowly, as the next sentence of a story, not as a slam: a moment of the closed dark screen first, then the small line, then the
+      // two words one after the other, each rising and fading in over a long stretch of scrolling.
+      tl.fromTo(eyebrow, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out', immediateRender: false }, 'cover+=2.35');
+      tl.fromTo(headLines, { yPercent: 115, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 1.5, stagger: 0.35, ease: 'power2.out', immediateRender: false }, 'cover+=2.6');
+      tl.to({}, { duration: 0.6 }); // a beat on the finished heading before the first photo rises
       tl.to({}, { duration: (tl.duration() * share) / (1 - share) });
 
       // 6. the long scroll. Each scene is a photo cut to the shape of a spot of the coat, beside one trait. A clip-path opens the
@@ -484,7 +486,7 @@ const scenes = [
   }
   /* ---- pinned sequence (the script sets data-live) ---- */
   .why[data-live] .why-track {
-    --screens: 6; /* how many screens of scrolling the pinned part lasts */
+    --screens: 6.8; /* how many screens of scrolling the pinned part lasts */
     height: calc(100vh * var(--screens));
     height: calc(100lvh * var(--screens)); /* lvh: constant when the mobile address bar slides away */
     padding: 0;
@@ -608,7 +610,7 @@ const scenes = [
   /* the pinned part is shorter on a phone and a tablet */
   @media (max-width: 1023px) {
     .why[data-live] .why-track {
-      --screens: 5;
+      --screens: 5.7;
     }
   }
   .why[data-live] .why-copy + .why-scene {

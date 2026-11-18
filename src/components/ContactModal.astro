@@ -836,29 +836,37 @@ const STRIPES = 5;
   }
 
   @media (max-width: 860px) {
-    /* one column: the name in the middle of the top, Close at the right */
+    /* one column: the emblem and the name in the middle, a little lower and larger than the title under them; Close at the top right corner */
     .contact-head {
-      grid-template-columns: 1fr auto 1fr;
-      column-gap: 0;
-    }
-    .contact-brand {
-      grid-column: 2;
+      position: relative;
+      display: block;
+      padding-top: clamp(0.3rem, 1.6svh, 0.9rem);
     }
     .contact-head .contact-close {
-      grid-column: 3;
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 1;
     }
     .contact-brand {
+      flex-direction: column;
       gap: 0.6rem;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .contact-brand-text {
+      text-align: center;
     }
     .contact-brand :global(img) {
-      height: 2.4rem;
+      height: clamp(3rem, 10.5svh, 5.6rem); /* larger than the title under it, and it follows the height of the screen */
     }
     .contact-title-brand {
-      font-size: 0.8rem;
-      letter-spacing: 0.03em;
+      font-size: 1rem;
     }
     .contact-sub {
-      display: none; /* on a phone the name alone fits beside the Close word */
+      display: block;
+      margin-top: 0.3rem;
+      font-size: 0.6rem;
     }
     .contact-body {
       grid-template-columns: 1fr;
@@ -887,7 +895,10 @@ const STRIPES = 5;
       opacity: 0.2; /* dim enough that the small gold words and the typed text always read well */
     }
     .contact-title {
-      font-size: clamp(2.4rem, 11vw, 3.4rem);
+      font-size: clamp(1.55rem, 6.6vw, 2.6rem); /* one line on a phone: the form gets the room */
+      margin: clamp(0.7rem, 2.6svh, 1.4rem) 0 clamp(0.7rem, 1.8svh, 1.1rem);
+      text-align: center;
+      white-space: nowrap;
     }
     .way-note {
       font-size: clamp(1.8rem, 8vw, 2.4rem);
@@ -919,7 +930,7 @@ const STRIPES = 5;
       padding: 0.6rem 0 0.8rem;
     }
     .field textarea {
-      min-height: 7.5rem;
+      min-height: clamp(4rem, 13svh, 7.5rem);
     }
     .contact-copy .copy {
       min-height: 44px;
@@ -931,6 +942,44 @@ const STRIPES = 5;
     }
     .contact-status {
       font-size: 0.9rem;
+    }
+  }
+
+  /* a short screen (an iPhone SE, a small Android): everything is tighter so that the form and its Send button stand on one screen */
+  @media (max-width: 860px) and (max-height: 760px) {
+    .contact-sub {
+      display: none;
+    }
+    .contact-brand :global(img) {
+      height: clamp(2.8rem, 9svh, 4rem);
+    }
+    .contact-brand {
+      gap: 0.4rem;
+    }
+    .contact-copy-label {
+      display: none; /* the address and Copy say enough on a short screen */
+    }
+    .field textarea {
+      min-height: clamp(3.4rem, 10svh, 5rem);
+    }
+    .contact-form {
+      gap: 0.6rem;
+    }
+    .field {
+      gap: 0.2rem;
+    }
+    .field input {
+      padding: 0.35rem 0 0.5rem;
+    }
+    .tabs {
+      margin-bottom: 0.8rem;
+    }
+    .contact-send {
+      margin-top: 0;
+    }
+    .contact-copy {
+      margin-top: 0.8rem;
+      padding-top: 0.5rem;
     }
   }
 

@@ -12,6 +12,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { ABOUT_HERO as O } from './settings';
 import { HOUSE } from './house-ease';
+import { transitionDone } from './lifecycle';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -56,7 +57,8 @@ export function initAboutHero(root: HTMLElement): () => void {
       });
     };
     let cancelled = false;
-    (document.fonts?.ready ?? Promise.resolve()).then(() => {
+    // it starts when the fonts are there and the page transition is nearly over (the new page stands in place ~1 s into it): not under the slide-in
+    Promise.all([document.fonts?.ready ?? Promise.resolve(), transitionDone()]).then(() => {
       if (!cancelled) play();
     });
 

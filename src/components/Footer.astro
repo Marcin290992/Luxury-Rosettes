@@ -118,6 +118,43 @@ import emblem from '../assets/logo/logo-emblem.svg';
       text-align: center;
     }
   }
+  /* a phone or a tablet (a finger): no screen of empty dark between the links and the foot line; the address is smaller than the photo's
+     words above it; and every link is a target of at least 44 px */
+  @media (max-width: 700px), (pointer: coarse) {
+    .foot {
+      min-height: 0;
+    }
+    .foot-in {
+      gap: 3.5rem;
+      padding-bottom: 2rem;
+    }
+    .mail {
+      font-size: clamp(1.25rem, 5.2vw, 2.2rem);
+      display: inline-block;
+      padding: 0.5rem 0;
+    }
+    .social,
+    nav {
+      gap: 0 0.5rem;
+    }
+    .social a,
+    nav a,
+    nav button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 0.75rem;
+      font-size: 0.85rem;
+    }
+    .social {
+      margin-top: 1.25rem;
+    }
+    .bottom {
+      margin-top: 0;
+      justify-content: center;
+      text-align: center;
+    }
+  }
   .copy {
     font-size: 0.7rem;
     opacity: 0.45;

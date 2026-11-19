@@ -142,6 +142,7 @@ import hero from '../assets/img/hero_img.webp';
     ro.observe(hero);
     let opening: gsap.core.Timeline | undefined;
     let cancelled = false;
+    const navCoarse = matchMedia('(pointer: coarse)').matches; // a phone or a tablet (a finger)
 
     if (!reduceMotion) {
       gsap.set(chars, { yPercent: WORD_HIDDEN });
@@ -151,8 +152,9 @@ import hero from '../assets/img/hero_img.webp';
       // another page: the page transition has just shown the photo, and zooming it in and settling it again looked like the hero loading twice.
       gsap.set(media, { scale: document.documentElement.classList.contains('preloading') || arrived ? 1 : HERO.mediaZoom });
       // on a phone or a tablet the bar does not move, so its logo and buttons do not move either: only the bar's own look fades in
-      const navRise = matchMedia('(pointer: coarse)').matches ? 0 : -HERO.navRise;
-      if (nav && !arrived) gsap.set(nav, { '--intro': 0, visibility: 'hidden', y: navRise });
+      // On a phone the bar's fade is a plain opacity (the compositor does it, no repaint per frame; animating --intro restyled the whole bar every frame
+      // and the bar flickered and changed shade). It does not move either, so no transform: gsap would turn the CSS translate (the centring) into one.
+      if (nav && !arrived) gsap.set(nav, navCoarse ? { opacity: 0, visibility: 'hidden' } : { '--intro': 0, visibility: 'hidden', y: -HERO.navRise });
     }
 
     // wait for the web font and the photo, but never longer than HERO.maxWait
@@ -183,7 +185,7 @@ import hero from '../assets/img/hero_img.webp';
         .to(chars, { yPercent: 0, duration: T.chars.dur, stagger: T.chars.stagger }, T.chars.at)
         .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at);
       // the nav only arrives with the very first intro; after a page transition it was already on screen
-      if (!arrived) opening.to(nav, { '--intro': 1, y: 0, visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, force3D: true, clearProps: '--intro,visibility,transform' }, T.nav.at);
+      if (!arrived) opening.to(nav, navCoarse ? { opacity: 1, visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, clearProps: 'opacity,visibility' } : { '--intro': 1, y: 0, visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, clearProps: '--intro,visibility,transform' }, T.nav.at);
     });
 
     return () => {

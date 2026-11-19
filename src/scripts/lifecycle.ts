@@ -29,26 +29,3 @@ export function mount(init: () => Destroy | void, only?: string) {
   document.addEventListener('astro:before-swap', stop);
   document.addEventListener('astro:after-swap', run);
 }
-
-// Like `mount`, for a setup that lives in a heavy module (three.js, ~500 KB): the module is fetched as a separate file, after the page's own
-// scripts have run, and the setup starts once it has arrived. If the page is swapped away before that, the setup is not started at all.
-// The scroll triggers are sorted and measured again afterwards, since these were created later than the rest of the page's.
-export function mountLazy(load: (root: HTMLElement) => Promise<(root: HTMLElement) => Destroy | void>, only: string) {
-  mount(() => {
-    const root = document.querySelector<HTMLElement>(only);
-    if (!root) return;
-    let cancelled = false;
-    let destroy: Destroy | void;
-    load(root).then(async (init) => {
-      if (cancelled) return;
-      destroy = init(root);
-      const { ScrollTrigger } = await import('gsap/ScrollTrigger');
-      ScrollTrigger.sort();
-      ScrollTrigger.refresh();
-    });
-    return () => {
-      cancelled = true;
-      destroy?.();
-    };
-  }, only);
-}

@@ -54,10 +54,13 @@ const heroSrc = (await getImage({ src: heroPhoto, width: 2000, format: 'webp' })
 </section>
 
 <script>
-  import { mountLazy } from '../scripts/lifecycle';
+  import { mount } from '../scripts/lifecycle';
+  import { initAwardsSpiral } from '../scripts/awards-spiral';
 
-  // three.js comes as a separate file, fetched when this page runs
-  mountLazy(async () => (await import('../scripts/awards-spiral')).initAwardsSpiral, '.sp');
+  mount(() => {
+    const root = document.querySelector<HTMLElement>('.sp');
+    return root ? initAwardsSpiral(root) : undefined;
+  });
 </script>
 
 <style is:global>

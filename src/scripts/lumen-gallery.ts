@@ -342,9 +342,13 @@ export function initLumenGallery(root: HTMLElement): () => void {
   // made over the picture first (flat, exactly over it) and only then the picture under it is changed, so there is no frame without a picture.
   // (The grid moves behind the box so that the one the box will fly back to on closing is on the screen.)
   const select = (index: number) => {
-    if (!lightboxOpen || !boxReady || closing || index < 0 || index >= images.length) return;
-    if (switching) {
-      wanted = index; // the person is going faster than the pictures change: the last one asked for is shown when this one is done
+    if (!lightboxOpen || closing || index < 0 || index >= images.length) return;
+    if (!boxReady || switching) {
+      // the person is going faster than the pictures change (or taps while the photo is still opening): the last one asked for is remembered, shown
+      // in the strip at once, and put on the screen as soon as this is done (see finish() and shown())
+      wanted = index;
+      navIndex = index;
+      markActive(index);
       return;
     }
     if (index === currentIndex) return;
@@ -356,6 +360,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     const finish = () => {
       switching = false;
       if (wanted !== currentIndex) {
+        navIndex = wanted;
         select(wanted);
         return;
       }
@@ -413,7 +418,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
         source = next;
         next.style.visibility = 'hidden';
         currentIndex = index;
-        navIndex = index;
+        navIndex = wanted; // a later one may have been asked for while this turned (finish() goes on to it)
         try {
           await boxImg.decode();
         } catch {
@@ -475,6 +480,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     lightboxOpen = true;
     currentIndex = images.indexOf(img);
     navIndex = currentIndex;
+    wanted = currentIndex;
     markActive(currentIndex, false);
     gsap.set(boxImg, { opacity: 1 });
     // the picture the grid already has (cached, so it is there at once) grows first; the large file is fetched and decoded in the background and
@@ -495,6 +501,12 @@ export function initLumenGallery(root: HTMLElement): () => void {
       if (!lightboxOpen) return;
       gsap.set(boxImg, { opacity: 1, borderRadius: 0 });
       boxReady = true;
+      if (wanted !== currentIndex) {
+        // another picture was asked for (a tap in the strip, a swipe) while this one was still opening: it is turned to now
+        navIndex = wanted;
+        select(wanted);
+        return;
+      }
       const full = img.dataset.full;
       if (!full) return;
       const big = new Image();
@@ -594,11 +606,15 @@ export function initLumenGallery(root: HTMLElement): () => void {
   let navToken = 0;
   let upgradeTimer = 0;
   const jumpTo = (index: number) => {
-    if (!lightboxOpen || !boxReady || closing || switching) return;
+    if (!lightboxOpen || closing) return;
     const target = ((index % images.length) + images.length) % images.length; // round and round: after the last comes the first
     if (target === navIndex) return;
     navIndex = target;
     markActive(target, false);
+    if (!boxReady || switching) {
+      wanted = target; // the photo is still opening or a page is turning: this one is shown as soon as that is done (finish() / shown())
+      return;
+    }
     const token = ++navToken;
     const next = images[target];
     const nextSrc = next.currentSrc || next.src;
@@ -642,7 +658,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
     if (!lightboxOpen) return;
     if ((event.target as Element | null)?.closest('.lg-strip')) return; // over the strip the wheel scrolls the strip itself
     event.preventDefault();
-    if (!boxReady) return;
     const unit = event.deltaMode === 1 ? 40 : event.deltaMode === 2 ? window.innerHeight : 1;
     const now = performance.now();
     const delta = event.deltaY * unit;
@@ -669,7 +684,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     swipeY = event.touches[0]?.clientY ?? 0;
   };
   const onBoxTouchEnd = (event: TouchEvent) => {
-    if (!lightboxOpen || !boxReady || switching) return;
+    if (!lightboxOpen) return;
     if ((event.target as Element | null)?.closest('.lg-strip')) return;
     const dy = (event.changedTouches[0]?.clientY ?? swipeY) - swipeY;
     if (Math.abs(dy) > 60) jumpTo(navIndex + (dy < 0 ? 1 : -1));

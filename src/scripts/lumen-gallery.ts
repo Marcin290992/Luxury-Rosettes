@@ -354,6 +354,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     if (index === currentIndex) return;
     switching = true;
     wanted = index;
+    navIndex = index; // the picture on its way: closing now sends this one back to its tile (see closePicture)
     const next = images[index];
     const forward = index > currentIndex;
     markActive(index);
@@ -553,6 +554,18 @@ export function initLumenGallery(root: HTMLElement): () => void {
     gsap.set(ghost, { opacity: 0 });
     turns.splice(0).forEach((d) => d()); // a page still turning is taken away
     gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });
+    // Closed while another picture was on its way (a page turning, a swipe still loading): the picture that was asked for is the one that goes back,
+    // to its own tile. Without this the old one, still in the box, flew back to its tile (the picture jumped back and then returned to its place).
+    const asked = images[navIndex];
+    if (asked && asked !== source) {
+      source.style.visibility = '';
+      fitBox(asked);
+      boxImg.src = asked.currentSrc || asked.src;
+      boxImg.alt = asked.alt;
+      source = asked;
+      asked.style.visibility = 'hidden';
+      currentIndex = navIndex;
+    }
     const rest = boxImg.getBoundingClientRect(); // where the picture stands now, measured, not remembered
     // the grid stands still while the picture flies, and the tile is on the screen: a tile that is far off (the strip went through many pictures) is
     // brought into view first, so the picture always has a place to land on

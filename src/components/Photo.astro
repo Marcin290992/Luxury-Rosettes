@@ -1,0 +1,19 @@
+---
+// A photo with its description (alt) required: it is what search engines read to understand and rank a picture (Google Images), and what a screen
+// reader says. Every content photo gets an `alt` that says what is in the picture ("Brown rosetted Bengal kitten on a white blanket"). A picture that
+// only decorates (a pattern, a duplicate, a logo beside its name) is marked `decorative` on purpose, so that an empty alt is a decision and not
+// something left out. Everything else is passed to astro:assets' <Image> as it is (widths, sizes, loading, class, data-*), so the output is the same.
+import { Image } from 'astro:assets';
+import type { ComponentProps } from 'astro/types';
+
+type ImageProps = Omit<ComponentProps<typeof Image>, 'alt'>;
+type Props = ImageProps & ({ alt: string; decorative?: never } | { decorative: true; alt?: never });
+
+const { alt, decorative, ...rest } = Astro.props as ImageProps & { alt?: string; decorative?: boolean };
+if (!decorative && !alt?.trim()) {
+  // not an error (a page with data still to be filled in must build), but the build log lists every photo that has no description yet
+  console.warn(`[Photo] no alt text: ${(rest.src as { src?: string })?.src ?? rest.src}`);
+}
+---
+
+<Image {...(rest as any)} alt={decorative ? "" : (alt ?? "")} />

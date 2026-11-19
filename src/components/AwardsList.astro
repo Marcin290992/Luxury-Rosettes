@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 import { AWARDS_LIST as S } from '../scripts/settings';
 
@@ -25,7 +25,7 @@ const total = String(items.length).padStart(2, '0');
       {
         items.map((item, i) => (
           <figure class="al-img">
-            <Image src={item.img} alt={item.alt} widths={[600, 1000, 1400]} sizes="(min-width: 1000px) 46vw, 90vw" loading={i < 3 ? 'eager' : 'lazy'} draggable="false" />
+            <Photo src={item.img} alt={item.alt} widths={[600, 1000, 1400]} sizes="(min-width: 1000px) 46vw, 90vw" loading={i < 3 ? 'eager' : 'lazy'} draggable="false" />
           </figure>
         ))
       }

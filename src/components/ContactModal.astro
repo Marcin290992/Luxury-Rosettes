@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import kita from '../assets/img/cats/kita.webp'; // placeholder: swap for the real portrait
 import logo from '../assets/logo/logo-emblem.svg'; // the emblem of the footer
 import { CONTACT_FORM } from '../scripts/settings';
@@ -27,7 +27,7 @@ const STRIPES = 5;
   <div class="contact-stage">
     <header class="contact-head">
       <div class="contact-brand">
-        <Image src={logo} alt="" height={112} loading="eager" />
+        <Photo src={logo} decorative height={112} loading="eager" />
         <div class="contact-brand-text">
           <p class="contact-title-brand">Luxury Rosettes</p>
           <p class="contact-sub">Bengal Cattery</p>
@@ -44,7 +44,7 @@ const STRIPES = 5;
     <div class="contact-body">
       <figure class="contact-photo" aria-hidden="true">
         <div class="contact-frame">
-          <Image src={kita} alt="" widths={[500, 800, 1100]} sizes="(min-width:769px) 34vw, 100vw" loading="lazy" draggable="false" />
+          <Photo src={kita} decorative widths={[500, 800, 1100]} sizes="(min-width:769px) 34vw, 100vw" loading="lazy" draggable="false" />
         </div>
       </figure>
 

@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 
@@ -28,7 +28,7 @@ const fulls = await Promise.all(photos.map((p) => getImage({ src: p.src, width: 
       {
         photos.map((p, i) => (
           <li>
-            <Image src={p.src} alt={p.alt} widths={[500, 800]} sizes="(min-width:769px) 30vw, 46vw" loading="eager" draggable="false" data-full={fulls[i].src} />
+            <Photo src={p.src} alt={p.alt} widths={[500, 800]} sizes="(min-width:769px) 30vw, 46vw" loading="eager" draggable="false" data-full={fulls[i].src} />
           </li>
         ))
       }

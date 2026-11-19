@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 
 /**
@@ -31,7 +31,7 @@ const half = Math.ceil(words.length / 2);
     </h2>
     <div class="ct-lines">
       <h3>{above}</h3>
-      <div class="ct-media"><Image src={image} alt={alt} widths={[600, 1000, 1400]} sizes="(min-width:1025px) 26vw, 62vw" loading="lazy" /></div>
+      <div class="ct-media"><Photo src={image} alt={alt} widths={[600, 1000, 1400]} sizes="(min-width:1025px) 26vw, 62vw" loading="lazy" /></div>
       <h3>{below}</h3>
     </div>
   </div>

@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import LetterButton from './LetterButton.astro';
 import type { ImageMetadata } from 'astro';
 import { spots } from '../scripts/spots';
@@ -39,13 +39,13 @@ const SHAPES = [spots[1], spots[0], spots[3]];
     <h2 class="rt-huge">{word}</h2>
 
     <div class="rt-float rt-float-3">
-      <Image class="rt-pic rt-pic-3" src={right} alt="" widths={[500, 800]} sizes="30vw" loading="lazy" />
+      <Photo class="rt-pic rt-pic-3" src={right} decorative widths={[500, 800]} sizes="30vw" loading="lazy" />
     </div>
     <div class="rt-float rt-float-2">
-      <Image class="rt-pic rt-pic-2" src={top} alt="" widths={[600, 900]} sizes="40vw" loading="lazy" />
+      <Photo class="rt-pic rt-pic-2" src={top} decorative widths={[600, 900]} sizes="40vw" loading="lazy" />
     </div>
     <div class="rt-float rt-float-1">
-      <Image class="rt-pic rt-pic-1" src={front} alt="" widths={[500, 800]} sizes="34vw" loading="lazy" />
+      <Photo class="rt-pic rt-pic-1" src={front} decorative widths={[500, 800]} sizes="34vw" loading="lazy" />
     </div>
 
     <div class="rt-col">

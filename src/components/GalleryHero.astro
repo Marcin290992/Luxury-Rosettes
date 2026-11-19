@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 
 /**
@@ -28,7 +28,7 @@ const floaters = photos.slice(0, 4);
 <div class="gh-stage">
   <div class="gh-layer gh-bg" data-depth="12">
     <div class="gh-media">
-      <Image src={image} alt={alt} widths={[900, 1600, 2400]} sizes="100vw" loading="eager" draggable="false" />
+      <Photo src={image} alt={alt} widths={[900, 1600, 2400]} sizes="100vw" loading="eager" draggable="false" />
     </div>
   </div>
   <div class="gh-scrim" aria-hidden="true"></div>
@@ -38,7 +38,7 @@ const floaters = photos.slice(0, 4);
       floaters.map((p, i) => (
         <div class={`gh-layer gh-float gh-f${i + 1}`} data-depth={i % 2 ? -26 : 34}>
           <figure style={`--i:${i}`}>
-            <Image src={p.src} alt="" widths={[500, 800, 1200]} sizes="(min-width:769px) 20vw, 48vw" loading="eager" draggable="false" />
+            <Photo src={p.src} decorative widths={[500, 800, 1200]} sizes="(min-width:769px) 20vw, 48vw" loading="eager" draggable="false" />
           </figure>
         </div>
       ))

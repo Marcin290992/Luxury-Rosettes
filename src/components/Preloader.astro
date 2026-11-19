@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import kita from '../assets/img/cats/kita.webp';
 import candy from '../assets/img/cats/candy.webp';
 import draco from '../assets/img/cats/draco.webp';
@@ -33,14 +33,14 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
   <div class="pl-frame">
     {
       photos.slice(0, -1).map((img, i) => (
-        <Image src={img} alt="" width={600} loading="eager" class:list={['pl-photo', { 'is-on': i === 0 }]} />
+        <Photo src={img} decorative width={600} loading="eager" class:list={['pl-photo', { 'is-on': i === 0 }]} />
       ))
     }
   </div>
   {/* the hero's own photo, at the same sizes as the hero, so it is the file the page already has. It is the real wallpaper: the size of the screen
       from the start, hidden; the small frame shows a window onto it (a clip-path) at the end of the count, and that window opens. It is never scaled. */}
   <div class="pl-wall">
-    <Image src={photos[photos.length - 1]} alt="" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" class="pl-photo pl-hero" />
+    <Photo src={photos[photos.length - 1]} decorative widths={[800, 1600, 2400]} sizes="100vw" loading="eager" class="pl-photo pl-hero" />
   </div>
   <div class="pl-foot">
     <p class="pl-count">000</p>

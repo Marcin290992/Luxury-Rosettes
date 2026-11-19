@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 
 /**
@@ -50,7 +50,7 @@ const { head, noteTitle, note, items } = Astro.props;
               items.map((it, i) => (
                 <article class="wk-item" data-wk-item>
                   <div class="wk-item-photo">
-                    <Image src={it.image} alt={it.alt ?? it.title} widths={[500, 900]} sizes="(max-width: 767px) 90vw, 1px" loading="lazy" />
+                    <Photo src={it.image} alt={it.alt ?? it.title} widths={[500, 900]} sizes="(max-width: 767px) 90vw, 1px" loading="lazy" />
                   </div>
                   <span class="wk-num">{String(i + 1).padStart(2, '0')}</span>
                   <h3 class="wk-item-title">{it.title}</h3>
@@ -64,7 +64,7 @@ const { head, noteTitle, note, items } = Astro.props;
           {
             items.map((it, i) => (
               <div class="wk-media" data-wk-media data-index={i}>
-                <Image src={it.image} alt="" widths={[700, 1200]} sizes="(min-width: 768px) 34vw, 1px" loading="eager" decoding="async" />
+                <Photo src={it.image} decorative widths={[700, 1200]} sizes="(min-width: 768px) 34vw, 1px" loading="eager" decoding="async" />
                 <span class="wk-media-dim" data-wk-dim></span>
               </div>
             ))

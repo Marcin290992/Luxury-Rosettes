@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 import { AWARD_ORBIT as S } from '../scripts/settings';
 
@@ -23,13 +23,13 @@ const { slides } = Astro.props;
         {
           slides.map((s) => (
             <figure class="ao-panel">
-              <Image src={s.img} alt={s.alt} widths={[240, 480]} sizes="160px" loading="eager" draggable="false" />
+              <Photo src={s.img} alt={s.alt} widths={[240, 480]} sizes="160px" loading="eager" draggable="false" />
             </figure>
           ))
         }
         <!-- the big one in the middle: all the photos on top of each other, the one that faces you is shown -->
         <div class="ao-preview" aria-hidden="true">
-          {slides.map((s) => <Image src={s.img} alt="" widths={[420, 840]} sizes="280px" loading="eager" draggable="false" />)}
+          {slides.map((s) => <Photo src={s.img} decorative widths={[420, 840]} sizes="280px" loading="eager" draggable="false" />)}
         </div>
       </div>
     </div>

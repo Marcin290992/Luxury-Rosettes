@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from '../components/Photo.astro';
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
 import SpinShutter from '../components/SpinShutter.astro';
@@ -58,7 +58,7 @@ import { breadcrumb } from '../data/seo';
       {
         kittens.map((k, i) => (
           <li class="row" id={k.name.toLowerCase()}>
-            <div class="photo" data-clip={`kp-${i}`} style={`--clip:url(#kp-${i});--clip-closed:url(#kp-${i}-closed)`}><Image src={k.image} alt={k.name} widths={[600, 1000]} sizes="(min-width:1024px) 40vw, 90vw" /></div>
+            <div class="photo" data-clip={`kp-${i}`} style={`--clip:url(#kp-${i});--clip-closed:url(#kp-${i}-closed)`}><Photo src={k.image} alt={k.name} widths={[600, 1000]} sizes="(min-width:1024px) 40vw, 90vw" /></div>
             <div class="text">
               <h2 data-line-reveal>{k.name}</h2>
               <p class="line" data-line-reveal>{k.line}</p>

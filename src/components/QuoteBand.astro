@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 
 /**
@@ -19,7 +19,7 @@ const { quote, by, source = 'Facebook review', image, alt = '' } = Astro.props;
 
 <section class="qb" data-quote-band>
   <div class="qb-photo" data-qb-photo>
-    <Image src={image} alt={alt} widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
+    <Photo src={image} alt={alt} widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
   </div>
   <span class="qb-shade" aria-hidden="true"></span>
   <figure class="qb-copy">

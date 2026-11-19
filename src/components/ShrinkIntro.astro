@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 import hero from '../assets/img/hero_img.webp';
 
@@ -28,7 +28,7 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
   <section class="si-hero" id="shrink-intro">
     <div class="si-pin">
       <div class="si-img">
-        <Image src={hero} alt="" widths={[900, 1600, 2400]} sizes="100vw" loading="eager" />
+        <Photo src={hero} decorative widths={[900, 1600, 2400]} sizes="100vw" loading="eager" />
         <span class="si-shade" aria-hidden="true"></span>
       </div>
       <div class="si-header"><h1 set:html={headline} /></div>
@@ -42,7 +42,7 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
           <div class="si-col">
             {column.map((img) => (
               <div class="si-tile">
-                <Image src={img} alt="" widths={[200, 400]} sizes="125px" loading="lazy" />
+                <Photo src={img} decorative widths={[200, 400]} sizes="125px" loading="lazy" />
               </div>
             ))}
           </div>

@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import LetterButton from './LetterButton.astro';
 import defaultPhoto from '../assets/img/our_cats.webp'; // placeholder: swap for the real closing photo
 import type { ImageMetadata } from 'astro';
@@ -22,7 +22,7 @@ const {
 <!-- Full-screen photo with the closing line. When the footer rises, the photo is clipped inward and the footer scales in (scripts/footer-zoom.ts). -->
 <section class="end" id="enquire" data-footer-clip>
   <div class="bg" aria-hidden="true">
-    <Image class="photo" src={photo} alt="" widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" draggable="false" data-footer-photo />
+    <Photo class="photo" src={photo} decorative widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" draggable="false" data-footer-photo />
     <i class="shade"></i>
   </div>
   <div class="inner">

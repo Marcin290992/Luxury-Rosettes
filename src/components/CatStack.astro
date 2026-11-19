@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 
 /**
@@ -33,7 +33,7 @@ const { cards, pull, lead } = Astro.props;
       <div class="cs-item" data-cs-item>
         <div class="cs-reveal" data-cs-reveal>
         <div class="cs-card" data-cs-card>
-          <Image src={c.image} alt={c.name} widths={[900, 1600, 2400]} sizes="100vw" loading="eager" decoding="async" style={`object-position:${c.position ?? '50% 35%'}`} />
+          <Photo src={c.image} alt={c.name} widths={[900, 1600, 2400]} sizes="100vw" loading="eager" decoding="async" style={`object-position:${c.position ?? '50% 35%'}`} />
           <span class="cs-shade" aria-hidden="true"></span>
           <span class="cs-dim" aria-hidden="true" data-cs-dim></span>
           <div class="cs-content">

@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import LetterButton from './LetterButton.astro';
 import draco from '../assets/img/cats/draco.webp';
 import kita from '../assets/img/cats/kita.webp';
@@ -50,7 +50,7 @@ const pillars = [
         cats.map((c) => (
           <article class="cat">
             <div class="cat-photo">
-              <Image src={c.image} alt={c.name} widths={[500, 800, 1100]} sizes="(min-width:1024px) 28vw, 80vw" />
+              <Photo src={c.image} alt={c.name} widths={[500, 800, 1100]} sizes="(min-width:1024px) 28vw, 80vw" />
             </div>
             <h3>{c.name}</h3>
             <p>{c.line}</p>

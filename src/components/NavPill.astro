@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import logo from '../assets/logo/logo-cat.svg';
 
 const pathname = Astro.url.pathname;
@@ -35,7 +35,7 @@ const isCurrent = (href: string) =>
     </button>
 
     <a href="/" class="nav-logo" aria-label="Luxury Rosettes — home">
-      <Image src={logo} alt="" height={56} loading="eager" />
+      <Photo src={logo} decorative height={56} loading="eager" />
     </a>
 
     <button type="button" class="nav-btn inquire-btn" aria-label="Inquire" data-contact-trigger>

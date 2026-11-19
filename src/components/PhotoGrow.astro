@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 import LetterButton from './LetterButton.astro';
 
@@ -25,14 +25,14 @@ const [left, mid, right] = images;
   <div class="pg-track" data-pg-track>
     <div class="pg-stage" data-pg-stage data-footer-clip={ending ? "" : undefined}>
       <div class="pg-img pg-img--l" data-pg-left>
-        <div class="pg-wrap"><Image src={left} alt={alts[0]} widths={[600, 1000]} sizes="34vw" loading="lazy" /></div>
+        <div class="pg-wrap"><Photo src={left} alt={alts[0]} widths={[600, 1000]} sizes="34vw" loading="lazy" /></div>
       </div>
       <div class="pg-img pg-img--m" data-pg-mid>
-        <Image src={mid} alt={alts[1]} widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
+        <Photo src={mid} alt={alts[1]} widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
         <span class="pg-shade" data-pg-shade aria-hidden="true"></span>
       </div>
       <div class="pg-img pg-img--r" data-pg-right>
-        <div class="pg-wrap"><Image src={right} alt={alts[2]} widths={[600, 1000]} sizes="34vw" loading="lazy" /></div>
+        <div class="pg-wrap"><Photo src={right} alt={alts[2]} widths={[600, 1000]} sizes="34vw" loading="lazy" /></div>
       </div>
 
       <div class="pg-copy">

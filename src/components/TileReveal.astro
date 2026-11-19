@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 import { TILE_REVEAL } from '../scripts/settings';
 
@@ -32,7 +32,7 @@ const { columns, gap, gridWidth, tileAspect, scrollLength } = TILE_REVEAL;
         {
           images.map((img) => (
             <div class="tr-tile">
-              <Image src={img.src} alt={img.alt ?? ''} widths={[400, 700]} sizes="(min-width:1024px) 24vw, 30vw" loading="lazy" draggable="false" />
+              <Photo src={img.src} alt={img.alt ?? ''} widths={[400, 700]} sizes="(min-width:1024px) 24vw, 30vw" loading="lazy" draggable="false" />
             </div>
           ))
         }

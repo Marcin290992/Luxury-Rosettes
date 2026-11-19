@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 
 /**
@@ -25,7 +25,7 @@ const { heading, paragraphs, images, alts = [] } = Astro.props;
         {
           images.map((img, i) => (
             <div class={`ss-item${i === 0 ? ' is-active' : ''}`} data-ss-item>
-              <Image src={img} alt={alts[i] ?? ''} widths={[700, 1200]} sizes="(min-width: 900px) 46vw, 92vw" loading="eager" decoding="async" />
+              <Photo src={img} alt={alts[i] ?? ''} widths={[700, 1200]} sizes="(min-width: 900px) 46vw, 92vw" loading="eager" decoding="async" />
             </div>
           ))
         }

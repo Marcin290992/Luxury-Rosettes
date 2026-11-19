@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
 
 /**
@@ -45,7 +45,7 @@ const { eyebrow, title, photos } = Astro.props;
           <div class="ah-drift">
             <div class="ah-mouse" data-mouse={p.mouse}>
               <div class="ah-pic">
-                <Image src={p.src} alt={i === 0 ? p.alt : ''} widths={[400, 800, 1200]} sizes={i === 0 ? '(min-width:769px) 36vw, 90vw' : '(min-width:769px) 16vw, 40vw'} loading="eager" draggable="false" />
+                <Photo src={p.src} alt={i === 0 ? p.alt : ''} widths={[400, 800, 1200]} sizes={i === 0 ? '(min-width:769px) 36vw, 90vw' : '(min-width:769px) 16vw, 40vw'} loading="eager" draggable="false" />
               </div>
             </div>
           </div>

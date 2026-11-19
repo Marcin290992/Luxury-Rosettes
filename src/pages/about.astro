@@ -4,7 +4,7 @@ import NavPill from '../components/NavPill.astro';
 import AboutHero from '../components/AboutHero.astro';
 import Closing from '../components/Closing.astro';
 import Footer from '../components/Footer.astro';
-import { Image } from 'astro:assets';
+import Photo from '../components/Photo.astro';
 import aboutPhoto from '../assets/img/story/about.webp';
 import closingPhoto from '../assets/img/cats/draco.webp'; // placeholder: swap for the real closing photo
 import kita from '../assets/img/cats/kita.webp';
@@ -74,7 +74,7 @@ import { breadcrumb } from '../data/seo';
             {b.photo && (
               <figure class="beat-fig" data-beat-photo>
                 <div class="beat-frame">
-                  <Image class="beat-img" src={b.photo.src} alt={b.photo.alt} widths={[500, 800, 1100]} sizes="(min-width:900px) 34vw, 86vw" loading="lazy" draggable="false" />
+                  <Photo class="beat-img" src={b.photo.src} alt={b.photo.alt} widths={[500, 800, 1100]} sizes="(min-width:900px) 34vw, 86vw" loading="lazy" draggable="false" />
                 </div>
               </figure>
             )}

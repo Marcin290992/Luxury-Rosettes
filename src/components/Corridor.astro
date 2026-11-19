@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import LetterButton from './LetterButton.astro';
 import about from '../assets/img/story/about.webp';
 import parent from '../assets/img/story/champion-parent.webp';
@@ -40,7 +40,7 @@ const items = [
         items.map((it) => (
           <figure class="cor-item">
             <div class="cor-frame">
-              <Image src={it.img} alt={it.title} widths={[500, 800, 1100]} sizes="(min-width:1024px) 30vw, 90vw" loading="lazy" draggable="false" />
+              <Photo src={it.img} alt={it.title} widths={[500, 800, 1100]} sizes="(min-width:1024px) 30vw, 90vw" loading="lazy" draggable="false" />
             </div>
             <figcaption class="cor-cap">
               <p class="cor-eyebrow">{it.eyebrow}</p>
@@ -56,7 +56,7 @@ const items = [
       }
 
       <div class="cor-finale">
-        <Image class="cor-finale-img" src={finale} alt="Bengal kittens" widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
+        <Photo class="cor-finale-img" src={finale} alt="Bengal kittens" widths={[900, 1600, 2400]} sizes="100vw" loading="lazy" />
         <div class="cor-finale-scrim"></div>
         <div class="cor-finale-copy">
           <p class="cor-eyebrow">Your Bengal awaits</p>

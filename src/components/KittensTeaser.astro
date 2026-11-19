@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import LetterButton from './LetterButton.astro';
 import candy from '../assets/img/cats/candy.webp';
 import cosmo from '../assets/img/cats/cosmo.webp';
@@ -32,7 +32,7 @@ const next = nextLitter(getLitters());
           {kittens.map((k, i) => (
             <article class="kit-card" data-reveal>
               <div class="kit-photo">
-                <Image src={photos[k.photo]} alt={`${k.name}, a Bengal kitten`} widths={[400, 700]} sizes="(min-width:1024px) 22vw, 70vw" loading="lazy" />
+                <Photo src={photos[k.photo]} alt={`${k.name}, a Bengal kitten`} widths={[400, 700]} sizes="(min-width:1024px) 22vw, 70vw" loading="lazy" />
                 <span class={`kit-badge${k.status === 'reserved' ? ' kit-badge--reserved' : ''}`}>{k.status === 'reserved' ? 'Reserved' : 'Available'}</span>
               </div>
               <div class="kit-info">

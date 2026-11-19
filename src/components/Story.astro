@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import LetterButton from './LetterButton.astro';
 import kittens from '../assets/img/kittens.webp';
 import ourCats from '../assets/img/our_cats.webp';
@@ -65,7 +65,7 @@ const small = [
       {
         big.map((p) => (
           <div class="layer">
-            <Image
+            <Photo
               class={p.crop}
               src={p.src}
               alt={p.alt}
@@ -81,10 +81,10 @@ const small = [
       {
         small.map((p) => (
           <div class="layer">
-            <Image
+            <Photo
               class={p.crop}
               src={p.src}
-              alt=""
+              decorative
               widths={[500, 800]}
               sizes="(min-width:1024px) 20vw, 50vw"
               loading="eager"

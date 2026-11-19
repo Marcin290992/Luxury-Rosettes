@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import kittens from '../assets/img/kittens.webp';
 import candy from '../assets/img/cats/candy.webp';
 import draco from '../assets/img/cats/draco.webp';
@@ -43,7 +43,7 @@ const steps = [
           steps.map((s) => (
             <li class="stack-slot">
               <article class="stack-card">
-                <Image class="stack-image" src={s.img} alt={s.alt} widths={[600, 1000, 1400]} sizes="(min-width:1024px) 840px, 92vw" loading="lazy" draggable="false" />
+                <Photo class="stack-image" src={s.img} alt={s.alt} widths={[600, 1000, 1400]} sizes="(min-width:1024px) 840px, 92vw" loading="lazy" draggable="false" />
                 <span class="stack-scrim" aria-hidden="true"></span>
                 <div class="stack-copy">
                   <i class="stack-line" aria-hidden="true"></i>

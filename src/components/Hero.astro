@@ -1,12 +1,12 @@
 ---
-import { Image } from 'astro:assets';
+import Photo from './Photo.astro';
 import hero from '../assets/img/hero_img.webp';
 ---
 
 <header class="hero" id="hero">
   <!-- the photo sits in a wrapper so the load-in zoom can't clash with the scroll zoom (which targets .hero-img) -->
   <div class="hero-media">
-    <Image
+    <Photo
       class="hero-img"
       src={hero}
       alt="Bengal cat looking up"

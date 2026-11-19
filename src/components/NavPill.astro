@@ -379,7 +379,7 @@ const isCurrent = (href: string) =>
 
   /* A phone or a tablet (a finger): no glass, no transparency at all. The bar is one solid colour in every state (closed, scrolled, open, in a page
      transition, arriving with the intro), so nothing behind it can show through or change its shade. Its border and shadow are solid too, and it
-     arrives by sliding down (see Hero.astro), not by fading. The glass layer stays only for a mouse. */
+     arrives with the intro as before: it fades in and settles down a little (Hero.astro). The glass layer stays only for a mouse. */
   @media (pointer: coarse) {
     .nav-glass {
       display: none;
@@ -387,10 +387,10 @@ const isCurrent = (href: string) =>
     .nav-pill {
       --glass: rgb(30, 26, 22);
       background: rgb(30, 26, 22);
-      opacity: 1 !important;
+      opacity: var(--intro); /* the intro fades the solid bar in, as before (Hero.astro) */
       border-color: rgb(75, 70, 66);
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
-      will-change: translate;
+      will-change: opacity, translate;
       transition: border-radius 0.3s var(--ease);
     }
     .nav-pill.is-scrolled,

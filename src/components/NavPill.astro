@@ -390,6 +390,8 @@ const isCurrent = (href: string) =>
       /* the whole pill (the bar with its logo and buttons) arrives as one with the home page's intro. There is no glass on touch, so a plain
          opacity is safe here (see the note under --intro): the bar can no longer show before its contents or the other way round */
       opacity: var(--intro);
+      /* the bar keeps its own layer for good: when the intro's fade ended, the browser dropped the layer and repainted the bar in one frame, which showed as a blink */
+      will-change: opacity, transform;
       transition: border-radius 0.3s var(--ease), background 0.25s ease;
     }
     .nav-pill.is-scrolled {

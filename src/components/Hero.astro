@@ -183,7 +183,7 @@ import hero from '../assets/img/hero_img.webp';
         .to(chars, { yPercent: 0, duration: T.chars.dur, stagger: T.chars.stagger }, T.chars.at)
         .to(rail, { opacity: 1, y: 0, duration: T.rail.dur }, T.rail.at);
       // the nav only arrives with the very first intro; after a page transition it was already on screen
-      if (!arrived) opening.to(nav, { '--intro': 1, y: 0, visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, clearProps: '--intro,visibility,transform' }, T.nav.at);
+      if (!arrived) opening.to(nav, { '--intro': 1, y: 0, visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, force3D: true, clearProps: '--intro,visibility,transform' }, T.nav.at);
     });
 
     return () => {

@@ -154,13 +154,6 @@ const first = gallery.photos[0];
     .lg-hero-inner {
       padding-top: 96px;
     }
-    .lg-strip,
-    .lg-strip :global(.lg-thumb) {
-      width: 54px;
-    }
-    .lg-strip :global(.lg-thumb) {
-      height: 72px;
-    }
   }
   @media (min-width: 1024px) {
     .lg-hero-inner {
@@ -347,12 +340,43 @@ const first = gallery.photos[0];
   }
   /* phone: bottom right (the site's pill is across the top and its dock in the middle at the bottom) */
   @media (max-width: 1023px) {
-    .lg-box-close {
+    /* the opened photo on a phone: the pictures lie in a row along the bottom (the full width of the screen, scrolled sideways; the Close pill sits above its right end), so the photo has the whole width */
+    .lg-strip {
       top: auto;
-      bottom: 24px;
+      bottom: 12px;
+      left: 0;
+      right: 0;
+      width: auto;
+      height: 72px;
+      display: flex;
+      gap: 4px;
+      padding: 0 8px 0 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    /* the size is set by the script (fitBox); the 80 % limits of the desktop would shrink the photo again */
+    .lg-box-img {
+      max-width: none;
+      max-height: none;
+    }
+    .lg-strip :global(.lg-thumb) {
+      flex: none;
+      width: 54px;
+      height: 72px;
+    }
+    /* only the X, a round button under the site's pill at the right (the photo starts below it) */
+    .lg-box-close {
+      top: 108px; /* clear of the pill's Inquire button */
+      bottom: auto;
       right: 16px;
-      height: 46px;
-      padding: 0 1.1rem 0 1.2rem;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      justify-content: center;
+      gap: 0;
+    }
+    .lg-box-close span {
+      display: none;
     }
   }
 </style>

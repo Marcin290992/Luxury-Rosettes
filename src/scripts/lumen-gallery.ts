@@ -84,7 +84,20 @@ export function initLumenGallery(root: HTMLElement): () => void {
   const applyLayout = (level: Level) => {
     const s = spacingFor(level, isDesktop);
     // on the grid page the first row keeps clear of the site's pill
-    grid.style.paddingTop = `${startGrid ? Math.max(s.paddingTop, isDesktop ? 150 : 120) : s.paddingTop}px`;
+    let paddingTop = startGrid ? Math.max(s.paddingTop, isDesktop ? 150 : 120) : s.paddingTop;
+    // the two large pictures of the grid page's opening, on a phone: one above the other in the middle of the screen (not at the top with a big gap
+    // under them)
+    if (startGrid && level === 'intro' && !isDesktop) {
+      const colW = window.innerWidth - s.paddingLeft - s.paddingRight;
+      const heights = [0, 1].map((i) => {
+        const w = Number(images[i]?.getAttribute('width'));
+        const h = Number(images[i]?.getAttribute('height'));
+        return w && h ? (colW * h) / w : colW * 0.75;
+      });
+      const total = heights[0] + heights[1] + s.gapY;
+      paddingTop = Math.max(100, (window.innerHeight - total) / 2);
+    }
+    grid.style.paddingTop = `${paddingTop}px`;
     grid.style.paddingBottom = `${s.paddingBottom}px`;
     grid.style.paddingLeft = `${s.paddingLeft}px`;
     grid.style.paddingRight = `${s.paddingRight}px`;
@@ -348,7 +361,10 @@ export function initLumenGallery(root: HTMLElement): () => void {
   const markActive = (index: number, smooth = true) => {
     thumbs.forEach((t, i) => t.classList.toggle('is-active', i === index));
     const t = thumbs[index];
-    strip.scrollTo({ top: t.offsetTop - strip.clientHeight / 2 + t.clientHeight / 2, behavior: smooth ? 'smooth' : 'auto' });
+    const behavior = smooth ? 'smooth' : 'auto';
+    // on a phone the strip lies along the bottom and runs sideways, on a desktop it stands down the left
+    if (window.innerWidth < 1024) strip.scrollTo({ left: t.offsetLeft - strip.clientWidth / 2 + t.clientWidth / 2, behavior });
+    else strip.scrollTo({ top: t.offsetTop - strip.clientHeight / 2 + t.clientHeight / 2, behavior });
   };
   // another picture (from the strip, the keys or the wheel): the opened one is a page of a book that turns over and the next is under it. The page is
   // made over the picture first (flat, exactly over it) and only then the picture under it is changed, so there is no frame without a picture.
@@ -456,13 +472,15 @@ export function initLumenGallery(root: HTMLElement): () => void {
   // the same size, whatever the screen)
   const fitBox = (source: HTMLImageElement, el: HTMLImageElement = boxImg): Box => {
     const aspect = (source.naturalWidth || source.width) / (source.naturalHeight || source.height) || 4 / 3;
-    // the area under the site's pill (it is about 100 px from the top) and clear of the strip on the left
-    const top = window.innerWidth >= 1024 ? 104 : 96;
-    const bottom = 28;
-    const left = window.innerWidth >= 1024 ? 100 : 66;
-    const areaW = window.innerWidth - left - 24;
+    // the area under the site's pill (it is about 100 px from the top) and clear of the strip: on a desktop the strip is on the left, on a phone it
+    // lies along the bottom (the full width); the X sits under the pill, so the photo starts below it, so the photo gets the whole width
+    const phone = window.innerWidth < 1024;
+    const top = phone ? 164 : 104;
+    const bottom = phone ? 96 : 28;
+    const left = phone ? 12 : 100;
+    const areaW = phone ? window.innerWidth - 24 : window.innerWidth - left - 24;
     const areaH = window.innerHeight - top - bottom;
-    const width = Math.min(areaW * 0.94, areaH * aspect);
+    const width = Math.min(areaW * (phone ? 1 : 0.94), areaH * aspect);
     const height = width / aspect;
     el.style.width = `${width}px`;
     el.style.height = `${height}px`;

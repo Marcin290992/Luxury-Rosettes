@@ -28,6 +28,8 @@ gsap.registerPlugin(Flip);
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
+const CLOSE_FLIGHT = 0.65; // seconds the opened picture takes to fly back to its tile
+
 export function initLumenGallery(root: HTMLElement): () => void {
   const q = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
   const hero = q<HTMLElement>('.lg-hero');
@@ -403,9 +405,15 @@ export function initLumenGallery(root: HTMLElement): () => void {
         // loaded, and only then the second image goes: there is never a frame with the old one
         gsap.set(ghost, { opacity: 1 });
         gsap.killTweensOf(boxImg);
-        natural = fitBox(next);
+        // the picture and the tile it belongs to change in one step, so that closing at any moment sends the shown picture to its own tile
+        fitBox(next);
         boxImg.src = nextSrc;
         boxImg.alt = next.alt;
+        if (source) source.style.visibility = '';
+        source = next;
+        next.style.visibility = 'hidden';
+        currentIndex = index;
+        navIndex = index;
         try {
           await boxImg.decode();
         } catch {
@@ -413,11 +421,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
         }
         gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });
         gsap.set(ghost, { opacity: 0 });
-        if (source) source.style.visibility = '';
-        source = next;
-        next.style.visibility = 'hidden';
-        currentIndex = index;
-        navIndex = index;
         finish();
       };
       // the one shown fades away under the sheet while it turns over (it may be a different size)
@@ -442,7 +445,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
 
   type Box = { left: number; top: number; width: number; height: number };
   const turns: Array<() => void> = [];
-  let natural: Box | undefined; // where the large picture rests (measured once it is in the box, before any move)
   // the large picture fills the box as far as it goes (80 % of the window each way) in the proportions of the grid's picture; its size is set from
   // those proportions, so it is known before the file is loaded and the move can start at once (and the file that replaces the small one later has
   // the same size, whatever the screen)
@@ -482,7 +484,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 0 }); // placed over its tile by start() below
     gsap.set(boxBg, { opacity: 0 });
     gsap.set(strip, { opacity: 0 });
-    natural = fitBox(img);
+    fitBox(img);
     box.hidden = false;
     // the grid stays exactly as it is while the white comes in over it
     gsap.to(boxBg, { opacity: 1, duration: 0.55, ease: 'power2.out' });
@@ -530,34 +532,45 @@ export function initLumenGallery(root: HTMLElement): () => void {
     void start();
   };
   const closePicture = () => {
-    if (!lightboxOpen || closing || !source || !natural) return;
+    if (!lightboxOpen || closing || !source) return;
     closing = true;
     boxReady = false;
     switching = false;
     window.clearTimeout(upgradeTimer);
-    gsap.killTweensOf(ghost);
+    gsap.killTweensOf([ghost, boxImg]);
     gsap.set(ghost, { opacity: 0 });
     turns.splice(0).forEach((d) => d()); // a page still turning is taken away
-    const to = source.getBoundingClientRect();
-    const rest = natural;
-    gsap.killTweensOf(boxImg);
-    gsap.set(boxImg, { opacity: 1 });
-    // everything leaves softly together: the strip and the Close pill fade first, the white thins out over the whole flight, the picture
-    // glides back on a gentle curve and, once at its tile, melts into it (no hard swap)
-    gsap.to([strip, boxClose], { opacity: 0, duration: 0.35, ease: 'power1.out' });
-    gsap.to(boxBg, { opacity: 0, duration: 0.75, delay: 0.05, ease: 'power1.inOut' });
-    gsap.to(boxImg, {
-      x: to.left + to.width / 2 - (rest.left + rest.width / 2),
-      y: to.top + to.height / 2 - (rest.top + rest.height / 2),
-      scale: to.width / rest.width,
-      duration: 1.05,
+    gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });
+    const rest = boxImg.getBoundingClientRect(); // where the picture stands now, measured, not remembered
+    // the grid stands still while the picture flies, and the tile is on the screen: a tile that is far off (the strip went through many pictures) is
+    // brought into view first, so the picture always has a place to land on
+    vlerp.jump(vlerp.getValue());
+    const seen = source.getBoundingClientRect();
+    if (seen.bottom < 0 || seen.top > window.innerHeight) vlerp.jump(clamp(position + seen.top - (window.innerHeight - seen.height) / 2, 0, maxScroll()));
+    // everything leaves softly together: the strip and the X fade first, the white thins out over the flight, the picture glides back and, once at
+    // its tile, melts into it (no hard swap)
+    gsap.to([strip, boxClose], { opacity: 0, duration: 0.25, ease: 'power1.out' });
+    gsap.to(boxBg, { opacity: 0, duration: 0.55, delay: 0.05, ease: 'power1.inOut' });
+    // the tile is measured at every frame, so the picture lands exactly on it even if the page moves a little (the address bar, a resize)
+    const flight = { p: 0 };
+    gsap.to(flight, {
+      p: 1,
+      duration: CLOSE_FLIGHT,
       ease: 'power2.inOut',
-      force3D: true,
+      onUpdate: () => {
+        const to = source!.getBoundingClientRect();
+        gsap.set(boxImg, {
+          x: (to.left + to.width / 2 - (rest.left + rest.width / 2)) * flight.p,
+          y: (to.top + to.height / 2 - (rest.top + rest.height / 2)) * flight.p,
+          scale: 1 + (to.width / rest.width - 1) * flight.p,
+          force3D: true,
+        });
+      },
       onComplete: () => {
         if (source) source.style.visibility = '';
         gsap.to(boxImg, {
           opacity: 0,
-          duration: 0.28,
+          duration: 0.2,
           ease: 'power1.out',
           onComplete: () => {
             box.hidden = true;
@@ -596,7 +609,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       const r = next.getBoundingClientRect();
       vlerp.jump(clamp(position + r.top - (window.innerHeight - r.height) / 2, 0, maxScroll()));
       gsap.killTweensOf(boxImg);
-      natural = fitBox(next);
+      fitBox(next);
       boxImg.src = nextSrc;
       boxImg.alt = next.alt;
       gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });

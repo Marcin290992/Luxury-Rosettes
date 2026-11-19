@@ -2,6 +2,18 @@
 import { ClientRouter } from 'astro:transitions';
 import CursorTrail from '../components/CursorTrail.astro';
 import ContactModal from '../components/ContactModal.astro';
+// the fonts are served from the site itself (no request to Google), only the Latin letters and only the weights the site uses
+import '@fontsource/cinzel-decorative/latin-400.css';
+import '@fontsource/cinzel-decorative/latin-700.css';
+import '@fontsource/cormorant-garamond/latin-300.css';
+import '@fontsource/cormorant-garamond/latin-400.css';
+import '@fontsource/cormorant-garamond/latin-500.css';
+import '@fontsource/cormorant-garamond/latin-400-italic.css';
+import '@fontsource/montserrat/latin-400.css';
+import '@fontsource/montserrat/latin-500.css';
+// the two used on every first screen are fetched at once, not when the styles are read
+import headingFont from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff2?url';
+import bodyFont from '@fontsource/montserrat/files/montserrat-latin-400-normal.woff2?url';
 
 const {
   title = 'Luxury Rosettes — TICA Bengal Kittens in High Wycombe, UK',
@@ -66,12 +78,8 @@ const jsonLd = [business, ...schema];
     <meta name="twitter:image" content={imageUrl} />
     {jsonLd.map((d) => <script type="application/ld+json" set:html={JSON.stringify(d)} />)}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Montserrat:wght@400;500&display=swap"
-    />
+    <link rel="preload" as="font" type="font/woff2" href={headingFont} crossorigin="anonymous" />
+    <link rel="preload" as="font" type="font/woff2" href={bodyFont} crossorigin="anonymous" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <!-- A refresh starts the page over: no restored scroll position (the pinned sections and the intro are built to start from the top) -->

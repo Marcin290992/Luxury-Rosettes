@@ -386,9 +386,10 @@ const isCurrent = (href: string) =>
     }
     .nav-pill {
       --glass: rgba(34, 29, 25, 0.86);
-      /* the plain background arrives softly with the home page's intro (--intro 0 to 1), like the border: it used to be there whole the moment the pill
-         became visible, a hard entrance */
-      background: color-mix(in srgb, var(--glass) calc(var(--intro) * 100%), transparent);
+      background: var(--glass);
+      /* the whole pill (the bar with its logo and buttons) arrives as one with the home page's intro. There is no glass on touch, so a plain
+         opacity is safe here (see the note under --intro): the bar can no longer show before its contents or the other way round */
+      opacity: var(--intro);
       transition: border-radius 0.3s var(--ease), background 0.25s ease;
     }
     .nav-pill.is-scrolled {

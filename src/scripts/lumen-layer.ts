@@ -23,7 +23,10 @@ export class Layer {
     this.el = document.createElement('div');
     this.el.className = 'lumen-layer';
     this.el.style.cssText = `position:fixed;inset:0;pointer-events:none;z-index:${zIndex};`;
-    document.body.appendChild(this.el);
+    // On a phone or a tablet the page lives in #scroll-root, a fixed box that is a stacking context of its own: the nav pill (z 1000) is trapped
+    // inside it, so a layer on <body> at z 900 was drawn OVER the open menu. Inside the same box the two compare their z-indexes as on a desktop.
+    const box = document.getElementById('scroll-root');
+    (box && getComputedStyle(box).display !== 'contents' ? box : document.body).appendChild(this.el);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));

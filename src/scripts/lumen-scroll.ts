@@ -82,10 +82,11 @@ interface GestureOptions {
   shouldHandle?: (delta: number) => boolean;
   touchMultiplier?: number;
   wheelMultiplier?: number;
+  touchInertia?: number; // ms of finger speed carried on after the finger lifts (0 = stops dead)
 }
 
 /** Returns destroy(). `enabled()` is asked at each gesture, so it can change over time without re-binding. */
-export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier = 2, wheelMultiplier = 1 }: GestureOptions) {
+export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier = 2, wheelMultiplier = 1, touchInertia = 0 }: GestureOptions) {
   let lastY = 0;
 
   const handle = (delta: number, event: Event, kind: 'wheel' | 'touch' = 'touch') => {
@@ -98,16 +99,33 @@ export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier
     const unit = e.deltaMode === 1 ? LINE_HEIGHT : e.deltaMode === 2 ? window.innerHeight : 1;
     handle(e.deltaY * unit * wheelMultiplier, e, 'wheel');
   };
+  // a flick: like Lenis' syncTouch, the page keeps going for a moment after the finger leaves, in proportion to how fast the finger was moving
+  let velocity = 0; // px per ms, smoothed
+  let lastT = 0;
+  let lastMoveAt = 0;
   const onTouchStart = (e: TouchEvent) => {
     const t = e.targetTouches[0];
     if (t) lastY = t.clientY;
+    velocity = 0;
+    lastMoveAt = 0;
   };
   const onTouchMove = (e: TouchEvent) => {
     const t = e.targetTouches[0];
     if (!t) return;
     const delta = -(t.clientY - lastY) * touchMultiplier;
     lastY = t.clientY;
+    const now = performance.now();
+    if (lastMoveAt && now > lastT) velocity = velocity * 0.6 + (delta / (now - lastT)) * 0.4;
+    lastT = now;
+    lastMoveAt = now;
     handle(delta, e);
+  };
+  const onTouchEnd = (e: TouchEvent) => {
+    const fresh = lastMoveAt && performance.now() - lastMoveAt < 80; // a finger that rested before lifting does not flick
+    const delta = Math.max(-2500, Math.min(2500, velocity * touchInertia));
+    velocity = 0;
+    lastMoveAt = 0;
+    if (fresh && Math.abs(delta) > 20) handle(delta, e);
   };
   // arrow keys, page keys and space also scroll, for people without a wheel
   const onKey = (e: KeyboardEvent) => {
@@ -119,8 +137,10 @@ export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier
   window.addEventListener('wheel', onWheel, { passive: false });
   window.addEventListener('touchstart', onTouchStart, { passive: false });
   window.addEventListener('touchmove', onTouchMove, { passive: false });
+  window.addEventListener('touchend', onTouchEnd, { passive: false });
   window.addEventListener('keydown', onKey);
   return () => {
+    window.removeEventListener('touchend', onTouchEnd);
     window.removeEventListener('wheel', onWheel);
     window.removeEventListener('touchstart', onTouchStart);
     window.removeEventListener('touchmove', onTouchMove);

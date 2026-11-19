@@ -267,8 +267,10 @@ Te wartości są dobrze dobrane i nie należy ich ruszać bez powodu. Wszystko j
 
 **Reszta opcji** (`src/scripts/lenis.ts`): `smoothWheel: true`, `autoRaf: false` (klatki napędza ticker GSAP, żeby piny ScrollTrigger były zsynchronizowane), `stopInertiaOnNavigate: true`. Na dotyku Lenis wygładza pudełko `#scroll-root`, a nie okno (`wrapper` i `content` to to samo pudełko).
 
-**Galeria** (`/gallery`) ma własny scroll po transformie, ale używa tych samych liczb: `createLerp({ glide: SMOOTH_WHEEL.duration })` dla kółka (ta sama krzywa, ślizg od aktualnej pozycji), a dla palca `lerpFactor: 0.15`. Mnożniki kółka i palca w `scrollGestures` też są z `settings.ts`. Dzięki temu czuć ją tak samo jak resztę strony.
+**Galeria** (`/gallery`) ma własny scroll po transformie, ale używa tych samych liczb: `createLerp({ glide: SMOOTH_WHEEL.duration })` dla kółka (ta sama krzywa, ślizg od aktualnej pozycji), a dla palca `lerpFactor: 0.15`. Mnożniki kółka i palca w `scrollGestures` też są z `settings.ts`. Dzięki temu czuć ją tak samo jak resztę strony. Na telefonie dodatkowo `touchInertia: 350` (patrz niżej).
 
 **Porównanie z Belgrade Arbor** (odczytane z ich działającej strony): `duration: 2`, `wheelMultiplier: 1`, ta sama krzywa, **`syncTouch: false`** (na telefonie przewijanie natywne, bez Lenisa). Ich strona nie ma długich przypiętych scen, dlatego wystarcza im pełny mnożnik 1. U nas mnożnik 1 przyspieszałby wszystkie sceny ze scrollem.
 
 **Gdyby wracało:** za ciężko na myszy → `duration` niżej (np. 1,3). Za daleko po jednym kliknięciu → `wheelMultiplier` niżej (0,55). Telefon za ciężki → `syncTouchLerp` wyżej (0,2) albo `syncTouch: false`. Zmiany `wheelMultiplier` zmieniają tempo wszystkich scen spiętych ze scrollem (intro, opowieść, lista nagród), więc po zmianie przejść stronę główną i Awards.
+
+**Galeria na telefonie była cięższa niż reszta strony:** po puszczeniu palca zatrzymywała się natychmiast, a Lenis (`syncTouch`) niesie stronę jeszcze chwilę. Naprawa: `scrollGestures` w `src/scripts/lumen-scroll.ts` liczy prędkość palca i po `touchend` dosyła dodatkowy ruch (`velocity * touchInertia`, max 2500 px), tylko jeśli palec ruszał się w ostatnich 80 ms. Galeria ustawia `touchInertia: 350` w `lumen-gallery.ts` (domyślnie 0, inne użycia bez zmian). Za daleko po machnięciu → 250; za blisko → 500.

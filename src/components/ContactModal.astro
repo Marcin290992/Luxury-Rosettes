@@ -227,6 +227,7 @@ const STRIPES = 5;
         const res = await fetch(CONTACT_FORM.endpoint, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
         if (!res.ok) throw new Error(String(res.status));
         form.reset();
+        message.style.height = ''; // back to its own size
         say('Thank you. Your message is on its way.', 'ok');
       } catch {
         say(`It did not go through. Please write to ${CONTACT_FORM.to}.`, 'error');
@@ -293,13 +294,22 @@ const STRIPES = 5;
 
     // The on-screen keyboard (phone, tablet) is drawn OVER the page: the layout does not shrink (iOS Safari, and Chrome Android since v108),
     // so the lower fields and the Send button sat behind it. The screen follows the visual viewport (the part that is really visible) while
-    // the keyboard is up, and the field being written in is kept in view inside it.
+    // the keyboard is up, and the field being written in is brought into view inside it, but only when it is not in view (when the keyboard comes
+    // up or the person goes to another field). It must never pull the screen back while a finger is moving it: the person scrolls freely.
+    const stage = root.querySelector<HTMLElement>('.contact-stage')!;
     const vv = window.visualViewport;
     const field = () => {
       const a = document.activeElement as HTMLElement | null;
       return a && form.contains(a) && a.matches('input, textarea') ? a : null;
     };
-    const keepInView = () => field()?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const keepInView = () => {
+      const f = field();
+      if (!f) return;
+      const seen = stage.getBoundingClientRect();
+      const at = f.getBoundingClientRect();
+      if (at.top < seen.top + 8 || at.bottom > seen.bottom - 8) f.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    };
+    let keyboardHeight = 0;
     const followViewport = () => {
       if (!vv) return;
       const up = !root.hidden && window.innerHeight - vv.height > 120;
@@ -307,8 +317,10 @@ const STRIPES = 5;
       if (up) {
         root.style.setProperty('--vv-h', `${vv.height}px`);
         root.style.setProperty('--vv-top', `${vv.offsetTop}px`);
-        keepInView();
+        if (vv.height !== keyboardHeight) keepInView(); // the keyboard has just come up or changed its height, not a scroll
+        keyboardHeight = vv.height;
       } else {
+        keyboardHeight = 0;
         root.style.removeProperty('--vv-h');
         root.style.removeProperty('--vv-top');
       }
@@ -316,6 +328,14 @@ const STRIPES = 5;
     const onFocusIn = () => {
       window.setTimeout(keepInView, 350); // after the keyboard has come up and the screen has been resized
     };
+    // The message grows with what is written instead of scrolling inside itself: a box that scrolls its own text takes the finger's drag for itself,
+    // and the screen could not be moved up from it.
+    const message = form.querySelector<HTMLTextAreaElement>('textarea')!;
+    const grow = () => {
+      message.style.height = 'auto';
+      message.style.height = `${message.scrollHeight}px`;
+    };
+    message.addEventListener('input', grow);
     vv?.addEventListener('resize', followViewport);
     vv?.addEventListener('scroll', followViewport);
     form.addEventListener('focusin', onFocusIn);
@@ -328,6 +348,7 @@ const STRIPES = 5;
       vv?.removeEventListener('resize', followViewport);
       vv?.removeEventListener('scroll', followViewport);
       form.removeEventListener('focusin', onFocusIn);
+      message.removeEventListener('input', grow);
       document.removeEventListener('click', onClick);
       form.removeEventListener('submit', onSubmit);
       document.removeEventListener('open-contact-modal', onEvent);
@@ -697,6 +718,7 @@ const STRIPES = 5;
   }
   .field textarea {
     min-height: 3rem;
+    overflow-y: hidden; /* it grows with the text (see the script), it does not scroll inside itself */
   }
   .field input:focus,
   .field textarea:focus {

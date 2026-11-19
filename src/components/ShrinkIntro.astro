@@ -172,6 +172,23 @@ const columns = [0, 1, 2, 3].map((c) => tiles.slice(c * 4, c * 4 + 4));
   .si-hero[data-live] {
     height: calc((1 + var(--si-length)) * 100svh);
   }
+  /* On a phone the page transition's picture is the height of the LARGEST window (lvh), taller than the pin (svh): the strip under the pin was the
+     page's cream, a white band at the bottom of the arriving page. The strip is dark like the photo's foot; it is shown only while the photo is whole
+     (the script sets --si-strip), so it never peeks out around the shrinking photo. */
+  .si-hero[data-live] {
+    position: relative;
+  }
+  .si-hero[data-live]::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100svh;
+    height: 100lvh;
+    background: #0d0b09;
+    opacity: var(--si-strip, 1);
+    pointer-events: none;
+  }
   .si-hero[data-live] .si-pin {
     position: sticky;
     top: 0;

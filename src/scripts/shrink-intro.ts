@@ -58,6 +58,7 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
       // at the very top the photo is whole, whatever the scrubbed number says: during a page transition that number can still be a stale one from the
       // previous page (the scrub catches up with a delay), and the photo then showed gaps at the sides and the bottom until the first scroll
       const k = getScrollY() <= 2 ? 0 : between(p, o.shrink[0], o.shrink[1]);
+      track.style.setProperty('--si-strip', k === 0 ? '1' : '0');
       const tile = narrow ? o.tile.narrow : o.tile.wide;
       // before it starts to shrink the photo is simply the whole pin (100%, not a measured pixel size: on a phone the measure taken during the page
       // transition could be stale and left gaps at the sides and the bottom until the first scroll)
@@ -136,6 +137,7 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
       opening?.kill();
       settleTimers.forEach((t) => window.clearTimeout(t));
       delete track.dataset.live;
+      track.style.removeProperty('--si-strip');
       root.style.removeProperty('--si-length');
       root.style.removeProperty('--si-overlap');
     };

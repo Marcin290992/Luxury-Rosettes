@@ -25,9 +25,14 @@ const awards = [
   ['Best Opposite Sex', 'Placeholder Spring Show · 2021'],
   ["Judge's Choice", 'Placeholder Show Record · 2021'],
 ].map(([title, meta], i) => ({ img: pool[(i * 3 + 1) % pool.length], alt: title, title, meta, text: words }));
+import { breadcrumb } from '../data/seo';
 ---
 
-<Layout title="Awards — Luxury Rosettes">
+<Layout
+  title="Bengal Show Awards & Champions — Luxury Rosettes"
+  description="Show titles and awards won by the Bengal cats of Luxury Rosettes: proof of the quality of our champion bloodlines."
+  schema={[breadcrumb(['Awards', '/awards'])]}
+>
   <NavPill />
   <AwardsSpiral
     top="Champions"

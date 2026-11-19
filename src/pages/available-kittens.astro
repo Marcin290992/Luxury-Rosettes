@@ -25,9 +25,14 @@ const kittens = [
   { name: 'Chester', line: 'Male, brown rosetted', image: chester },
   { name: 'Cosmo', line: 'Male, silver', image: cosmo },
 ];
+import { breadcrumb } from '../data/seo';
 ---
 
-<Layout title="Available Kittens — Luxury Rosettes">
+<Layout
+  title="Bengal Kittens for Sale in the UK — Luxury Rosettes"
+  description="Available TICA registered Bengal kittens from Luxury Rosettes in High Wycombe, UK. Health-tested, vaccinated and raised at home. See who is looking for a family."
+  schema={[breadcrumb(['Available kittens', '/available-kittens'])]}
+>
   <NavPill />
   <main>
     <section class="hero">

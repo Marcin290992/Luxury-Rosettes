@@ -317,12 +317,13 @@ const isCurrent = (href: string) =>
     --radius: 34px;
     --blur: 10px;
     --intro: 1; /* 0-1: how much of the pill is shown while it arrives with the home page's intro (see Hero.astro) */
+    --nav-y: 0px;
     --open-h: calc(var(--head) + 2px + min(100dvh - 7rem, 700px)); /* the pill's height when open (the script puts the measured one here) */
 
     position: fixed;
     top: 1.25rem;
     left: 50%;
-    translate: -50% 0;
+    translate: -50% var(--nav-y);
     width: min(94vw, 660px);
     z-index: 1000;
     color: var(--text);
@@ -391,7 +392,7 @@ const isCurrent = (href: string) =>
          opacity is safe here (see the note under --intro): the bar can no longer show before its contents or the other way round */
       opacity: var(--intro);
       /* the bar keeps its own layer for good: when the intro's fade ended, the browser dropped the layer and repainted the bar in one frame, which showed as a blink */
-      will-change: opacity, transform;
+      will-change: opacity, translate;
       transition: border-radius 0.3s var(--ease); /* the colour does not transition: it never changes while the bar is closed */
     }
     .nav-pill.is-scrolled {

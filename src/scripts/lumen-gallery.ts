@@ -127,8 +127,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
     if (startGrid && index < 2) return; // the two large pictures come in turned over like pages (see enterGrid)
     if (firstBatch) {
       const top = item.getBoundingClientRect().top;
-      const order = Math.max(0, Math.min(top / window.innerHeight, 1)) * 0.7 + index * 0.025;
-      gsap.to(item, { opacity: 1, filter: 'blur(0px)', duration: 1.3, delay: order, ease: SINE, overwrite: 'auto' });
+      const order = Math.max(0, Math.min(top / window.innerHeight, 1)) * 0.35 + index * 0.015;
+      gsap.to(item, { opacity: 1, filter: 'blur(0px)', duration: 0.85, delay: order, ease: SINE, overwrite: 'auto' });
       return;
     }
     gsap.to(item, { opacity: 1, filter: 'blur(0px)', duration: 0.6, delay: Math.min(0.08 * index, 0.2), ease: SINE, overwrite: 'auto' });
@@ -284,7 +284,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       const state = Flip.getState(items);
       zoom = level;
       applyLayout(level);
-      Flip.from(state, { duration: 1.2, ease: QUART, overwrite: 'auto' });
+      Flip.from(state, { duration: 0.95, ease: QUART, overwrite: 'auto' });
       return;
     }
     zooming = true;
@@ -408,7 +408,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       } catch {
         /* it shows when it is there */
       }
-      if (!lightboxOpen) {
+      if (!lightboxOpen || closing) {
         switching = false;
         return;
       }
@@ -422,6 +422,13 @@ export function initLumenGallery(root: HTMLElement): () => void {
         /* it shows when it is there */
       }
       const land = async () => {
+        // the box is being closed (or is closed) while the page turned: nothing may touch the picture now, or it is put back at its resting place in
+        // the middle of its flight to the tile, the flight's tween is killed and the picture hangs over the grid for good
+        if (!lightboxOpen || closing) {
+          switching = false;
+          gsap.set(ghost, { opacity: 0 });
+          return;
+        }
         // the next picture stands where the sheet turned (the second image shows it); the shown one takes its place once it has the new picture
         // loaded, and only then the second image goes: there is never a frame with the old one
         gsap.set(ghost, { opacity: 1 });
@@ -538,6 +545,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       if (!lightboxOpen) return;
       // the same turn-over as the two pictures of the intro: the picture is turned onto the page (WebGL), and shown when the turn is done
       foldIn({ container: boxImg, image: boxImg, direction: 1, delay: 0.15, duration: 1.4, onComplete: () => {
+        if (!lightboxOpen || closing) return; // closed while it turned: the tile must stay as it is
         img.style.visibility = 'hidden';
         shown();
       } }).then(
@@ -557,6 +565,11 @@ export function initLumenGallery(root: HTMLElement): () => void {
     if (!lightboxOpen || closing || !source || !natural) return;
     closing = true;
     boxReady = false;
+    switching = false;
+    window.clearTimeout(upgradeTimer);
+    gsap.killTweensOf(ghost);
+    gsap.set(ghost, { opacity: 0 });
+    turns.splice(0).forEach((d) => d()); // a page still turning is taken away
     const to = source.getBoundingClientRect();
     const rest = natural;
     gsap.killTweensOf(boxImg);
@@ -738,8 +751,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
         if (!alive) return;
         changeLevel(2, 'flip');
         observeItems(); // now the rest may come in, as the pictures glide to their places
-        interactiveTimer = window.setTimeout(() => (interactive = true), 1700); // the glide takes 1.2 s
-      }, 700);
+        interactiveTimer = window.setTimeout(() => (interactive = true), 1300); // the glide takes 0.95 s
+      }, 350);
     };
     let turned = 0;
     const landed = (item: HTMLElement) => {

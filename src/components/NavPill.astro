@@ -377,30 +377,20 @@ const isCurrent = (href: string) =>
     }
   }
 
-  /* The pill is its own layer in a page transition, and a backdrop blur has nothing to sample there: the old pill and the new one
-     were drawn differently (the menu seemed to load twice, and Safari flickered it). On touch devices there is no glass at all: the
-     pill has a plain background of its own (no separate layer, no clip-path, which flickered in the picture of the old page), and the
-     open menu is opaque, so the page does not show through it. It is the same before, during and after a transition. */
+  /* Touch screens get the glass too (a lighter blur, no refraction: that is Chromium on a mouse only, see glass-surface.ts). It is the same layer as on a
+     desktop, faded with --intro (not with the pill's opacity, which would hide the page from the blur). The open menu is almost opaque.
+     If the glass flickers in a page transition on a phone, this block is where to go back to a solid bar (see the history of this file). */
   @media (pointer: coarse) {
-    .nav-glass {
-      display: none;
-    }
     .nav-pill {
-      --glass: rgb(30, 26, 22); /* one solid colour, whatever is behind the bar: at 0.92 the cream sections showed through and the bar changed shade as the page scrolled (measured: rgb 28,24,20 to 48,43,39) */
-      background: var(--glass);
-      /* the whole pill (the bar with its logo and buttons) arrives as one with the home page's intro. There is no glass on touch, so a plain
-         opacity is safe here (see the note under --intro): the bar can no longer show before its contents or the other way round */
-      opacity: var(--intro);
-      /* the bar keeps its own layer for good: when the intro's fade ended, the browser dropped the layer and repainted the bar in one frame, which showed as a blink */
-      will-change: opacity, translate;
-      transition: border-radius 0.3s var(--ease); /* the colour does not transition: it never changes while the bar is closed */
+      --blur: 8px;
+      --glass: rgba(34, 29, 25, 0.62);
+      will-change: translate;
     }
     .nav-pill.is-scrolled {
-      --glass: rgb(30, 26, 22);
+      --glass: rgba(30, 26, 22, 0.78);
     }
     .nav-pill.expanded {
-      --glass: rgb(30, 26, 22);
-      transition: border-radius 0.6s var(--ease), background 0.4s ease;
+      --glass: rgba(26, 22, 19, 0.95);
     }
   }
 

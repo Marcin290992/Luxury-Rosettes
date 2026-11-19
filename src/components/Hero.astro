@@ -142,7 +142,6 @@ import hero from '../assets/img/hero_img.webp';
     ro.observe(hero);
     let opening: gsap.core.Timeline | undefined;
     let cancelled = false;
-    const navCoarse = matchMedia('(pointer: coarse)').matches; // a phone or a tablet (a finger)
 
     if (!reduceMotion) {
       gsap.set(chars, { yPercent: WORD_HIDDEN });
@@ -155,11 +154,11 @@ import hero from '../assets/img/hero_img.webp';
       // Both use the separate translate property for the small rise, preserving the pill's horizontal centring.
       if (nav && !arrived) {
         gsap.set(nav, {
-          ...(navCoarse ? { opacity: 0 } : { '--intro': 0 }),
+          '--intro': 0,
           '--nav-y': `${-HERO.navRise}px`,
           visibility: 'hidden',
         });
-        if (!navCoarse) gsap.set(nav.querySelector('.nav-header'), { opacity: 0 });
+        gsap.set(nav.querySelector('.nav-header'), { opacity: 0 });
       }
     }
 
@@ -194,12 +193,10 @@ import hero from '../assets/img/hero_img.webp';
       if (!arrived) {
         opening.to(
           nav,
-          navCoarse
-            ? { opacity: 1, '--nav-y': '0px', visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, clearProps: 'opacity,visibility,--nav-y' }
-            : { '--intro': 1, '--nav-y': '0px', visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, clearProps: '--intro,visibility,--nav-y' },
+          { '--intro': 1, '--nav-y': '0px', visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, clearProps: '--intro,visibility,--nav-y' },
           T.nav.at,
         );
-        if (!navCoarse && nav) opening.to(nav.querySelector('.nav-header'), { opacity: 1, duration: T.nav.dur, ease: T.nav.ease, clearProps: 'opacity' }, T.nav.at);
+        if (nav) opening.to(nav.querySelector('.nav-header'), { opacity: 1, duration: T.nav.dur, ease: T.nav.ease, clearProps: 'opacity' }, T.nav.at);
       }
     });
 

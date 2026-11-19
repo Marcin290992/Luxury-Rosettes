@@ -433,7 +433,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       gsap.to(boxImg, { opacity: 0, duration: 0.7, delay: 0.55, ease: 'power1.inOut' });
       foldIn({ container: ghost, image: ghost, direction: forward ? 1 : -1, delay: 0, duration: 1.3, onComplete: land }).then(
         (dispose) => {
-          if (lightboxOpen) turns.push(dispose);
+          if (lightboxOpen && !closing) turns.push(dispose); // a sheet that is ready only after the close has begun is taken away at once, not left to play over the flying picture
           else dispose();
         },
         land, // no WebGL: the picture is simply changed
@@ -533,7 +533,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
         shown();
       } }).then(
         (dispose) => {
-          if (lightboxOpen) turns.push(dispose);
+          if (lightboxOpen && !closing) turns.push(dispose); // a sheet that is ready only after the close has begun is taken away at once, not left to play over the flying picture
           else dispose();
         },
         () => {
@@ -558,10 +558,17 @@ export function initLumenGallery(root: HTMLElement): () => void {
     // to its own tile. Without this the old one, still in the box, flew back to its tile (the picture jumped back and then returned to its place).
     const asked = images[navIndex];
     if (asked && asked !== source) {
+      // not a cut: the picture that was in the box stays on the second image and melts away while the asked one comes in over it, in its place
+      ghost.src = boxImg.currentSrc || boxImg.src;
+      Object.assign(ghost.style, { left: boxImg.style.left, top: boxImg.style.top, width: boxImg.style.width, height: boxImg.style.height });
+      gsap.set(ghost, { x: 0, y: 0, scale: 1, opacity: 1 });
+      gsap.to(ghost, { opacity: 0, duration: 0.3, ease: 'power1.out' });
       source.style.visibility = '';
       fitBox(asked);
       boxImg.src = asked.currentSrc || asked.src;
       boxImg.alt = asked.alt;
+      gsap.set(boxImg, { opacity: 0 });
+      gsap.to(boxImg, { opacity: 1, duration: 0.3, ease: 'power1.out' });
       source = asked;
       asked.style.visibility = 'hidden';
       currentIndex = navIndex;
@@ -584,7 +591,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       ease: 'power2.inOut',
       onUpdate: () => {
         const to = source!.getBoundingClientRect();
-        gsap.set(boxImg, {
+        gsap.set([boxImg, ghost], { // the second image (the old picture, melting away) flies with it
           x: (to.left + to.width / 2 - (rest.left + rest.width / 2)) * flight.p,
           y: (to.top + to.height / 2 - (rest.top + rest.height / 2)) * flight.p,
           scale: 1 + (to.width / rest.width - 1) * flight.p,
@@ -598,6 +605,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
           duration: 0.2,
           ease: 'power1.out',
           onComplete: () => {
+            gsap.set(ghost, { x: 0, y: 0, scale: 1, opacity: 0 });
             box.hidden = true;
             closing = false;
             lightboxOpen = false;

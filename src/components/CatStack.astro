@@ -84,9 +84,9 @@ const { cards, pull, lead } = Astro.props;
     };
     const mark = (sticky: boolean, items: HTMLElement[], i: number, where: string) => (sticky ? `top+=${Math.round(natural(items, i))} ${where}` : `top ${where}`);
 
-    // what both versions share: the words rise out of their windows when a card arrives; returns each card's words (for the way out)
+    // what both versions share: the words rise out of their windows when a card arrives
     const prepare = (root: HTMLElement, items: HTMLElement[], sticky = false) =>
-      items.map((item, i) => {
+      items.forEach((item, i) => {
         const role = SplitText.create(item.querySelector('.cs-role')!, { type: 'words', mask: 'words' });
         const name = SplitText.create(item.querySelector('.cs-name')!, { type: 'words', mask: 'words' });
         const line = SplitText.create(item.querySelector('.cs-line')!, { type: 'words', mask: 'words' });
@@ -103,11 +103,10 @@ const { cards, pull, lead } = Astro.props;
             toggleActions: 'play none none reverse',
           },
         });
-        return words;
       });
 
     // the card that is covered shrinks into a rounded frame and darkens (the values of the capture's stack.js); its words stay
-    const cover = (item: HTMLElement, words: Element[], scrollTrigger: ScrollTrigger.Vars) => {
+    const cover = (item: HTMLElement, scrollTrigger: ScrollTrigger.Vars) => {
       const card = item.querySelector<HTMLElement>('[data-cs-card]')!;
       const dim = item.querySelector<HTMLElement>('[data-cs-dim]')!;
       gsap.set(card, { clipPath: 'inset(0rem round 0rem)' });
@@ -132,20 +131,20 @@ const { cards, pull, lead } = Astro.props;
     mm.add('(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)', () => {
       const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-cat-stack]'));
       roots.forEach((root) => {
-      root.dataset.live = 'pin';
-      const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
-      const words = prepare(root, items);
-      unfold(items, root);
-      items.forEach((item, i) => {
-        if (i === items.length - 1) return;
-        // every card stays pinned until the LAST card has reached the top: the covered cards stay where they are, one under the other (a card that let go
-        // as soon as the next had covered it would scroll away upwards and show through the gap round the card in front)
-        const last = items[items.length - 1];
-        const end = () => `+=${last.offsetTop - item.offsetTop}`;
-        ScrollTrigger.create({ trigger: item, start: 'top top', end, pin: true, pinSpacing: false });
-        // a card is covered while the next one slides up over it: from the moment that one's top enters the screen to the moment it reaches the top
-        // (the same for every card, the first one included, whatever it was given to unfold in before)
-        cover(item, words[i], { trigger: items[i + 1], start: 'top bottom', end: 'top top', scrub: true, invalidateOnRefresh: true });
+        root.dataset.live = 'pin';
+        const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
+        prepare(root, items);
+        unfold(items, root);
+        items.forEach((item, i) => {
+          if (i === items.length - 1) return;
+          // every card stays pinned until the LAST card has reached the top: the covered cards stay where they are, one under the other (a card that let go
+          // as soon as the next had covered it would scroll away upwards and show through the gap round the card in front)
+          const last = items[items.length - 1];
+          const end = () => `+=${last.offsetTop - item.offsetTop}`;
+          ScrollTrigger.create({ trigger: item, start: 'top top', end, pin: true, pinSpacing: false });
+          // a card is covered while the next one slides up over it: from the moment that one's top enters the screen to the moment it reaches the top
+          // (the same for every card, the first one included, whatever it was given to unfold in before)
+          cover(item, { trigger: items[i + 1], start: 'top bottom', end: 'top top', scrub: true, invalidateOnRefresh: true });
       });
       });
       return () => {
@@ -159,20 +158,20 @@ const { cards, pull, lead } = Astro.props;
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-cat-stack]'));
       roots.forEach((root) => {
-      root.dataset.live = 'sticky';
-      const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
-      const words = prepare(root, items, true);
-      unfold(items, root, true);
-      items.forEach((item, i) => {
-        const next = items[i + 1];
-        if (!next) return;
-        cover(item, words[i], {
-          trigger: root,
-          start: () => mark(true, items, i + 1, 'bottom'),
-          end: () => mark(true, items, i + 1, 'top'),
-          scrub: true,
-          invalidateOnRefresh: true,
-        });
+        root.dataset.live = 'sticky';
+        const items = Array.from(root.querySelectorAll<HTMLElement>('[data-cs-item]'));
+        prepare(root, items, true);
+        unfold(items, root, true);
+        items.forEach((item, i) => {
+          const next = items[i + 1];
+          if (!next) return;
+          cover(item, {
+            trigger: root,
+            start: () => mark(true, items, i + 1, 'bottom'),
+            end: () => mark(true, items, i + 1, 'top'),
+            scrub: true,
+            invalidateOnRefresh: true,
+          });
       });
       });
       return () => {

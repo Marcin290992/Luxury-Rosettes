@@ -58,15 +58,6 @@ export const GRID_LAYOUTS: Record<Level, LayoutSpec> = {
   },
 };
 
-export const ZOOM_STEPS: Array<1 | 2 | 3> = [1, 2, 3];
-
-/** The zoom level one step in (bigger pictures) or out; "intro" counts as level 2. null at the ends. */
-export function neighbourZoom(level: Level, direction: 'in' | 'out'): 1 | 2 | 3 | null {
-  const current = level === 'intro' ? 2 : level;
-  const i = ZOOM_STEPS.indexOf(current);
-  return ZOOM_STEPS[direction === 'in' ? i + 1 : i - 1] ?? null;
-}
-
 export interface Placement {
   gridColumn: string;
   gridRow: string;

@@ -16,12 +16,11 @@ import type { LumenGallery } from '../data/lumen';
  */
 interface Props {
   gallery: LumenGallery;
-  galleries: LumenGallery[];
   start?: 'hero' | 'grid'; // 'grid': no hero, the grid at once (the /gallery page)
   intro?: string[]; // with start 'grid': the photos of a spiral that flies before the grid comes in
   closing?: ImageMetadata; // the photo of the closing block under the grid (with the footer, as on the home page)
 }
-const { gallery, galleries, start = 'hero', intro = [], closing } = Astro.props;
+const { gallery, start = 'hero', intro = [], closing } = Astro.props;
 const first = gallery.photos[0];
 ---
 

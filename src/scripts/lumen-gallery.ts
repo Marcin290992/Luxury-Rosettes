@@ -4,18 +4,18 @@
 //   the gestures are caught and turned into a number) moves `heroLerp`, which eases 6 % of the way to its target each frame. That number
 //   pulls the grid layer up over the hero (the grid's top edge is the hero's bottom edge), shrinks the wordmark to 60 %, blurs it to 8 px and
 //   fades it. Past halfway the page finishes the move by itself; at 80 % the header comes in and the grid leaves its "intro" layout for zoom
-//   level 2 (the pictures glide to their new places with GSAP Flip, 1.2 s).
-// GRID: the hero is gone. The grid moves inside a box by transform (`vlerp`, 10 % per frame); the faster it moves the more the whole grid shrinks
-//   (to 96 %), springing back when it stops. + / - change the zoom: the pictures on screen blur out one after another (0.08 s apart), the grid
-//   is laid out again and the pictures blur back in. On a desktop a mouse over a photo lifts it like paper (lumen-paper.ts). A click opens the
-//   photo large: it grows from its place in the grid to the middle of the screen (FLIP: measure First and Last, Invert with a transform, Play).
+//   level 2 (the pictures glide to their new places with GSAP Flip).
+// GRID: the hero is gone. The grid moves inside a box by transform (`vlerp`: a wheel turn glides, a finger follows at once and a flick carries on);
+//   the faster it moves the more the whole grid shrinks (to 96 %), springing back when it stops. On a desktop a mouse over a photo lifts it like
+//   paper (lumen-paper.ts). A click opens the photo large: it grows from its place in the grid to the middle of the screen (FLIP: measure First and
+//   Last, Invert with a transform, Play), with a strip of the other pictures to choose from.
 // initLumenGallery(root) returns destroy().
 
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip';
 import { QUART, SINE } from './lumen-ease';
 import { createLerp, scrollGestures } from './lumen-scroll';
-import { neighbourZoom, placeItem, spacingFor, type Level } from './lumen-grid';
+import { placeItem, spacingFor, type Level } from './lumen-grid';
 import { initPaperHover } from './lumen-paper';
 import { getLenis } from './lenis';
 import { transitionDone } from './lifecycle';
@@ -36,7 +36,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
   const logo = q<HTMLElement>('.lg-logo');
   const content = q<HTMLElement>('.lg-content');
   const vscroll = q<HTMLElement>('.lg-vscroll');
-  const scaler = q<HTMLElement>('.lg-scaler');
   const track = q<HTMLElement>('.lg-track');
   const grid = q<HTMLElement>('.lg-grid');
   const items = Array.from(grid.querySelectorAll<HTMLElement>('.lg-item'));
@@ -70,7 +69,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
   let heroAnimating = false;
   let lightboxOpen = false;
   let zoom: Level = 'intro';
-  let zooming = false;
   let zoomedByHero = false;
   let heroH = 0;
   let lastHero = 0;
@@ -230,7 +228,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       // at 80 % the grid leaves its big intro layout for zoom level 2
       if (progress >= 0.8 && !zoomedByHero) {
         zoomedByHero = true;
-        changeLevel(2, 'flip');
+        changeLevel(2);
       }
       // past halfway the hero finishes leaving on its own
       if (progress >= 0.5 && phase === 'hero') {
@@ -260,9 +258,9 @@ export function initLumenGallery(root: HTMLElement): () => void {
   // the hero's own entrance: it opens at the full height and settles to 75 % (a long, soft settle)
   const entrance = gsap.timeline();
   if (!startGrid) {
-  entrance.fromTo(hero, { height: window.innerHeight }, { height: window.innerHeight * 0.75, duration: 2.4, delay: 0.9, ease: 'power3.out', onComplete: () => (introPlaying = false) }, 0);
-  entrance.fromTo(logoBox, { opacity: 0 }, { opacity: 1, duration: 1.5, ease: 'none', delay: 0.9 }, 0);
-  entrance.fromTo(heroLabel.firstElementChild, { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1.4, delay: 1.6, ease: 'power3.out' }, 0);
+    entrance.fromTo(hero, { height: window.innerHeight }, { height: window.innerHeight * 0.75, duration: 2.4, delay: 0.9, ease: 'power3.out', onComplete: () => (introPlaying = false) }, 0);
+    entrance.fromTo(logoBox, { opacity: 0 }, { opacity: 1, duration: 1.5, ease: 'none', delay: 0.9 }, 0);
+    entrance.fromTo(heroLabel.firstElementChild, { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1.4, delay: 1.6, ease: 'power3.out' }, 0);
   }
 
   // the grid page: no hero at all (it never returns), the grid is where it will stay
@@ -275,40 +273,12 @@ export function initLumenGallery(root: HTMLElement): () => void {
     content.style.transform = 'translate3d(0, 0, 0)';
   }
 
-  // ---- index labels and zoom buttons appear once the grid has taken over ----
-
-  // ---- zoom ----
-  // 'flip': the pictures glide to their new places. 'fade': the ones on screen blur out one after another, the grid is laid out again, they blur back in.
-  function changeLevel(level: Level, how: 'flip' | 'fade') {
-    if (how === 'flip') {
-      const state = Flip.getState(items);
-      zoom = level;
-      applyLayout(level);
-      Flip.from(state, { duration: 0.95, ease: QUART, overwrite: 'auto' });
-      return;
-    }
-    zooming = true;
-    paper.leave();
-    const visible = items.filter((item) => {
-      const r = item.getBoundingClientRect();
-      return r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
-    });
-    gsap.to(visible, {
-      opacity: 0,
-      filter: 'blur(6px)',
-      duration: 0.6,
-      ease: SINE,
-      stagger: 0.08,
-      overwrite: 'auto',
-      onComplete: () => {
-        zoom = level;
-        applyLayout(level);
-        gsap.set(items, { opacity: 0, filter: 'blur(6px)' });
-        measureGrid();
-        observeItems();
-        zooming = false;
-      },
-    });
+  // ---- zoom: the pictures glide to their places in another layout ----
+  function changeLevel(level: Level) {
+    const state = Flip.getState(items);
+    zoom = level;
+    applyLayout(level);
+    Flip.from(state, { duration: 0.95, ease: QUART, overwrite: 'auto' });
   }
 
   const onDesktopChange = () => {
@@ -415,7 +385,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       const r = next.getBoundingClientRect();
       vlerp.jump(clamp(position + r.top - (window.innerHeight - r.height) / 2, 0, maxScroll()));
       ghost.src = nextSrc;
-      const nextRect = fitBox(next, ghost);
+      fitBox(next, ghost); // the second image takes the size and place of the next picture
       try {
         await ghost.decode();
       } catch {
@@ -452,7 +422,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
       };
       // the one shown fades away under the sheet while it turns over (it may be a different size)
       gsap.to(boxImg, { opacity: 0, duration: 0.7, delay: 0.55, ease: 'power1.inOut' });
-      void nextRect;
       foldIn({ container: ghost, image: ghost, direction: forward ? 1 : -1, delay: 0, duration: 1.3, onComplete: land }).then(
         (dispose) => {
           if (lightboxOpen) turns.push(dispose);
@@ -506,7 +475,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
     navIndex = currentIndex;
     markActive(currentIndex, false);
     gsap.set(boxImg, { opacity: 1 });
-    const from = img.getBoundingClientRect();
     // the picture the grid already has (cached, so it is there at once) grows first; the large file is fetched and decoded in the background and
     // takes its place when the move is over (same proportions, so nothing shifts)
     boxImg.src = img.currentSrc || img.src;
@@ -749,7 +717,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       pagesDone = true;
       glideTimer = window.setTimeout(() => {
         if (!alive) return;
-        changeLevel(2, 'flip');
+        changeLevel(2);
         observeItems(); // now the rest may come in, as the pictures glide to their places
         interactiveTimer = window.setTimeout(() => (interactive = true), 1300); // the glide takes 0.95 s
       }, 350);

@@ -75,6 +75,10 @@ export function createLerp({ lerpFactor = 0.1, threshold = 0.01, glide = 0, onUp
 }
 
 const LINE_HEIGHT = 100 / 6;
+const FRAME_MS = 1000 / 60; // a frame at 60 Hz: the unit of Lenis' touch velocity
+const FLICK_WINDOW_MS = 80; // a finger that rested longer than this before lifting does not flick
+const MIN_FLICK = 1; // px per frame: slower than this, the page just stops
+const VELOCITY_KEEP = 0.6; // how much of the earlier speed stays in the smoothed speed of the finger
 
 interface GestureOptions {
   enabled: () => boolean;
@@ -100,8 +104,7 @@ export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier
     const unit = e.deltaMode === 1 ? LINE_HEIGHT : e.deltaMode === 2 ? window.innerHeight : 1;
     handle(e.deltaY * unit * wheelMultiplier, e, 'wheel');
   };
-  // a flick: like Lenis' syncTouch, the page keeps going for a moment after the finger leaves, in proportion to how fast the finger was moving
-  let velocity = 0; // px per ms, smoothed
+  let velocity = 0; // the finger's speed in px per ms, smoothed
   let lastT = 0;
   let lastMoveAt = 0;
   const onTouchStart = (e: TouchEvent) => {
@@ -116,7 +119,7 @@ export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier
     const delta = -(t.clientY - lastY) * touchMultiplier;
     lastY = t.clientY;
     const now = performance.now();
-    if (lastMoveAt && now > lastT) velocity = velocity * 0.6 + (delta / (now - lastT)) * 0.4;
+    if (lastMoveAt && now > lastT) velocity = velocity * VELOCITY_KEEP + (delta / (now - lastT)) * (1 - VELOCITY_KEEP);
     lastT = now;
     lastMoveAt = now;
     handle(delta, e);
@@ -124,11 +127,11 @@ export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier
   // After the finger lifts, the page glides on by (the finger's last speed in px per frame) ** 1.7, as Lenis' syncTouch does (its touchInertiaExponent): one
   // push that the lerp then eases out, so a slow lift barely moves it and a fast flick travels far.
   const onTouchEnd = (e: TouchEvent) => {
-    const fresh = lastMoveAt && performance.now() - lastMoveAt < 80; // a finger that rested before lifting does not flick
-    const perFrame = velocity * 16.7;
+    const fresh = lastMoveAt && performance.now() - lastMoveAt < FLICK_WINDOW_MS;
+    const perFrame = velocity * FRAME_MS;
     velocity = 0;
     lastMoveAt = 0;
-    if (!touchInertia || !fresh || Math.abs(perFrame) < 1) return;
+    if (!touchInertia || !fresh || Math.abs(perFrame) < MIN_FLICK) return;
     handle(Math.sign(perFrame) * Math.abs(perFrame) ** touchInertia, e, 'inertia');
   };
   // arrow keys, page keys and space also scroll, for people without a wheel

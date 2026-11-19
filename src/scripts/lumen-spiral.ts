@@ -125,8 +125,7 @@ export async function createSpiral(sources: string[], covers: string[] = []): Pr
     cameraZ: 0,
   };
 
-  const sheets: Sheet[] = textures.map((texture, index) => {
-    const hero = index >= COUNT - heroCount;
+  const sheets: Sheet[] = textures.map((texture) => {
     const cropFlight = new THREE.Vector4(...coverCrop(texture, PLANE_ASPECT));
     const crop = cropFlight.clone();
     const uniforms = {

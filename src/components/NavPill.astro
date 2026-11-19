@@ -385,14 +385,14 @@ const isCurrent = (href: string) =>
       display: none;
     }
     .nav-pill {
-      --glass: rgba(34, 29, 25, 0.86);
+      --glass: rgba(30, 26, 22, 0.92); /* one colour for the closed bar, scrolled or not: it used to turn a shade darker after the first 40px of scrolling */
       background: var(--glass);
       /* the whole pill (the bar with its logo and buttons) arrives as one with the home page's intro. There is no glass on touch, so a plain
          opacity is safe here (see the note under --intro): the bar can no longer show before its contents or the other way round */
       opacity: var(--intro);
       /* the bar keeps its own layer for good: when the intro's fade ended, the browser dropped the layer and repainted the bar in one frame, which showed as a blink */
       will-change: opacity, transform;
-      transition: border-radius 0.3s var(--ease), background 0.25s ease;
+      transition: border-radius 0.3s var(--ease); /* the colour does not transition: it never changes while the bar is closed */
     }
     .nav-pill.is-scrolled {
       --glass: rgba(30, 26, 22, 0.92);

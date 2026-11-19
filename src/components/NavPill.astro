@@ -377,36 +377,28 @@ const isCurrent = (href: string) =>
     }
   }
 
-  /* Touch screens get the glass too (a lighter blur, no refraction: that is Chromium on a mouse only, see glass-surface.ts). It is the same layer as on a
-     desktop, faded with --intro (not with the pill's opacity, which would hide the page from the blur). The open menu is almost opaque.
-     If the glass flickers in a page transition on a phone, this block is where to go back to a solid bar (see the history of this file). */
+  /* A phone or a tablet (a finger): no glass, no transparency at all. The bar is one solid colour in every state (closed, scrolled, open, in a page
+     transition, arriving with the intro), so nothing behind it can show through or change its shade. Its border and shadow are solid too, and it
+     arrives by sliding down (see Hero.astro), not by fading. The glass layer stays only for a mouse. */
   @media (pointer: coarse) {
+    .nav-glass {
+      display: none;
+    }
     .nav-pill {
-      --blur: 8px;
-      --glass: rgba(30, 26, 22, 0.76);
+      --glass: rgb(30, 26, 22);
+      background: rgb(30, 26, 22);
+      opacity: 1 !important;
+      border-color: rgb(75, 70, 66);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
       will-change: translate;
+      transition: border-radius 0.3s var(--ease);
     }
-    .nav-pill.is-scrolled {
-      --glass: rgba(26, 22, 19, 0.86);
-    }
-    /* The blur layer is only ever as tall as the closed bar and never changes (on a phone the open pill's tall layer, revealed by an
-       animated clip-path, repainted its blur on every frame and flickered). The open menu is a solid colour of the pill itself, which fades in
-       under the glass of the bar and grows with the pill. */
-    .nav-glass,
-    .nav-pill.expanded .nav-glass {
-      height: calc(var(--head) + 2px);
-      clip-path: none;
-      border-radius: var(--radius);
-      transition: background 0.25s ease;
-    }
-    .nav-pill {
-      background: rgba(26, 22, 19, 0);
-      transition: border-radius 0.3s var(--ease), background 0.3s ease;
+    .nav-pill.is-scrolled,
+    .nav-pill.expanded {
+      --glass: rgb(30, 26, 22);
     }
     .nav-pill.expanded {
-      --glass: rgb(26, 22, 19); /* the bar of the open menu is the same solid colour as the rest of it (its blur has nothing left to show) */
-      background: rgb(26, 22, 19);
-      transition: border-radius 0.6s var(--ease), background 0.35s ease;
+      transition: border-radius 0.6s var(--ease);
     }
   }
 

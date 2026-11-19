@@ -142,6 +142,7 @@ import hero from '../assets/img/hero_img.webp';
     ro.observe(hero);
     let opening: gsap.core.Timeline | undefined;
     let cancelled = false;
+    const navCoarse = matchMedia('(pointer: coarse)').matches; // a phone or a tablet (a finger): the bar is solid, it slides in and does not fade
 
     if (!reduceMotion) {
       gsap.set(chars, { yPercent: WORD_HIDDEN });
@@ -153,12 +154,11 @@ import hero from '../assets/img/hero_img.webp';
       // On touch, opacity fades the whole solid pill without restyling it; on desktop, --intro fades the glass without hiding its backdrop.
       // Both use the separate translate property for the small rise, preserving the pill's horizontal centring.
       if (nav && !arrived) {
-        gsap.set(nav, {
-          '--intro': 0,
-          '--nav-y': `${-HERO.navRise}px`,
-          visibility: 'hidden',
-        });
-        gsap.set(nav.querySelector('.nav-header'), { opacity: 0 });
+        if (navCoarse) gsap.set(nav, { '--nav-y': '-110px', visibility: 'hidden' });
+        else {
+          gsap.set(nav, { '--intro': 0, '--nav-y': `${-HERO.navRise}px`, visibility: 'hidden' });
+          gsap.set(nav.querySelector('.nav-header'), { opacity: 0 });
+        }
       }
     }
 
@@ -193,10 +193,12 @@ import hero from '../assets/img/hero_img.webp';
       if (!arrived) {
         opening.to(
           nav,
-          { '--intro': 1, '--nav-y': '0px', visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, clearProps: '--intro,visibility,--nav-y' },
-          T.nav.at,
+          navCoarse
+            ? { '--nav-y': '0px', visibility: 'visible', duration: 1.1, ease: 'power3.out', clearProps: 'visibility,--nav-y' }
+            : { '--intro': 1, '--nav-y': '0px', visibility: 'visible', duration: T.nav.dur, ease: T.nav.ease, clearProps: '--intro,visibility,--nav-y' },
+          navCoarse ? T.nav.at - 0.3 : T.nav.at,
         );
-        if (nav) opening.to(nav.querySelector('.nav-header'), { opacity: 1, duration: T.nav.dur, ease: T.nav.ease, clearProps: 'opacity' }, T.nav.at);
+        if (nav && !navCoarse) opening.to(nav.querySelector('.nav-header'), { opacity: 1, duration: T.nav.dur, ease: T.nav.ease, clearProps: 'opacity' }, T.nav.at);
       }
     });
 

@@ -704,7 +704,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
   const stopGestures = scrollGestures({
     wheelMultiplier: SMOOTH_WHEEL.wheelMultiplier, // the same weight as the rest of the site
     touchMultiplier: SMOOTH_TOUCH.touchMultiplier,
-    touchInertia: 350, // a flick carries on after the finger lifts, as on the rest of the site
+    touchInertia: 0, // off for now (was 350: a flick carried on after the finger lifted, it felt like a snap)
     enabled: () => !lightboxOpen && revealOn,
     onDelta: (delta, kind) => {
       if (phase === 'grid') {

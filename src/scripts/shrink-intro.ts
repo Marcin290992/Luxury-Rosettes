@@ -16,6 +16,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { SHRINK_INTRO, WORD_HIDDEN, HERO } from './settings';
 import { drawStripes } from './stripes';
+import { getScrollY } from './scroller';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -54,7 +55,9 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
       headWords!.words.forEach((word, i) => gsap.set(word, { yPercent: -WORD_HIDDEN * stagger(away, i, headCount) }));
 
       // the photo shrinks from the whole screen to the tile
-      const k = between(p, o.shrink[0], o.shrink[1]);
+      // at the very top the photo is whole, whatever the scrubbed number says: during a page transition that number can still be a stale one from the
+      // previous page (the scrub catches up with a delay), and the photo then showed gaps at the sides and the bottom until the first scroll
+      const k = getScrollY() <= 2 ? 0 : between(p, o.shrink[0], o.shrink[1]);
       const tile = narrow ? o.tile.narrow : o.tile.wide;
       // before it starts to shrink the photo is simply the whole pin (100%, not a measured pixel size: on a phone the measure taken during the page
       // transition could be stale and left gaps at the sides and the bottom until the first scroll)
@@ -87,7 +90,7 @@ export function initShrinkIntro(root: HTMLElement, o = SHRINK_INTRO) {
     // After a page transition the scroll is put back to the top while the page is still being built, and the scrubbed photo could stay a little shrunk
     // (gaps at the sides and the bottom) although the page is at its top. A few checks while the page settles: at the top, the photo is whole again.
     const settle = () => {
-      if (window.scrollY > 2) return;
+      if (getScrollY() > 2) return;
       scrubbed.progress(0);
       state.p = 0;
       draw(0);

@@ -704,7 +704,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
   const stopGestures = scrollGestures({
     wheelMultiplier: SMOOTH_WHEEL.wheelMultiplier, // the same weight as the rest of the site
     touchMultiplier: SMOOTH_TOUCH.touchMultiplier,
-    touchInertia: 1, // a flick carries on after the finger lifts and slows down smoothly (a gentle decay, not one push)
+    touchInertia: 1.7, // Lenis' touchInertiaExponent: a flick carries on after the finger lifts
     enabled: () => !lightboxOpen && revealOn,
     onDelta: (delta, kind) => {
       if (phase === 'grid') {
@@ -713,11 +713,14 @@ export function initLumenGallery(root: HTMLElement): () => void {
           returnToHero(delta);
           return;
         }
-        vlerp.setTarget((target) => clamp(target + delta, 0, maxScroll()), kind);
+        // a finger drag moves the grid at once (Lenis' syncTouch has no lag while the finger is down); the wheel and the flick after the lift glide
+        if (kind === 'touch') vlerp.jump(clamp(vlerp.getValue() + delta, 0, maxScroll()));
+        else vlerp.setTarget((target) => clamp(target + delta, 0, maxScroll()), kind);
         return;
       }
       if (introPlaying || phase !== 'hero') return;
-      heroLerp.setTarget((target) => clamp(target + delta, 0, heroH));
+      if (kind === 'touch') heroLerp.jump(clamp(heroLerp.getValue() + delta, 0, heroH));
+      else heroLerp.setTarget((target) => clamp(target + delta, 0, heroH));
     },
   });
 

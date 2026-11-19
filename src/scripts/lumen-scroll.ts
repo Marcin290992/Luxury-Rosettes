@@ -5,7 +5,7 @@
 //     target: current += (target - current) * factor. That is what gives the soft, slightly lagging glide.
 
 export interface Lerp {
-  setTarget(value: number | ((target: number) => number), kind?: 'wheel' | 'touch'): void;
+  setTarget(value: number | ((target: number) => number), kind?: 'wheel' | 'touch' | 'inertia'): void;
   jump(value: number): void;
   getValue(): number;
   getTarget(): number;
@@ -78,18 +78,19 @@ const LINE_HEIGHT = 100 / 6;
 
 interface GestureOptions {
   enabled: () => boolean;
-  onDelta: (delta: number, kind: 'wheel' | 'touch') => void;
+  // 'touch': a finger dragging (Lenis' syncTouch follows it 1:1, no lag); 'inertia': the push after the finger lifts (glides with the lerp)
+  onDelta: (delta: number, kind: 'wheel' | 'touch' | 'inertia') => void;
   shouldHandle?: (delta: number) => boolean;
   touchMultiplier?: number;
   wheelMultiplier?: number;
-  touchInertia?: number; // how much of the finger's speed is carried on after it lifts (1 = as fast as the finger; 0 = the page stops dead)
+  touchInertia?: number; // Lenis' touchInertiaExponent (1.7): after the finger lifts the page glides by |px per frame| ** this; 0 = the page stops dead
 }
 
 /** Returns destroy(). `enabled()` is asked at each gesture, so it can change over time without re-binding. */
 export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier = 2, wheelMultiplier = 1, touchInertia = 0 }: GestureOptions) {
   let lastY = 0;
 
-  const handle = (delta: number, event: Event, kind: 'wheel' | 'touch' = 'touch') => {
+  const handle = (delta: number, event: Event, kind: 'wheel' | 'touch' | 'inertia' = 'touch') => {
     if (!delta || !enabled()) return;
     if (shouldHandle && !shouldHandle(delta)) return;
     event.preventDefault();
@@ -105,7 +106,6 @@ export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier
   let lastMoveAt = 0;
   const onTouchStart = (e: TouchEvent) => {
     const t = e.targetTouches[0];
-    stopMomentum();
     if (t) lastY = t.clientY;
     velocity = 0;
     lastMoveAt = 0;
@@ -121,32 +121,15 @@ export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier
     lastMoveAt = now;
     handle(delta, e);
   };
-  // after the finger lifts the page keeps moving at the finger's speed and slows down smoothly (a little each frame), in small steps: one big push at the
-  // lift made the page jump ahead at once, which felt like a snap
-  let momentum = 0;
-  const stopMomentum = () => {
-    if (momentum) cancelAnimationFrame(momentum);
-    momentum = 0;
-  };
-  const onTouchEnd = () => {
+  // After the finger lifts, the page glides on by (the finger's last speed in px per frame) ** 1.7, as Lenis' syncTouch does (its touchInertiaExponent): one
+  // push that the lerp then eases out, so a slow lift barely moves it and a fast flick travels far.
+  const onTouchEnd = (e: TouchEvent) => {
     const fresh = lastMoveAt && performance.now() - lastMoveAt < 80; // a finger that rested before lifting does not flick
-    let v = velocity * touchInertia; // px per ms
+    const perFrame = velocity * 16.7;
     velocity = 0;
     lastMoveAt = 0;
-    if (!fresh || Math.abs(v) < 0.15) return;
-    let last = performance.now();
-    const step = (now: number) => {
-      const dt = Math.min(now - last, 50);
-      last = now;
-      v *= 0.95 ** (dt / 16.7);
-      if (Math.abs(v) < 0.03 || !enabled()) {
-        momentum = 0;
-        return;
-      }
-      if (!shouldHandle || shouldHandle(v * dt)) onDelta(v * dt, 'touch');
-      momentum = requestAnimationFrame(step);
-    };
-    momentum = requestAnimationFrame(step);
+    if (!touchInertia || !fresh || Math.abs(perFrame) < 1) return;
+    handle(Math.sign(perFrame) * Math.abs(perFrame) ** touchInertia, e, 'inertia');
   };
   // arrow keys, page keys and space also scroll, for people without a wheel
   const onKey = (e: KeyboardEvent) => {
@@ -158,10 +141,9 @@ export function scrollGestures({ enabled, onDelta, shouldHandle, touchMultiplier
   window.addEventListener('wheel', onWheel, { passive: false });
   window.addEventListener('touchstart', onTouchStart, { passive: false });
   window.addEventListener('touchmove', onTouchMove, { passive: false });
-  window.addEventListener('touchend', onTouchEnd);
+  window.addEventListener('touchend', onTouchEnd, { passive: false });
   window.addEventListener('keydown', onKey);
   return () => {
-    stopMomentum();
     window.removeEventListener('touchend', onTouchEnd);
     window.removeEventListener('wheel', onWheel);
     window.removeEventListener('touchstart', onTouchStart);

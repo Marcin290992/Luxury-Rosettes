@@ -612,6 +612,22 @@ const scenes = [
     .why[data-live] .why-track {
       --screens: 5.7;
     }
+    /* On a phone the heading stands in the upper part of the screen (under the pill), not in the middle: the first photo then rises into the free
+       lower half at once, and there is no screen of empty dark between the heading and the photo (the pull-up is stronger for the same reason; the
+       script reads it from the margin) */
+    .why[data-live] .why-stage > .why-copy {
+      justify-content: flex-start;
+      padding-top: 24vh;
+      padding-top: 24svh;
+    }
+    .why[data-live] .why-more {
+      margin-top: -40vh;
+      margin-top: -40lvh;
+    }
+    /* the photos are larger on a narrow screen */
+    .why-spot {
+      width: 90%;
+    }
   }
   .why[data-live] .why-copy + .why-scene {
     padding-top: 0;

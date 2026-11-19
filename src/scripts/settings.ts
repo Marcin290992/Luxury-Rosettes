@@ -390,8 +390,9 @@ export const AWARD_ORBIT = {
 // ---- awards list (the awards as a spotlight: the counter goes down, the photos go up, the names roll, the words of the front one change) ---
 // After the Codegrid "PrototypeStudio Scroll Animation". The pinned part is `length` screens long.
 export const AWARDS_LIST = {
-  length: 5, // screens of scrolling the whole list takes
-  dim: 0.35, // opacity of a photo that is not the one at the middle of the screen
+  length: 7, // screens of scrolling the whole list takes
+  intro: 0.12, // the first share of it: the first photo settles from the whole screen into its frame and the words come in
+  reveal: 0.7, // the share of an award's step in which the next photo is opened over it (the rest of the step it rests)
   detailFade: 2.2, // how fast the words of an award fade as the list moves on from it (higher = faster)
   detailShift: 24, // px the words of an award travel while they come in and go out
   scrub: 1, // seconds the picture takes to catch up with the scroll
@@ -417,10 +418,12 @@ export const NAV_SCROLLED_AT = 40; // px of scrolling after which the glass gets
 // ---- awards spiral (the intro of the awards page: photos ride a spiral ribbon, then fly into a grid, then stripes cover the screen) ----
 export const AWARDS_SPIRAL = {
   spinScreens: 5, // screens of scrolling the spiral takes
-  exitScreens: 1.5, // screens the stripes take to cover the scene
+  premium: true, // the finer spiral: rounded photos, haze with distance, gold lines, an unhurried pace, a slight turn with the pointer (?premium=1 / ?premium=0 tries it either way)
+  path: 'helix', // the way the photos ride: 'coil' (the original's spiral, set to the screen), 'helix' (the original exactly), 'dragon' or 'wave'. ?path=helix in the address tries another
+  exitScreens: 2.4, // screens the end takes: one photo of the grid grows to fill the screen (all but the last screen), then the list of the awards slides over it
   hover: 1.12, // how much a photo grows under the mouse
-  grid: [0, 1, 4, 2, 7, 6], // which of the photos (counted from 0) land in the grid at the end
-  stripes: 5, // stripes that cover the scene at the end
+  grid: [0, 1, 4, 2, 7, 6], // which of the photos (counted from 0) land around the words at the end (a phone shows the first four)
+  hero: 1, // which of the cards (counted from 0) is the one that grows to the whole screen and becomes the first photo of the list
 };
 
 // ---- spin shutter (the kittens on a tilted ring in 3D that turns, with depth of field; one WebGL2 draw call, no libraries) -------

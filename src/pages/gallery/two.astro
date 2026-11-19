@@ -7,9 +7,14 @@ import { getLumenGalleries } from '../../data/lumen';
 // A gallery page (chosen on /gallery): a hero with the gallery's wordmark, a photo grid that comes up over it, zoom levels.
 const { galleries } = await getLumenGalleries();
 const gallery = galleries.find((g) => g.id === 'two')!;
+import { breadcrumb } from '../../data/seo';
 ---
 
-<Layout title={`${gallery.name} — Luxury Rosettes`}>
+<Layout
+  title={`${gallery.name} — Bengal Gallery — Luxury Rosettes`}
+  description={`${gallery.name}: a gallery of Bengal cats and kittens from Luxury Rosettes, High Wycombe, UK.`}
+  schema={[breadcrumb(['Gallery', '/gallery'], [gallery.name, '/gallery/two'])]}
+>
   <NavPill />
   <LumenGallery gallery={gallery} />
 </Layout>

@@ -381,11 +381,8 @@ const first = gallery.photos[0];
 </style>
 
 <script>
-  import { mount } from '../scripts/lifecycle';
-  import { initLumenGallery } from '../scripts/lumen-gallery';
+  import { mountLazy } from '../scripts/lifecycle';
 
-  mount(() => {
-    const root = document.querySelector<HTMLElement>('[data-lumen-gallery]');
-    return root ? initLumenGallery(root) : undefined;
-  }, '[data-lumen-gallery]');
+  // three.js comes as a separate file, fetched when this page runs
+  mountLazy(async () => (await import('../scripts/lumen-gallery')).initLumenGallery, '[data-lumen-gallery]');
 </script>

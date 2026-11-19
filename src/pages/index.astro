@@ -24,9 +24,14 @@ import FAQ from '../components/FAQ.astro';
 import Closing from '../components/Closing.astro';
 import Footer from '../components/Footer.astro';
 import expandImg from '../assets/img/expand.webp';
+import { faqSchema } from '../data/seo';
 ---
 
-<Layout>
+<Layout
+  title="Luxury Rosettes — TICA Registered Bengal Kittens in High Wycombe, UK"
+  description="TICA registered Bengal cattery in High Wycombe, UK. Champion bloodline, health-tested Bengal kittens born at home and raised with love. Enquire about available kittens."
+  schema={[faqSchema]}
+>
   <Preloader />
   <NavPill />
   <Stage />

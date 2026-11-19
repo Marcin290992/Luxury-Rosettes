@@ -9,9 +9,14 @@ import { getLumenGalleries } from '../../data/lumen';
 // Placeholder photos (see data/lumen.ts). The earlier version of this page (opening + stripes + photo wall) is in git history (070d923).
 const { galleries, spiral } = await getLumenGalleries();
 const gallery = { ...galleries[0], background: '#ffffff' };
+import { breadcrumb } from '../../data/seo';
 ---
 
-<Layout title="Gallery — Luxury Rosettes">
+<Layout
+  title="Bengal Cat & Kitten Photo Gallery — Luxury Rosettes"
+  description="Photos of Bengal cats and kittens from Luxury Rosettes in High Wycombe, UK: rosettes, marbles, silvers and browns."
+  schema={[breadcrumb(['Gallery', '/gallery'])]}
+>
   <NavPill />
   <LumenGallery gallery={gallery} start="grid" intro={spiral} closing={closingPhoto} />
 </Layout>

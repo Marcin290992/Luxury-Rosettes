@@ -7,6 +7,7 @@ import AwardsList from '../components/AwardsList.astro';
 import Closing from '../components/Closing.astro';
 import Footer from '../components/Footer.astro';
 import closingPhoto from '../assets/img/story/award3.webp'; // placeholder: swap for the real closing photo
+import { AWARDS_SPIRAL } from '../scripts/settings';
 
 // Sample page. The photos, titles, shows, years and words of the awards are placeholders, to be replaced with the real ones.
 const found = import.meta.glob<{ default: ImageMetadata }>('../assets/img/{cats,story}/*.webp', { eager: true });
@@ -25,9 +26,17 @@ const awards = [
   ['Best Opposite Sex', 'Placeholder Spring Show · 2021'],
   ["Judge's Choice", 'Placeholder Show Record · 2021'],
 ].map(([title, meta], i) => ({ img: pool[(i * 3 + 1) % pool.length], alt: title, title, meta, text: words }));
+// The first award's photo is the one the spiral grows to the whole screen (the spiral's photos are pool[(n * 4) % length], n = 0..8): the same picture,
+// so the hand-over from the spiral to the list shows no change.
+awards[0].img = pool[((AWARDS_SPIRAL.grid[AWARDS_SPIRAL.hero] % 9) * 4) % pool.length];
+import { breadcrumb } from '../data/seo';
 ---
 
-<Layout title="Awards — Luxury Rosettes">
+<Layout
+  title="Bengal Show Awards & Champions — Luxury Rosettes"
+  description="Show titles and awards won by the Bengal cats of Luxury Rosettes: proof of the quality of our champion bloodlines."
+  schema={[breadcrumb(['Awards', '/awards'])]}
+>
   <NavPill />
   <AwardsSpiral
     top="Champions"

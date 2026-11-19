@@ -5,8 +5,8 @@ import { AWARDS_SPIRAL } from '../scripts/settings';
 
 /**
  * The opening of the awards page (after a three.js "photo vortex"): photos ride a spiral ribbon up the screen while two huge words
- * slide in from the sides around a small line, then six of them fly into a grid, and stripes rise to cover the scene (the list of
- * the awards comes after it). It is a tall track with a sticky screen, scrubbed by the scroll (see scripts/awards-spiral.ts).
+ * slide in from the sides around a small line, then six of them fly in and settle above and below the words, and one of them grows to
+ * fill the whole screen (it is the first photo of the list of the awards, which comes after it). It is a tall track with a sticky screen, scrubbed by the scroll (see scripts/awards-spiral.ts).
  * Without WebGL (or with reduced motion) it is the two words, the line and a plain grid of the photos.
  */
 interface Props {
@@ -18,6 +18,9 @@ interface Props {
 const { top, bottom, line, photos } = Astro.props;
 const urls = (await Promise.all(photos.map((p) => getImage({ src: p, width: 1200, format: 'webp' })))).map((i) => i.src);
 const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
+// the photo that grows to the whole screen at the end (it is the first photo of the list: the same file, so the hand-over shows no change)
+const heroPhoto = photos[AWARDS_SPIRAL.grid[AWARDS_SPIRAL.hero] % photos.length];
+const heroSrc = (await getImage({ src: heroPhoto, width: 2000, format: 'webp' })).src;
 ---
 
 <!-- Until the scene is built (or the script has decided not to build one), the words and the plain grid are hidden: the page would
@@ -46,20 +49,15 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
       {grid.map((src) => <img src={src} alt="" loading="lazy" />)}
     </div>
     <canvas class="sp-canvas" aria-hidden="true"></canvas>
-    <div class="sp-stripes" aria-hidden="true">
-      {Array.from({ length: AWARDS_SPIRAL.stripes }, () => <div></div>)}
-    </div>
+    <img class="sp-hero" src={heroSrc} alt="" aria-hidden="true" draggable="false" hidden />
   </div>
 </section>
 
 <script>
-  import { mount } from '../scripts/lifecycle';
-  import { initAwardsSpiral } from '../scripts/awards-spiral';
+  import { mountLazy } from '../scripts/lifecycle';
 
-  mount(() => {
-    const root = document.querySelector<HTMLElement>('.sp');
-    return root ? initAwardsSpiral(root) : undefined;
-  });
+  // three.js comes as a separate file, fetched when this page runs
+  mountLazy(async () => (await import('../scripts/awards-spiral')).initAwardsSpiral, '.sp');
 </script>
 
 <style is:global>
@@ -116,7 +114,7 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
     display: block;
   }
   .sp-canvas,
-  .sp-stripes {
+  .sp-hero {
     display: none;
   }
 
@@ -170,20 +168,21 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
-  .sp[data-live] .sp-stripes {
-    display: flex;
-    flex-direction: column;
+  /* the photo that grows to the screen: the script puts it exactly over its card and then widens it (shown only while it grows) */
+  .sp[data-live] .sp-hero {
+    display: block;
     position: absolute;
-    inset: 0;
-    z-index: 3;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    z-index: 2;
+    object-fit: cover;
     pointer-events: none;
+    user-select: none;
   }
-  .sp[data-live] .sp-stripes div {
-    flex: 1;
-    margin-top: -1px;
-    background: var(--ink-warm);
-    transform: scaleY(0);
-    transform-origin: bottom;
+  .sp[data-live] .sp-hero[hidden] {
+    display: none;
   }
   /* The two big words: the letters come out of a blur once the section is in view and the page transition is over (`is-in`, see the
      script). The small line is plain text: it has no animation and is simply there. */

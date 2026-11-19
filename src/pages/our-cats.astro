@@ -45,9 +45,14 @@ const weeks = [
   { title: 'Health checks', text: 'Placeholder text. A visit to the vet, vaccinations and a microchip, all written down.', image: charlie },
   { title: 'Ready to meet you', text: 'Ready at 12 to 14 weeks, fully vaccinated, with a written health guarantee.', image: cosmo },
 ];
+import { breadcrumb } from '../data/seo';
 ---
 
-<Layout title="Our Cats — Luxury Rosettes">
+<Layout
+  title="Our Bengal Cats — Luxury Rosettes"
+  description="Meet the queens and stud cats of Luxury Rosettes: TICA registered Bengals with champion pedigrees, health-tested and part of our family."
+  schema={[breadcrumb(['Our cats', '/our-cats'])]}
+>
   <NavPill />
   <ShrinkIntro
     headline="The family behind<br>the line"

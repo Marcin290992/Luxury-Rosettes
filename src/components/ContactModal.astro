@@ -227,7 +227,7 @@ const STRIPES = 5;
         const res = await fetch(CONTACT_FORM.endpoint, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
         if (!res.ok) throw new Error(String(res.status));
         form.reset();
-        message.style.height = ''; // back to its own size
+        messageBox.style.height = ''; // back to its own size
         say('Thank you. Your message is on its way.', 'ok');
       } catch {
         say(`It did not go through. Please write to ${CONTACT_FORM.to}.`, 'error');
@@ -330,12 +330,12 @@ const STRIPES = 5;
     };
     // The message grows with what is written instead of scrolling inside itself: a box that scrolls its own text takes the finger's drag for itself,
     // and the screen could not be moved up from it.
-    const message = form.querySelector<HTMLTextAreaElement>('textarea')!;
+    const messageBox = form.querySelector<HTMLTextAreaElement>('textarea')!;
     const grow = () => {
-      message.style.height = 'auto';
-      message.style.height = `${message.scrollHeight}px`;
+      messageBox.style.height = 'auto';
+      messageBox.style.height = `${messageBox.scrollHeight}px`;
     };
-    message.addEventListener('input', grow);
+    messageBox.addEventListener('input', grow);
     vv?.addEventListener('resize', followViewport);
     vv?.addEventListener('scroll', followViewport);
     form.addEventListener('focusin', onFocusIn);
@@ -348,7 +348,7 @@ const STRIPES = 5;
       vv?.removeEventListener('resize', followViewport);
       vv?.removeEventListener('scroll', followViewport);
       form.removeEventListener('focusin', onFocusIn);
-      message.removeEventListener('input', grow);
+      messageBox.removeEventListener('input', grow);
       document.removeEventListener('click', onClick);
       form.removeEventListener('submit', onSubmit);
       document.removeEventListener('open-contact-modal', onEvent);

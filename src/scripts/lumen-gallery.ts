@@ -313,6 +313,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
   let currentIndex = 0;
   let boxReady = false; // the strip and the arrows work once the picture has finished growing, and not while it is closing
   let switching = false;
+  let fastUntil = 0; // while the person is going quickly (a page was just given up) the next pictures melt in too, no page is turned for each
+  let switchId = 0; // counts the switches: a turn that is no longer the latest stops touching the picture
   let wanted = 0; // the picture asked for last (it may be ahead of the one shown while a switch is running)
   const thumbs = images.map((img, i) => {
     const button = document.createElement('button');
@@ -341,8 +343,62 @@ export function initLumenGallery(root: HTMLElement): () => void {
   // another picture (from the strip, the keys or the wheel): the opened one is a page of a book that turns over and the next is under it. The page is
   // made over the picture first (flat, exactly over it) and only then the picture under it is changed, so there is no frame without a picture.
   // (The grid moves behind the box so that the one the box will fly back to on closing is on the screen.)
+  // The picture in the box melts into another one (no cut): the one that was there stays on the second image and fades while the asked one comes in over
+  // it, in its place. Used when a turn is given up for a later request, and when the box is closed on the way to another picture.
+  const crossfadeTo = (asked: HTMLImageElement) => {
+    ghost.src = boxImg.currentSrc || boxImg.src;
+    Object.assign(ghost.style, { left: boxImg.style.left, top: boxImg.style.top, width: boxImg.style.width, height: boxImg.style.height });
+    gsap.set(ghost, { x: 0, y: 0, scale: 1, opacity: 1 });
+    gsap.to(ghost, { opacity: 0, duration: 0.3, ease: 'power1.out' });
+    if (source) source.style.visibility = '';
+    fitBox(asked);
+    boxImg.src = asked.currentSrc || asked.src;
+    boxImg.alt = asked.alt;
+    gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 0 });
+    gsap.to(boxImg, { opacity: 1, duration: 0.3, ease: 'power1.out' });
+    source = asked;
+    asked.style.visibility = 'hidden';
+    currentIndex = images.indexOf(asked);
+  };
   const select = (index: number) => {
     if (!lightboxOpen || closing || index < 0 || index >= images.length) return;
+    if (boxReady && (switching || performance.now() < fastUntil)) {
+      // A page is turning and another picture is asked for: the page is not finished (that would show a picture nobody wanted any more, and then jump
+      // to the right one). It is given up, and the box melts straight into the latest one.
+      if (!switching && index === currentIndex) return;
+      fastUntil = performance.now() + 900;
+      switchId++;
+      turns.splice(0).forEach((d) => d());
+      gsap.killTweensOf([ghost, boxImg]);
+      wanted = index;
+      navIndex = index;
+      markActive(index);
+      switching = false;
+      const asked = images[index];
+      if (asked !== source) {
+        const r = asked.getBoundingClientRect();
+        vlerp.jump(clamp(position + r.top - (window.innerHeight - r.height) / 2, 0, maxScroll()));
+        crossfadeTo(asked);
+      } else {
+        gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });
+        gsap.set(ghost, { opacity: 0 });
+        asked.style.visibility = 'hidden';
+      }
+      window.clearTimeout(upgradeTimer);
+      upgradeTimer = window.setTimeout(() => {
+        const full = asked.dataset.full;
+        if (!full) return;
+        const big = new Image();
+        big.src = full;
+        big.decode().then(
+          () => {
+            if (lightboxOpen && source === asked && !switching) boxImg.src = full;
+          },
+          () => {},
+        );
+      }, 350);
+      return;
+    }
     if (!boxReady || switching) {
       // the person is going faster than the pictures change (or taps while the photo is still opening): the last one asked for is remembered, shown
       // in the strip at once, and put on the screen as soon as this is done (see finish() and shown())
@@ -353,6 +409,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     }
     if (index === currentIndex) return;
     switching = true;
+    const mine = ++switchId;
     wanted = index;
     navIndex = index; // the picture on its way: closing now sends this one back to its tile (see closePicture)
     const next = images[index];
@@ -386,6 +443,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       } catch {
         /* it shows when it is there */
       }
+      if (mine !== switchId) return; // given up for a later request
       if (!lightboxOpen || closing) {
         switching = false;
         return;
@@ -400,6 +458,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
         /* it shows when it is there */
       }
       const land = async () => {
+        if (mine !== switchId) return;
         // the box is being closed (or is closed) while the page turned: nothing may touch the picture now, or it is put back at its resting place in
         // the middle of its flight to the tile, the flight's tween is killed and the picture hangs over the grid for good
         if (!lightboxOpen || closing) {
@@ -425,6 +484,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
         } catch {
           /* it shows when it is there */
         }
+        if (mine !== switchId) return;
         gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });
         gsap.set(ghost, { opacity: 0 });
         finish();
@@ -558,20 +618,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
     // to its own tile. Without this the old one, still in the box, flew back to its tile (the picture jumped back and then returned to its place).
     const asked = images[navIndex];
     if (asked && asked !== source) {
-      // not a cut: the picture that was in the box stays on the second image and melts away while the asked one comes in over it, in its place
-      ghost.src = boxImg.currentSrc || boxImg.src;
-      Object.assign(ghost.style, { left: boxImg.style.left, top: boxImg.style.top, width: boxImg.style.width, height: boxImg.style.height });
-      gsap.set(ghost, { x: 0, y: 0, scale: 1, opacity: 1 });
-      gsap.to(ghost, { opacity: 0, duration: 0.3, ease: 'power1.out' });
-      source.style.visibility = '';
-      fitBox(asked);
-      boxImg.src = asked.currentSrc || asked.src;
-      boxImg.alt = asked.alt;
-      gsap.set(boxImg, { opacity: 0 });
-      gsap.to(boxImg, { opacity: 1, duration: 0.3, ease: 'power1.out' });
-      source = asked;
-      asked.style.visibility = 'hidden';
-      currentIndex = navIndex;
+      crossfadeTo(asked); // not a cut: the old picture melts into the asked one while they fly back together
     }
     const rest = boxImg.getBoundingClientRect(); // where the picture stands now, measured, not remembered
     // the grid stands still while the picture flies, and the tile is on the screen: a tile that is far off (the strip went through many pictures) is

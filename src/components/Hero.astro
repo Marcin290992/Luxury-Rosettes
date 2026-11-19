@@ -150,7 +150,9 @@ import hero from '../assets/img/hero_img.webp';
       // after the intro the photo is already on screen (the preloader's last frame): no second zoom on top of it. The same after a click through from
       // another page: the page transition has just shown the photo, and zooming it in and settling it again looked like the hero loading twice.
       gsap.set(media, { scale: document.documentElement.classList.contains('preloading') || arrived ? 1 : HERO.mediaZoom });
-      if (nav && !arrived) gsap.set(nav, { '--intro': 0, visibility: 'hidden', y: -HERO.navRise });
+      // on a phone or a tablet the bar does not move, so its logo and buttons do not move either: only the bar's own look fades in
+      const navRise = matchMedia('(pointer: coarse)').matches ? 0 : -HERO.navRise;
+      if (nav && !arrived) gsap.set(nav, { '--intro': 0, visibility: 'hidden', y: navRise });
     }
 
     // wait for the web font and the photo, but never longer than HERO.maxWait

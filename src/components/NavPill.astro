@@ -386,7 +386,9 @@ const isCurrent = (href: string) =>
     }
     .nav-pill {
       --glass: rgba(34, 29, 25, 0.86);
-      background: var(--glass);
+      /* the plain background arrives softly with the home page's intro (--intro 0 to 1), like the border: it used to be there whole the moment the pill
+         became visible, a hard entrance */
+      background: color-mix(in srgb, var(--glass) calc(var(--intro) * 100%), transparent);
       transition: border-radius 0.3s var(--ease), background 0.25s ease;
     }
     .nav-pill.is-scrolled {
@@ -404,7 +406,7 @@ const isCurrent = (href: string) =>
     align-items: center;
     height: var(--head);
     padding: 0 1.25rem 0 1.5rem;
-    opacity: var(--intro);
+    /* no opacity of --intro here: the logo and the buttons are there at once, only the bar itself arrives softly */
   }
 
   .nav-btn {

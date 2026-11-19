@@ -1,0 +1,30 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NavPill from '../../components/NavPill.astro';
+import RootsReveal from '../../components/RootsReveal.astro';
+import kita from '../../assets/img/cats/kita.webp';
+import draco from '../../assets/img/cats/draco.webp';
+import candy from '../../assets/img/cats/candy.webp';
+
+// A demo page for RootsReveal (not linked from the site): a screen before and after it. The first photo is the arch in front.
+---
+
+<Layout title="Demo: RootsReveal — Luxury Rosettes">
+  <NavPill />
+  <section class="before"><p>Scroll down ↓</p></section>
+  <RootsReveal images={[kita, draco, candy]} />
+  <section class="after"><p>The end of the demo</p></section>
+</Layout>
+
+<style>
+  .before,
+  .after {
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+  }
+</style>

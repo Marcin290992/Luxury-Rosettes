@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://luxuryrosettes.co.uk/sitemap-index.xml

@@ -4,11 +4,11 @@ import type { ImageMetadata } from 'astro';
 import { AWARDS_LIST as S } from '../scripts/settings';
 
 /**
- * The list of the awards, one at a time (see scripts/awards-list.ts): a pinned screen. It begins with the photo that the spiral before it
- * has grown to the whole screen (the same picture: the hand-over shows no seam); that photo settles into a large frame, a huge counter
- * stands at the left with the words of the award, and the names of the awards stand in a list at the right. Then every next award is one
- * large photo that is opened over the last one from the bottom edge (a mask), while the counter, the words and the list move on.
- * Without the script, with reduced motion, it is a grid of the photos and the awards written out one under the other.
+ * The list of the awards, one at a time (after the Codegrid "PrototypeStudio Scroll Animation", see scripts/awards-list.ts): a pinned
+ * screen where a counter goes down the left side, a column of photos goes up through the middle, the names of the awards roll up on the
+ * right and the words of the current award (where, when, the story) are shown in the middle of its photo.
+ * When it comes up, everything arrives the way things do on the rest of the site: the photos open from the bottom, the counter, the
+ * names and the words rise out of masks. Without the script, on a narrow screen, or with reduced motion, it is a grid of the photos and the awards written out one under the other.
  */
 interface Props {
   items: { img: ImageMetadata; alt: string; title: string; meta: string; text: string }[];
@@ -21,16 +21,11 @@ const total = String(items.length).padStart(2, '0');
   <div class="al-pin">
     <p class="al-index" aria-hidden="true"><span class="al-mask"><span class="al-roll"><span class="al-num">01</span><span class="al-total">/{total}</span></span></span></p>
 
-    <div class="al-slot" aria-hidden="true"></div>
     <div class="al-images">
       {
         items.map((item, i) => (
           <figure class="al-img">
-            {i === 0 ? (
-              <Image src={item.img} alt={item.alt} widths={[1000, 1400, 2000]} sizes="(min-width: 1000px) 100vw, 100vw" loading="eager" draggable="false" />
-            ) : (
-              <Image src={item.img} alt={item.alt} widths={[600, 1000, 1400]} sizes="(min-width: 1000px) 46vw, 90vw" loading={i < 3 ? 'eager' : 'lazy'} draggable="false" />
-            )}
+            <Image src={item.img} alt={item.alt} widths={[600, 1000, 1400]} sizes="(min-width: 1000px) 46vw, 90vw" loading={i < 3 ? 'eager' : 'lazy'} draggable="false" />
           </figure>
         ))
       }
@@ -67,7 +62,7 @@ const total = String(items.length).padStart(2, '0');
 <style>
   .al {
     position: relative;
-    background: var(--ink-warm);
+    background: var(--ink-warm); /* the colour of the spiral's stripes (see AwardsSpiral): the list is what is left when they have covered the scene */
     color: var(--cream);
   }
 
@@ -130,15 +125,10 @@ const total = String(items.length).padStart(2, '0');
   /* ---- with the script: one pinned screen in a tall track ---- */
   .al[data-live] {
     height: calc((1 + var(--al-length)) * 100svh);
-    /* where the photo's frame stands (a laptop: to the right of the words; a phone or a tablet: under the counter, above the words) */
-    --fx: 32vw;
-    --fy: 14svh;
-    --fw: 46vw;
-    --fh: 74svh;
   }
-  /* The list is pulled up by one screen over the end of the spiral's pin, so it reaches the top of the screen exactly when the pin ends. Its
-     first picture is the one the spiral has grown to the whole screen: while the list slides up, the picture is held still on the screen (the
-     script), so it is the spiral's own photo, not a copy that moves. */
+  /* The list comes up while the stripes of the spiral are still rising, not after them (that was a long empty dark stretch of scrolling):
+     it is pulled up by one screen over the end of the spiral's pin, so it reaches the top of the screen exactly when the pin ends. Its own
+     background is the stripes' colour, so it is what is left of them. */
   :global(.sp[data-live]) ~ .al[data-live] {
     position: relative;
     z-index: 1;
@@ -151,26 +141,12 @@ const total = String(items.length).padStart(2, '0');
     padding: 0;
     overflow: hidden;
   }
-  /* the frame's place (only measured by the script) */
-  .al-slot {
-    display: none;
-  }
-  .al[data-live] .al-slot {
-    display: block;
-    position: absolute;
-    left: var(--fx);
-    top: var(--fy);
-    width: var(--fw);
-    height: var(--fh);
-    pointer-events: none;
-    visibility: hidden;
-  }
   .al[data-live] .al-index {
     display: block;
     position: absolute;
     top: 2rem;
     left: 2rem;
-    z-index: 3;
+    z-index: 2;
     margin: 0;
     font-family: var(--font-heading);
     font-size: clamp(3.5rem, 6.2vw, 8.5rem);
@@ -197,41 +173,30 @@ const total = String(items.length).padStart(2, '0');
   .al[data-live] .al-name {
     display: block;
   }
-  /* the frame: it begins as the whole screen (the photo of the spiral) and settles into its place; every award is one photo in it, opened over
-     the one before from the bottom edge */
   .al[data-live] .al-images {
     position: absolute;
-    left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
+    left: 50%;
     z-index: 1;
+    width: 46%; /* the original has 35%; on the cream page that looks small */
     max-width: none;
     margin: 0;
-    padding: 0;
-    display: block;
-    overflow: hidden;
-    border-radius: 0;
-    will-change: left, top, width, height, transform;
+    padding: calc(var(--al-mid, 0.5) * 100svh) 0 calc((1 - var(--al-mid, 0.5)) * 100svh); /* the first photo starts at the middle line of the screen and the last one ends there */
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    will-change: transform;
   }
   .al[data-live] .al-img {
-    position: absolute;
-    inset: 0;
+    flex: none;
     width: 100%;
-    height: 100%;
-    margin: 0;
-    aspect-ratio: auto;
-    border-radius: 0;
-  }
-  .al[data-live] .al-img :global(img) {
-    will-change: transform;
   }
   .al[data-live] .al-names {
     display: flex;
     position: absolute;
     right: 2rem;
     bottom: 2rem;
-    z-index: 3;
+    z-index: 2;
     flex-direction: column;
     align-items: flex-end;
     list-style: none;
@@ -249,13 +214,13 @@ const total = String(items.length).padStart(2, '0');
   .al[data-live] .al-names li.is-current {
     color: var(--gold);
   }
-  /* the words of the current award: on the left, level with the middle of the frame */
+  /* the words of the current award: on the left, level with the middle of its photo (the middle line of the screen), well clear of it */
   .al[data-live] .al-details {
     position: absolute;
     left: 2rem;
     top: 50%;
-    z-index: 3;
-    width: min(22rem, calc(30vw - 3rem));
+    z-index: 2;
+    width: min(22rem, calc(27vw - 4rem));
     max-width: none;
     margin: 0;
     gap: 0;
@@ -265,18 +230,32 @@ const total = String(items.length).padStart(2, '0');
     grid-area: 1 / 1;
     will-change: transform, opacity;
   }
-  .al[data-live] .al-detail h3 {
-    font-size: clamp(2rem, 3vw, 3.4rem);
-  }
 
-  /* ---- a tablet and a phone (upright): the same pinned screen in one column. The counter is at the top, the photo's frame is under it,
-     and the words of its award stand under the frame. The names are left out. ---- */
+  /* ---- a tablet and a phone (upright): the same pinned screen, laid out in one column. The counter is at the top, the photo goes up through
+     the upper middle of the screen (its middle line is --al-mid), and the words of its award stand under it. The names are left out. The
+     photos above and below the current one fade into the dark at the top and the bottom of the screen. ---- */
   @media (max-width: 1000px) {
     .al[data-live] {
-      --fx: 1.5rem;
-      --fw: calc(100% - 3rem);
-      --fy: max(9rem, 17svh);
-      --fh: 42svh;
+      --al-mid: 0.38;
+    }
+    .al[data-live] .al-pin::before,
+    .al[data-live] .al-pin::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .al[data-live] .al-pin::before {
+      top: 0;
+      height: 22svh;
+      background: linear-gradient(var(--ink-warm) 35%, transparent);
+    }
+    .al[data-live] .al-pin::after {
+      bottom: 0;
+      height: 48svh;
+      background: linear-gradient(transparent, var(--ink-warm) 16%);
     }
     .al[data-live] .al-index {
       top: 5.4rem;
@@ -286,10 +265,13 @@ const total = String(items.length).padStart(2, '0');
     .al[data-live] .al-names {
       display: none;
     }
+    .al[data-live] .al-images {
+      width: min(88%, 52svh * 1.78);
+    }
     .al[data-live] .al-details {
       left: 1.5rem;
       right: 1.5rem;
-      top: calc(var(--fy) + var(--fh) + 1.4rem);
+      top: 62svh;
       width: auto;
       translate: none;
     }
@@ -302,12 +284,11 @@ const total = String(items.length).padStart(2, '0');
     }
   }
   @media (min-width: 600px) and (max-width: 1000px) {
-    .al[data-live] {
-      --fx: 2.5rem;
-      --fw: calc(100% - 5rem);
-    }
     .al[data-live] .al-index {
       left: 2.5rem;
+    }
+    .al[data-live] .al-images {
+      width: min(74%, 52svh * 1.78);
     }
     .al[data-live] .al-details {
       left: 2.5rem;

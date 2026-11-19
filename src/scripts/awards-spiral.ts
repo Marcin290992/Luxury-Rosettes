@@ -1,6 +1,5 @@
 // Awards spiral: photos ride a spiral ribbon up the screen (three.js) while two huge words slide in from the sides around a small line;
-// then six of the photos fly in and settle above and below the words (the words stay clear), and one of them grows to fill the screen:
-// it is the first photo of the list of the awards (AwardsList), the same picture, so the hand-over from this scene to the list shows no seam.
+// then six of the photos fly into a grid, a line is drawn between the rows and stripes rise to cover the scene.
 //
 // Adapted from a "photo vortex" demo to Vanilla TS for this site (see docs/SCRIPTING.md, section 3):
 //  - initAwardsSpiral(root) is `init` and returns destroy(); everything is looked up inside `root`,
@@ -9,7 +8,7 @@
 //  - the numbers are in settings.ts (AWARDS_SPIRAL); the ones of the shape of the spiral are below.
 //
 // Expected markup (see AwardsSpiral.astro): root(data-photos="url|url|...") > .sp-scene > .sp-words (.sp-top, .sp-line, .sp-bottom),
-// canvas.sp-canvas, img.sp-hero.
+// canvas.sp-canvas, .sp-stripes > div x n.
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -36,22 +35,12 @@ const STEPS = 600; // points of a drawn line
 const TAIL = 86; // points of the spiral lines that are drawn behind the head
 
 const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
-// the photos of the ribbon: rounded corners (uRound), and haze: a photo on the far side of the spiral fades towards the colour of the page (uHaze),
-// which gives the spiral depth, like air between you and what is far away. (vUv is the strip's own 0..1: a photo's width is 1 and its height 0.7.)
-const VERT_RIBBON = 'varying vec2 vUv; varying float vDepth; void main(){ vUv = uv; vec4 mv = modelViewMatrix * vec4(position, 1.0); vDepth = -mv.z; gl_Position = projectionMatrix * mv; }';
 const FRAG_RIBBON = `
-uniform sampler2D map; uniform vec4 uCrop; uniform vec3 uPaper; uniform float uRound; uniform float uHaze; uniform vec2 uHazeRange; varying vec2 vUv; varying float vDepth;
+uniform sampler2D map; uniform vec4 uCrop; varying vec2 vUv;
 void main(){
   vec2 uv = vUv;
   if (gl_FrontFacing) uv.x = 1.0 - uv.x;
-  vec3 c = texture2D(map, uv * uCrop.xy + uCrop.zw).rgb;
-  vec2 p = (vUv - 0.5) * vec2(1.0, 0.7);
-  vec2 q = abs(p) - vec2(0.5, 0.35) + uRound;
-  float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - uRound;
-  float a = 1.0 - smoothstep(-0.004, 0.004, d);
-  if (a <= 0.0) discard;
-  float haze = smoothstep(uHazeRange.x, uHazeRange.y, vDepth) * uHaze;
-  gl_FragColor = vec4(mix(c, uPaper, haze), a);
+  gl_FragColor = texture2D(map, uv * uCrop.xy + uCrop.zw);
 }`;
 const FRAG_CARD = `
 uniform sampler2D map; uniform vec4 uCrop; uniform vec2 uSize; uniform float uRadius; varying vec2 vUv;
@@ -66,7 +55,6 @@ void main(){
 }`;
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-const growEase = gsap.parseEase('power3.inOut');
 
 function point(t: number) {
   const d = (t - T / 2) / 2;
@@ -81,176 +69,6 @@ function up(t: number) {
   return u.normalize();
 }
 
-// ---- the track the photos ride: where a point at distance s along it is, and which way the photo's height points there ----
-interface Track {
-  length: number; // the whole path
-  ribbonW: number; // a photo's width along the path
-  ribbonH: number;
-  gap: number; // the distance between two photos
-  start: number; // where the first photo begins (a head start on the path)
-  at(s: number, p: THREE.Vector3, u: THREE.Vector3): void;
-  // A track of CARDS (the dragon): each photo is a flat card standing on the path (not a strip bent along it), turned a little with the path.
-  // `pose` gives the centre of the card at distance s and the two directions of the card (its width and its height); `update` moves the
-  // track's wave with the progress; `spine` is a thin line along the body, drawn from the last photo to the first.
-  pose?(s: number, p: THREE.Vector3, right: THREE.Vector3, up: THREE.Vector3): void;
-  update?(progress: number): void;
-  spine?: boolean;
-}
-
-// the spiral: the photos ride a helix that climbs round the middle of the screen (the original)
-const helixTrack = (): Track => ({
-  length: LENGTH,
-  ribbonW: RIBBON_W,
-  ribbonH: RIBBON_H,
-  gap: GAP,
-  start: 25,
-  at(s, p, u) {
-    const t = s / L;
-    p.copy(point(t));
-    u.copy(up(t));
-  },
-});
-
-// the coil: the spiral of the original (the photos are one chain of strips that winds round the middle of the screen as it climbs), set to the
-// screen: the coil is narrower than the screen, so the photos near the viewer are not huge, the coils climb the whole height of the screen,
-// and the photos stand close together, so it reads as one band of photos winding upward (the climb and the unhurried winding of the dragon,
-// the pattern of the original spiral).
-const coilTrack = (halfW: number, halfH: number): Track => {
-  const portrait = halfW < halfH;
-  const R2 = portrait ? Math.min(halfW * 0.95, 9) : Math.min(halfH * 0.8, halfW * 0.5, 10);
-  const turns = portrait ? 2.6 : 2.25;
-  const T2 = turns * 2 * Math.PI;
-  const y0 = -halfH * 1.25;
-  const y1 = halfH * 1.25;
-  const slope = (y1 - y0) / T2;
-  const L2 = Math.hypot(R2, slope);
-  const dip = halfH * 0.16; // the climb dips a little in the middle, as the original's does
-  const pt = (t: number, out: THREE.Vector3) => {
-    const d = (t - T2 / 2) / 2;
-    return out.set(R2 * Math.cos(t), y0 + t * slope - dip * Math.exp(-d * d), R2 * Math.sin(t));
-  };
-  const tangent = new THREE.Vector3();
-  const radial = new THREE.Vector3();
-  const ribbonW = R2 * 0.55;
-  return {
-    length: T2 * L2,
-    ribbonW,
-    ribbonH: ribbonW * 0.7,
-    gap: ribbonW * 1.1,
-    start: T2 * L2 * 0.1,
-    at(sDist, p, u) {
-      const t = sDist / L2;
-      pt(t, p);
-      const d = (t - T2 / 2) / 2;
-      tangent.set(-R2 * Math.sin(t), slope + dip * d * Math.exp(-d * d), R2 * Math.cos(t)).normalize();
-      radial.set(Math.cos(t), 0, Math.sin(t));
-      u.crossVectors(tangent, radial).normalize();
-      u.y += 0.6;
-      u.normalize();
-    },
-  };
-};
-
-// the dragon (after the dragon that rises into the sky in Dragon Ball): the photos are the scales of a long body that climbs the screen from below
-// in big S-curves, swinging from side to side and passing in front of and behind the line of the climb. Each photo is a flat card that
-// leans with the body; the waves of the body travel along it as it rises (the wave's phase follows the scroll), so it winds upward. A thin gold
-// line runs through the body, from the last photo to the first.
-const dragonTrack = (halfW: number, halfH: number): Track => {
-  const portrait = halfW < halfH;
-  const ribbonW = portrait ? halfW * 0.62 : Math.min(halfW * 0.42, halfH * 0.62);
-  const ribbonH = ribbonW * 0.7;
-  const Y = halfH * 1.3;
-  const length = 2 * Y;
-  const A = halfW * (portrait ? 0.3 : 0.38); // how far the body swings to each side
-  const B = 3.4; // how far it comes in front of and goes behind the line of the climb
-  const waves = portrait ? 1.15 : 1.4; // S-curves on the screen
-  let phi = 0;
-  const TAU = 2 * Math.PI;
-  const dummyU = new THREE.Vector3();
-  const track: Track = {
-    length,
-    ribbonW,
-    ribbonH,
-    gap: ribbonH * 1.22,
-    start: 0,
-    spine: true,
-    update(progress) {
-      phi = progress * TAU * 0.85;
-    },
-    pose(sDist, p, r, u) {
-      const a = Math.min(1, Math.max(0, sDist / length));
-      const ph = a * waves * TAU + phi;
-      p.set(A * Math.sin(ph), -Y + 2 * Y * a, B * Math.cos(ph));
-      const slope = (A * waves * TAU * Math.cos(ph)) / (2 * Y); // dx/dy of the body here
-      const roll = Math.atan(slope) * 0.5; // the card leans with the body (less than the body itself: the photos stay readable)
-      const yaw = 0.45 * Math.sin(ph + 1.0); // and turns a little, as a body does when it coils
-      const cy = Math.cos(yaw);
-      const sy = Math.sin(yaw);
-      const cr = Math.cos(roll);
-      const sr = Math.sin(roll);
-      // width: (cos yaw, 0, -sin yaw) turned by the lean; height: (0, 1, 0) turned by the lean
-      r.set(cy * cr, sr, -sy * cr).normalize();
-      u.set(-cy * sr, cr, sy * sr).normalize();
-    },
-    at(sDist, p) {
-      track.pose!(sDist, p, dummyU, dummyU);
-    },
-  };
-  return track;
-};
-
-// the wave: the photos flow across the screen along a soft S-curve that rises from the lower left to the upper right, turning a little
-// round the path as they go (a ribbon in a current), so they stay readable and face the viewer, no half-turns and no back sides.
-// The curve is measured once into a table so that the photos are spaced evenly along it (distance, not parameter).
-const waveTrack = (halfW: number, halfH: number): Track => {
-  const portrait = halfW < halfH; // a phone or a tablet upright: a narrow screen, so the curve is longer and shallower (the photos stay upright)
-  const spanX = halfW * (portrait ? 2.7 : 1.45);
-  const rise = halfH * (portrait ? 0.42 : 0.8);
-  const sway = halfH * (portrait ? 0.2 : 0.34);
-  const waves = 1.45;
-  const f = (a: number, out: THREE.Vector3) =>
-    out.set(-spanX + 2 * spanX * a, -rise + 2 * rise * a + sway * Math.sin(a * waves * 2 * Math.PI + 0.5), 2.2 * Math.cos(a * waves * 2 * Math.PI));
-  const N = 900;
-  const cum = new Float32Array(N + 1);
-  const a0 = new THREE.Vector3();
-  const a1 = new THREE.Vector3();
-  f(0, a0);
-  for (let i = 1; i <= N; i++) {
-    f(i / N, a1);
-    cum[i] = cum[i - 1] + a1.distanceTo(a0);
-    a0.copy(a1);
-  }
-  const length = cum[N];
-  const ribbonW = Math.max(halfW * 0.4, halfH * 0.3);
-  const t = new THREE.Vector3();
-  const q = new THREE.Vector3();
-  return {
-    length,
-    ribbonW,
-    ribbonH: ribbonW * 0.7,
-    gap: ribbonW * 1.22,
-    start: 0,
-    at(s, p, u) {
-      const d = Math.min(length, Math.max(0, s));
-      let lo = 0;
-      let hi = N;
-      while (hi - lo > 1) {
-        const mid = (lo + hi) >> 1;
-        if (cum[mid] <= d) lo = mid;
-        else hi = mid;
-      }
-      const a = (lo + (d - cum[lo]) / Math.max(1e-6, cum[hi] - cum[lo])) / N;
-      f(a, p);
-      f(Math.min(1, a + 0.002), t);
-      f(Math.max(0, a - 0.002), q);
-      t.sub(q).normalize();
-      // the height of the photo: the normal of the curve in the plane of the screen, turned round the path by a slow twist
-      const theta = 0.55 * Math.sin(a * waves * 2 * Math.PI + 1.2);
-      u.set(-t.y * Math.cos(theta), t.x * Math.cos(theta), Math.sin(theta)).normalize();
-    },
-  };
-};
-
 export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
   if (!WEBGL_ENABLED) return; // WebGL is switched off (settings.ts): the plain words, line and grid stay
   const mm = gsap.matchMedia();
@@ -261,7 +79,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     const top = root.querySelector<HTMLElement>('.sp-top')!;
     const bottom = root.querySelector<HTMLElement>('.sp-bottom')!;
     const line = root.querySelector<HTMLElement>('.sp-line')!;
-    const hero = root.querySelector<HTMLImageElement>('.sp-hero')!;
+    const stripes = Array.from(root.querySelectorAll<HTMLElement>('.sp-stripes div'));
     const urls = (root.dataset.photos ?? '').split('|').filter(Boolean);
     if (urls.length < 2) return;
 
@@ -398,10 +216,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       textures[i] = texture;
     });
 
-    // the finer variant (rounded photos, haze with distance, gold lines, an unhurried pace, a slight turn of the view with the pointer); ?premium=0 shows the plain one
-    const premiumParam = new URLSearchParams(location.search).get('premium');
-    const premium = premiumParam === '1' ? true : premiumParam === '0' ? false : o.premium;
-    const lineMaterial = new THREE.LineBasicMaterial(premium ? { color: 0xba8e47, transparent: true, opacity: 0.7 } : { color: 0x9e9e9e });
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x9e9e9e });
 
     // the ribbons on the spiral
     const ribbons = urls
@@ -415,20 +230,10 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         const mesh = new THREE.Mesh(
           geo,
           new THREE.ShaderMaterial({
-            uniforms: {
-              map: { value: textures[nr] },
-              uCrop: crops[nr],
-              uPaper: { value: new THREE.Vector3(0.98, 0.973, 0.953) }, // --paper
-              uRound: { value: premium ? 0.04 : 0 },
-              uHaze: { value: premium ? 0.5 : 0 },
-              uHazeRange: { value: new THREE.Vector2(camera.position.z - 2, camera.position.z + 14) },
-            },
-            vertexShader: VERT_RIBBON,
+            uniforms: { map: { value: textures[nr] }, uCrop: crops[nr] },
+            vertexShader: VERT,
             fragmentShader: FRAG_RIBBON,
             side: THREE.DoubleSide,
-            // not blended: the photos must hide each other by their DISTANCE (a near photo over a far one), which blending without a depth sort gets
-            // wrong; the rounded edges are smoothed by the multisampling instead
-            alphaToCoverage: true,
           }),
         );
         mesh.frustumCulled = false;
@@ -438,98 +243,45 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         scene.add(mesh);
         return mesh;
       });
-    // the track the photos ride (the way is chosen by ?path=helix | wave in the address; the wave is rebuilt when the screen changes shape)
-    const variant = new URLSearchParams(location.search).get('path') ?? o.path;
-    const makeTrack = (): Track => {
-      if (variant === 'helix') return helixTrack(); // the original, exactly
-      const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * camera.position.z;
-      if (variant === 'dragon') return dragonTrack(halfH * camera.aspect, halfH);
-      if (variant === 'wave') return waveTrack(halfH * camera.aspect, halfH);
-      return coilTrack(halfH * camera.aspect, halfH);
-    };
-    let track = makeTrack();
-    let chain = 0;
-    let endOfSpin = 0;
-    const measureTrack = () => {
-      chain = (urls.length - 1) * track.gap + track.ribbonW;
-      endOfSpin = ((0.5 * track.length + chain + 10) / (track.length + chain)) * (2 / 3);
-    };
-    measureTrack();
+    const chain = (urls.length - 1) * GAP + RIBBON_W;
+    const endOfSpin = ((0.5 * LENGTH + chain + 10) / (LENGTH + chain)) * (2 / 3);
 
-    const tp = new THREE.Vector3();
-    const tu = new THREE.Vector3();
-    const tr = new THREE.Vector3();
     const layRibbon = (mesh: THREE.Mesh, s: number, scale: number) => {
       const pos = mesh.geometry.attributes.position;
-      const w = track.ribbonW * scale;
-      const h = track.ribbonH * scale;
-      if (track.pose) {
-        // a flat card at the centre of the photo's place on the path
-        track.pose(s + track.ribbonW / 2, tp, tr, tu);
-        for (let i = 0; i <= SEGMENTS; i++) {
-          const x = (i / SEGMENTS - 0.5) * w;
-          for (let r = 0; r < 2; r++) {
-            const y = (r === 0 ? -0.5 : 0.5) * h;
-            pos.setXYZ(r * (SEGMENTS + 1) + i, tp.x + tr.x * x + tu.x * y, tp.y + tr.y * x + tu.y * y, tp.z + tr.z * x + tu.z * y);
-          }
-        }
-        pos.needsUpdate = true;
-        return;
-      }
-      const s0 = s + track.ribbonW / 2 - w / 2;
+      const w = RIBBON_W * scale;
+      const h = RIBBON_H * scale;
+      const s0 = s + RIBBON_W / 2 - w / 2;
       for (let i = 0; i <= SEGMENTS; i++) {
-        track.at(s0 + (i / SEGMENTS) * w, tp, tu);
+        const t = (s0 + (i / SEGMENTS) * w) / L;
+        const p = point(t);
+        const u = up(t);
         for (let r = 0; r < 2; r++) {
           const off = (r === 0 ? -0.5 : 0.5) * h;
-          pos.setXYZ(r * (SEGMENTS + 1) + i, tp.x + tu.x * off, tp.y + tu.y * off, tp.z + tu.z * off);
+          pos.setXYZ(r * (SEGMENTS + 1) + i, p.x + u.x * off, p.y + u.y * off, p.z + u.z * off);
         }
       }
       pos.needsUpdate = true;
     };
 
-    // the two rails along the track
-    let rails: THREE.BufferGeometry[] = [];
-    let railLines: THREE.Line[] = [];
-    const buildRails = () => {
-      railLines.forEach((l) => {
-        scene.remove(l);
-        l.geometry.dispose();
-      });
-      railLines = [];
-      if (track.spine) {
-        // one thin line through the body, behind the photos; its points follow the body as its waves travel (see drawSpine)
-        const geo = new THREE.BufferGeometry().setFromPoints(Array.from({ length: STEPS + 1 }, () => new THREE.Vector3()));
-        geo.setDrawRange(0, 0);
-        const l = new THREE.Line(geo, lineMaterial);
-        l.frustumCulled = false;
-        l.renderOrder = 0;
-        scene.add(l);
-        railLines.push(l);
-        rails = [geo];
-        return;
+    // the two rails along the spiral
+    const rail = (sign: number) => {
+      const pts: THREE.Vector3[] = [];
+      const away = RIBBON_H / 2 + 0.12 * RIBBON_H;
+      for (let k = STEPS; k >= 0; k--) {
+        const t = (k / STEPS) * T;
+        pts.push(point(t).addScaledVector(up(t), sign * away));
       }
-      rails = [1, -1].map((sign) => {
-        const pts: THREE.Vector3[] = [];
-        const away = track.ribbonH / 2 + 0.12 * track.ribbonH;
-        for (let k = STEPS; k >= 0; k--) {
-          track.at((k / STEPS) * track.length, tp, tu);
-          pts.push(tp.clone().addScaledVector(tu, sign * away));
-        }
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        geo.setDrawRange(0, 0);
-        const l = new THREE.Line(geo, lineMaterial);
-        l.frustumCulled = false;
-        l.renderOrder = 5;
-        scene.add(l);
-        railLines.push(l);
-        return geo;
-      });
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      geo.setDrawRange(0, 0);
+      const l = new THREE.Line(geo, lineMaterial);
+      l.frustumCulled = false;
+      l.renderOrder = 5;
+      scene.add(l);
+      return geo;
     };
-    buildRails();
+    const rails = [rail(1), rail(-1)];
 
     // ---- the grid at the end ----
-    // The photos stand in two rows, one above and one below the words, and the middle of the screen stays clear for them: the height of the
-    // words (and the small line) is measured, the rows take what is left above and below, and the top row stays under the menu pill.
     const layout = () => {
       const w = scene3.clientWidth;
       const phone = w < 768;
@@ -538,18 +290,17 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * camera.position.z;
       const halfW = halfH * camera.aspect;
       const cols = phone ? 2 : 3;
-      const rows = 2;
+      const rows = phone ? 3 : 2;
       const gapX = phone ? 0.18 : tablet ? 0.28 : big ? 0.5 : 0.38;
-      const fillX = phone ? 0.88 : tablet ? 0.84 : big ? 0.7 : 0.72;
-      const perUnit = scene3.clientHeight / (2 * halfH); // pixels in one unit
-      const bandPx = (top.offsetHeight + bottom.offsetHeight + line.offsetHeight + 28) * 1.25; // the words' band, with a margin of air
-      const topSafe = halfH * (phone ? 0.24 : 0.23); // under the menu pill
-      const botSafe = halfH * 0.07;
-      const fromHeight = (2 * halfH - topSafe - botSafe - bandPx / perUnit) / rows;
-      const fromWidth = (2 * halfW * fillX - (cols - 1) * gapX) / cols;
-      const width = Math.max(1, Math.min(fromWidth, fromHeight / ASPECT, phone ? 99 : tablet ? 8.5 : 9.2));
-      const height = width * ASPECT;
-      return { halfH, halfW, cols, rows, gapX, gapY: 0, width, height, rowTop: halfH - topSafe - height / 2, rowBottom: -halfH + botSafe + height / 2 };
+      const gapY = phone ? 0.22 : tablet ? 0.36 : big ? 0.7 : 0.55;
+      const fillX = phone ? 0.88 : tablet ? 0.84 : big ? 0.78 : 0.8;
+      const fillY = phone || tablet ? 0.82 : big ? 0.78 : 0.8;
+      const width = Math.min(
+        (2 * halfW * fillX - (cols - 1) * gapX) / cols,
+        (2 * halfH * fillY - (rows - 1) * gapY) / rows / ASPECT,
+        phone ? 99 : tablet ? 8.5 : 9.2,
+      );
+      return { halfH, halfW, cols, rows, gapX, gapY, width, height: width * ASPECT };
     };
     let U = layout();
     let cards: THREE.Mesh[] = [];
@@ -558,7 +309,10 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     const spot = (i: number) => {
       const col = i % U.cols;
       const row = Math.floor(i / U.cols);
-      return new THREE.Vector2(-0.5 * (U.cols * U.width + (U.cols - 1) * U.gapX) + 0.5 * U.width + col * (U.width + U.gapX), row === 0 ? U.rowTop : U.rowBottom);
+      return new THREE.Vector2(
+        -0.5 * (U.cols * U.width + (U.cols - 1) * U.gapX) + 0.5 * U.width + col * (U.width + U.gapX),
+        0.5 * (U.rows * U.height + (U.rows - 1) * U.gapY) - 0.5 * U.height - row * (U.height + U.gapY),
+      );
     };
     const entry = (i: number, to: THREE.Vector2) => {
       const col = i % U.cols;
@@ -599,7 +353,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       dropGrid();
       U = layout();
       const px = scene3.clientHeight / (2 * U.halfH); // pixels in one unit
-      cards = o.grid.slice(0, U.cols * U.rows).map((n) => {
+      cards = o.grid.map((n) => {
         const nr = n % urls.length;
         const geo = new THREE.PlaneGeometry(U.width, U.height, 20, 12);
         const card = new THREE.Mesh(
@@ -632,7 +386,25 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         scene.add(card);
         return card;
       });
-      rowLines = []; // no line between the rows: the words stand there
+      rowLines = [];
+      const margin = scene3.clientWidth < 768 ? 0 : U.halfW * (80 / scene3.clientWidth);
+      const left = -U.halfW + margin;
+      const right = U.halfW - margin;
+      for (let j = 0; j < U.rows - 1; j++) {
+        const y = spot(j * U.cols).y - U.height / 2 - U.gapY / 2; // the gap between two rows
+        const pts: THREE.Vector3[] = [];
+        for (let k = 0; k <= STEPS; k++) {
+          const f = k / STEPS;
+          pts.push(new THREE.Vector3(j % 2 ? right - f * (right - left) : left + f * (right - left), y, 0));
+        }
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        geo.setDrawRange(0, 0);
+        const l = new THREE.Line(geo, lineMaterial);
+        l.renderOrder = 5;
+        l.frustumCulled = false;
+        scene.add(l);
+        rowLines.push(l);
+      }
     };
     buildGrid();
 
@@ -645,9 +417,6 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       sceneW = scene3.clientWidth;
       sceneH = scene3.clientHeight;
       fit();
-      track = makeTrack();
-      measureTrack();
-      buildRails();
       buildGrid();
     };
     window.addEventListener('resize', onResize);
@@ -668,7 +437,6 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     // ---- the scroll: ScrollTrigger gives 0..1 over the track, smoothed here ----
     let target = 0;
     let shown = 0;
-    const view = { x: 0, y: 0 };
     let near = true;
     const trigger = ScrollTrigger.create({
       trigger: root,
@@ -708,28 +476,15 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       const spinPart = spin / total;
       const g = Math.min(whole / spinPart, 1);
       const exit = clamp01((whole - spinPart) / (1 - spinPart));
-      const growEnd = Math.max(0.2, (o.exitScreens - 1) / o.exitScreens); // the last screen of the end belongs to the list sliding over it
-      const P0 = Math.min(1, g / (2 / 3));
-      const P = premium ? 0.45 * P0 + 0.55 * (P0 * P0 * (3 - 2 * P0)) : P0; // an unhurried pace: slow at the start and at the end
+      const P = Math.min(1, g / (2 / 3));
       const H = clamp01((g - endOfSpin) / (1 - endOfSpin)); // 0..1: how far the grid is laid
 
-      // the view turns a little with the pointer (a laptop), and settles to the middle as the photos land (the end must be exactly centred)
-      if (premium) {
-        const calm = 1 - H;
-        view.x += ((over ? mouse.x * 1.1 : 0) * calm - view.x) * k * 0.6;
-        view.y += ((over ? mouse.y * 0.7 : 0) * calm - view.y) * k * 0.6;
-        camera.position.x = view.x;
-        camera.position.y = view.y;
-        camera.lookAt(0, 0, 0);
-      }
-
-      // the photos ride the track
-      track.update?.(P);
-      const head = P * (track.length + chain) - chain + track.start;
+      // the photos ride the spiral
+      const head = P * (LENGTH + chain) - chain + 25;
       ribbons.forEach((m, e) => {
-        const s = head + track.gap * e;
-        m.visible = P < 1 && s > 0 && s < track.length;
-        if (m.visible) layRibbon(m, Math.min(s, track.length - 0.001), m.userData.scale);
+        const s = head + GAP * e;
+        m.visible = P < 1 && s > 0 && s < LENGTH;
+        if (m.visible) layRibbon(m, Math.min(s, LENGTH - 0.001), m.userData.scale);
       });
 
       // the photo under the mouse grows
@@ -744,30 +499,15 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       });
 
       // the lines along the spiral
-      if (track.spine && track.pose) {
-        // the body's line: from the last photo to the first, along the body as it is now
-        const attr = rails[0].attributes.position as THREE.BufferAttribute;
-        for (let k = 0; k <= STEPS; k++) {
-          track.pose((k / STEPS) * track.length, tp, tr, tu);
-          attr.setXYZ(k, tp.x, tp.y, tp.z - 0.05);
-        }
-        attr.needsUpdate = true;
-        const last = head + track.ribbonW / 2;
-        const first = head + track.gap * (ribbons.length - 1) + track.ribbonW / 2;
-        const idx = (v: number) => Math.min(STEPS, Math.max(0, Math.round((v / track.length) * STEPS)));
-        const a = idx(last);
-        rails[0].setDrawRange(a, Math.max(0, idx(first) - a + 1));
-      } else {
-        const headLine = Math.floor(P * (STEPS + 1 + TAIL));
-        const from = Math.max(0, headLine - TAIL);
-        rails.forEach((geo) => geo.setDrawRange(from, Math.max(0, Math.min(headLine, STEPS + 1) - from + 1)));
-      }
+      const headLine = Math.floor(P * (STEPS + 1 + TAIL));
+      const from = Math.max(0, headLine - TAIL);
+      rails.forEach((geo) => geo.setDrawRange(from, Math.max(0, Math.min(headLine, STEPS + 1) - from + 1)));
 
-      // the photos fly in and settle above and below the words
+      // the photos fly in and settle in the grid
       cards.forEach((card, i) => {
         const r = clamp01((H - 0.08 * i) / 0.4);
-        if (r <= 0 || (i === o.hero && exit > 0.0005)) {
-          card.visible = false; // (the hero card is replaced by the picture that grows, from the first moment of the end)
+        if (r <= 0) {
+          card.visible = false;
           return;
         }
         card.visible = true;
@@ -798,26 +538,14 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       const slide = clamp01(px / (vh * 3.2));
       top.style.transform = `translateX(calc(-100% + ${slide * 100}vw))`;
       bottom.style.transform = `translateX(calc(100% - ${slide * 100}vw))`;
-      line.style.opacity = '1'; // the small line stays: the photos stand around it, not over it
+      line.style.opacity = String(Math.max(0, 1 - 4 * H));
 
-      // the photo of the hero card grows to fill the whole screen (it is the first photo of the list)
-      if (exit > 0.0005 && cards[o.hero]) {
-        const to = spot(o.hero);
-        const perUnit = scene3.clientHeight / (2 * U.halfH);
-        const w0 = U.width * perUnit;
-        const h0 = U.height * perUnit;
-        const l0 = (to.x / (2 * U.halfW) + 0.5) * scene3.clientWidth - w0 / 2;
-        const t0 = (0.5 - to.y / (2 * U.halfH)) * scene3.clientHeight - h0 / 2;
-        const g = growEase(clamp01(exit / growEnd));
-        hero.hidden = false;
-        hero.style.left = `${l0 * (1 - g)}px`;
-        hero.style.top = `${t0 * (1 - g)}px`;
-        hero.style.width = `${w0 + (scene3.clientWidth - w0) * g}px`;
-        hero.style.height = `${h0 + (scene3.clientHeight - h0) * g}px`;
-        hero.style.borderRadius = `${8 * (1 - g)}px`;
-      } else if (!hero.hidden) {
-        hero.hidden = true;
-      }
+      // the stripes rise from the bottom
+      const n = stripes.length;
+      stripes.forEach((s, i) => {
+        const start = (0.3 * (n - 1 - i)) / Math.max(n - 1, 1);
+        s.style.transform = `scaleY(${clamp01((exit * 0.7 - start) / 0.3)})`;
+      });
 
       if (!document.hidden) renderer.render(scene, camera); // a page that is not on the screen is not drawn (a white canvas on iOS Safari)
     };
@@ -891,12 +619,11 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
         m.geometry.dispose();
         (m.material as THREE.Material).dispose();
       });
-      railLines.forEach((l) => l.geometry.dispose());
+      rails.forEach((g) => g.dispose());
       lineMaterial.dispose();
       textures.forEach((t) => t.dispose());
       renderer.dispose();
-      [top, bottom, line, hero].forEach((el) => el.removeAttribute('style'));
-      hero.hidden = true;
+      [top, bottom, line, ...stripes].forEach((el) => el.removeAttribute('style'));
       root.classList.remove('is-in');
       delete root.dataset.live;
       root.style.removeProperty('--sp-length');

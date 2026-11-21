@@ -255,6 +255,11 @@ const colours = [
       // have just closed (it does not scroll in from below). It goes back to .why-more when the script is reverted.
       const more0 = section.querySelector<HTMLElement>('.why-more')!;
       stage.appendChild(copy);
+      // Phones and tablets: the first scene (photo, statement, caption) lives on the pinned stage too, right under the heading, and appears
+      // there in place (no sliding up from the bottom, no gap). The following scenes scroll as usual. It goes back to .why-more on revert.
+      const compact = window.innerWidth < 1024;
+      const firstScene = compact ? more0.querySelector<HTMLElement>('.why-scene') : null;
+      if (firstScene) stage.appendChild(firstScene);
       const eyebrow = copy.querySelector<HTMLElement>('.eyebrow')!;
       const headLines = gsap.utils.toArray<HTMLElement>('.why-line > span', copy);
       const stripes = gsap.utils.toArray<HTMLElement>('.why-stripes > div', stage);
@@ -316,6 +321,19 @@ const colours = [
         gsap.set(by, { autoAlpha: 0, y: 16 });
         gsap.set(line, { clipPath: CLOSED });
 
+        if (scene === firstScene) {
+          // on the pinned stage: it opens in place, after the heading, as part of the main timeline
+          gsap.set(fig, { clipPath: SLIT });
+          tl.addLabel('photo');
+          tl.fromTo(fig, { clipPath: SLIT }, { clipPath: OPEN, duration: 1.4, ease: 'power2.inOut', immediateRender: false }, 'photo');
+          tl.fromTo(pic, { scale: 1.3, yPercent: -6 }, { scale: 1.1, yPercent: 3, duration: 1.8, ease: 'power2.out', immediateRender: false }, 'photo');
+          tl.to(ring, { autoAlpha: 1, duration: 1, ease: 'power2.out' }, 'photo+=0.6');
+          tl.to(words, { yPercent: 0, duration: 1, stagger: 0.05, ease: 'power3.out' }, 'photo+=0.7');
+          tl.to(line, { clipPath: OPEN, duration: 1, ease: 'power3.inOut' }, 'photo+=1.4');
+          tl.to(by, { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out' }, 'photo+=1.6');
+          tl.to({}, { duration: 0.6 }); // a beat on the finished scene before the pin lets go
+          return;
+        }
         gsap.fromTo(fig, { clipPath: SLIT }, { clipPath: OPEN, ease: 'power2.inOut', scrollTrigger: { trigger: scene, start: 'top 78%', end: 'top 30%', scrub: 0.8, refreshPriority: -1 } });
         gsap.fromTo(spot, { y: () => 90 * speed }, { y: () => -90 * speed, ease: 'none', scrollTrigger: through });
         gsap.fromTo(pic, { yPercent: -9 }, { yPercent: 9, ease: 'none', scrollTrigger: through });
@@ -384,6 +402,7 @@ const colours = [
         gsap.to(note, { autoAlpha: 0.6, y: 0, duration: 0.9, ease: 'power2.out', scrollTrigger: at(note!, 'top 95%') });
       }
       return () => {
+        if (firstScene) more0.prepend(firstScene);
         more0.prepend(copy);
         ScrollTrigger.removeEventListener('refresh', place);
         delete section.dataset.live;
@@ -912,30 +931,37 @@ const colours = [
   /* the pinned part is shorter on a phone and a tablet */
   @media (max-width: 1023px) {
     .why[data-live] .why-track {
-      --screens: 5.7;
+      --screens: 7; /* a little longer: the first photo opens on the pinned screen too */
     }
-    /* On a phone the heading stands in the upper part of the screen (under the pill), not in the middle: the first photo then rises into the free
-       lower half at once, and there is no screen of empty dark between the heading and the photo (the pull-up is stronger for the same reason; the
-       script reads it from the margin) */
+    /* On a phone and a tablet the heading stands in the upper part of the screen (under the pill) and the first scene (photo, statement,
+       caption) sits right under it on the same pinned screen; the script moves it onto the stage and opens it there in place. Nothing is pulled
+       up over the screen and nothing slides in from the bottom. The scenes after it scroll as usual. */
     .why[data-live] .why-stage > .why-copy {
       justify-content: flex-start;
-      padding-top: 24vh;
-      padding-top: 24svh;
+      padding-top: 15vh;
+      padding-top: 15svh;
     }
     .why[data-live] .why-more {
-      margin-top: -61vh;
-      margin-top: -61lvh;
+      margin-top: 0;
+    }
+    .why[data-live] .why-stage > .why-scene {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(15svh + 1.9rem + 21.6vw + 1rem); /* under the heading: its top padding, the eyebrow and the two lines of the big heading */
+      z-index: 4;
+      padding: 0 1.5rem;
+      color: var(--cream);
+    }
+    .why[data-live] .why-stage > .why-scene .why-spot {
+      width: min(72%, 34svh); /* the photo is as large as the screen leaves room for, with the statement under it */
+    }
+    .why[data-live] .why-stage > .why-scene .why-text {
+      margin-top: 1.25rem;
     }
     /* the photos are larger on a narrow screen */
     .why-spot {
       width: 90%;
-    }
-  }
-  /* a tablet is taller and its heading sits lower: the first photo comes up a little less, so it ends right under the heading and not over it */
-  @media (min-width: 700px) and (max-width: 1023px) {
-    .why[data-live] .why-more {
-      margin-top: -58vh;
-      margin-top: -58lvh;
     }
   }
   .why[data-live] .why-copy + .why-scene {

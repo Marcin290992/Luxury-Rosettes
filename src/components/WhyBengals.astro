@@ -914,20 +914,28 @@ const colours = [
     .why[data-live] .why-track {
       --screens: 5.7;
     }
-    /* On a phone and a tablet the heading stands a little above the middle of the screen, and the photos are NOT pulled up over the pinned screen:
-       the first photo only comes in from the bottom once the pin has let go and the whole page scrolls on (no pull-up, so it never rides over the
-       heading's screen). The script reads the pull-up from the margin (0 here). */
+    /* On a phone the heading stands in the upper part of the screen (under the pill), not in the middle: the first photo then rises into the free
+       lower half at once, so heading and photo are one screen and there is no gap between them (the pull-up is stronger for the same reason; the
+       script reads it from the margin) */
     .why[data-live] .why-stage > .why-copy {
       justify-content: flex-start;
-      padding-top: 34vh;
-      padding-top: 34svh;
+      padding-top: 24vh;
+      padding-top: 24svh;
     }
     .why[data-live] .why-more {
-      margin-top: 0;
+      margin-top: -61vh;
+      margin-top: -61lvh;
     }
     /* the photos are larger on a narrow screen */
     .why-spot {
       width: 90%;
+    }
+  }
+  /* a tablet is taller and its heading sits lower: the first photo comes up a little less, so it ends right under the heading and not over it */
+  @media (min-width: 700px) and (max-width: 1023px) {
+    .why[data-live] .why-more {
+      margin-top: -58vh;
+      margin-top: -58lvh;
     }
   }
   .why[data-live] .why-copy + .why-scene {

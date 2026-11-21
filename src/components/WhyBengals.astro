@@ -914,28 +914,10 @@ const colours = [
     .why[data-live] .why-track {
       --screens: 5.7;
     }
-    /* On a phone the heading stands in the upper part of the screen (under the pill), not in the middle: the first photo then rises into the free
-       lower half at once, and there is no screen of empty dark between the heading and the photo (the pull-up is stronger for the same reason; the
-       script reads it from the margin) */
-    .why[data-live] .why-stage > .why-copy {
-      justify-content: flex-start;
-      padding-top: 24vh;
-      padding-top: 24svh;
-    }
-    .why[data-live] .why-more {
-      margin-top: -61vh;
-      margin-top: -61lvh;
-    }
+    /* the heading and the pull-up are the same as on desktop (centred heading; the first photo does not rise over it) */
     /* the photos are larger on a narrow screen */
     .why-spot {
       width: 90%;
-    }
-  }
-  /* a tablet is taller and its heading sits lower: the first photo comes up a little less, so it ends right under the heading and not over it */
-  @media (min-width: 700px) and (max-width: 1023px) {
-    .why[data-live] .why-more {
-      margin-top: -58vh;
-      margin-top: -58lvh;
     }
   }
   .why[data-live] .why-copy + .why-scene {

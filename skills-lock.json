@@ -1,12 +1,19 @@
 {
   "version": 2,
   "skills": {
-    "awwwards-animations": {
-      "source": "DevMartinese/awwwards-animations-skill",
-      "commit": "c92d00b1e09a510120f6d61957ab7cb10d82c14f",
+    "astro-dev": {
+      "source": "gigio1023/astro-dev-skill",
+      "commit": "be297c390eef61118e6bf778fd8ea5ebc3625cc0",
       "sourceType": "github",
-      "skillPath": "SKILL.md",
-      "computedHash": "09697f61e14bdad907300271b903d04dee9700b45bc5529cd9844e5125bab26f"
+      "skillPath": "skills/astro-dev/SKILL.md",
+      "computedHash": "f1575462610ac1852036ed014d318cc9e25245ed60ef5af4a1b645d94fb75024"
+    },
+    "gsap-astro": {
+      "source": "johnpolacek/animaxxing-skills",
+      "commit": "8ddf542ec239b018ba43ce0878842205c529b1c6",
+      "sourceType": "github",
+      "skillPath": "skills/gsap-astro/SKILL.md",
+      "computedHash": "72185b8f5128c81880c17547da1be38e90459af03dd6b4bd8ebd300c756518f6"
     },
     "gsap-core": {
       "source": "greensock/gsap-skills",
@@ -63,6 +70,13 @@
       "sourceType": "github",
       "skillPath": "skills/gsap-utils/SKILL.md",
       "computedHash": "d05b56284eea0118d481b8c673aff27cae66199282995bfe78315785f561002d"
+    },
+    "gsap-vanilla": {
+      "source": "johnpolacek/animaxxing-skills",
+      "commit": "8ddf542ec239b018ba43ce0878842205c529b1c6",
+      "sourceType": "github",
+      "skillPath": "skills/gsap-vanilla/SKILL.md",
+      "computedHash": "8d6995667ea923988153eddf9b42bf8e9690ef85604b864b28ba15dda40544b3"
     }
   }
 }

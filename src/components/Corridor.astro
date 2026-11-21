@@ -3,28 +3,20 @@ import Photo from './Photo.astro';
 import LetterButton from './LetterButton.astro';
 import about from '../assets/img/story/about.webp';
 import parent from '../assets/img/story/champion-parent.webp';
-import standards from '../assets/img/story/our-standards.webp';
-import care from '../assets/img/story/premium-care.webp';
 import kittens from '../assets/img/story/our-kittens.webp';
+import care from '../assets/img/story/premium-care.webp';
 import plaque from '../assets/img/story/awards.webp';
 import bis from '../assets/img/story/award4.webp';
-import award1 from '../assets/img/story/award1.webp';
-import award2 from '../assets/img/story/award2.webp';
-import award6 from '../assets/img/story/award6.webp';
 import finale from '../assets/img/kittens.webp';
 
-// Copy taken from the previous site — to be updated
+// Only teasers: one photo, a title and one line each. The full stories live on their own pages (About, Our cats, Awards, Kittens), so nothing here repeats them.
 const items = [
-  { img: about, eyebrow: 'Our story', title: 'Fifteen years of Bengals', text: 'It began with a gift from my husband and became a lifelong passion. We do not just breed Bengals. We live with them, love them and admire them every day.' },
-  { img: parent, eyebrow: 'Bloodlines', title: 'Champion parents', text: 'Carefully selected champions with exceptional pedigrees. TICA registered, with proven show records.' },
-  { img: standards, eyebrow: 'Standards', title: 'Exceptional standards', text: 'Spectacular rosettes, muscular builds and a captivating wild appearance, true to the breed standard.' },
-  { img: care, eyebrow: 'Care', title: 'Premium care & health', text: 'Comprehensive veterinary care, premium nutrition and early socialisation. Health guarantees and lifetime breeder support.' },
-  { img: kittens, eyebrow: 'Kittens', title: 'Raised with love', text: 'Born in our family home, well socialised and ready to become a cherished member of your family.' },
-  { img: plaque, eyebrow: 'Bengal Cat Association', title: 'Official recognition', text: 'Brown (Black) Spotted Male Adult — one of many awards from the Bengal Cat Association.' },
-  { img: bis, eyebrow: 'Show ring', title: 'Overall Best in Show Bengal 2024', text: 'First Place in multiple classes, Best of Breed and Best in Show Adult.' },
-  { img: award1, eyebrow: 'Show ring', title: 'Best of Breed', text: 'Rosettes and ribbons earned in front of international judges.' },
-  { img: award2, eyebrow: 'Show ring', title: 'Proven excellence', text: 'Recognised in the show hall and respected within the wider Bengal community.' },
-  { img: award6, eyebrow: 'Show ring', title: 'A cat of proven quality', text: 'Every family welcomes a Bengal of outstanding quality and proven excellence.' },
+  { img: about, eyebrow: 'Our story', title: 'Fifteen years of Bengals', text: 'A gift that became a lifelong passion.' },
+  { img: parent, eyebrow: 'Bloodlines', title: 'Champion parents', text: 'Draco and Kita, TICA registered champions.' },
+  { img: bis, eyebrow: 'Show ring', title: 'Best in Show 2024', text: 'Proven in front of international judges.' },
+  { img: plaque, eyebrow: 'Recognition', title: 'Official awards', text: 'Honoured by the Bengal Cat Association.' },
+  { img: care, eyebrow: 'Care', title: 'Health first', text: 'Vet-checked and cared for, for life.' },
+  { img: kittens, eyebrow: 'Kittens', title: 'Raised with love', text: 'Born in our family home.' },
 ];
 ---
 
@@ -64,7 +56,6 @@ const items = [
           <p class="cor-finale-text">Placeholder text. A calm sentence or two about the next litter and how to reserve a kitten.</p>
           <div class="cor-ctas">
             <LetterButton label="View available kittens" href="#" solid />
-            <LetterButton label="Join the waiting list" href="#" />
           </div>
         </div>
       </div>

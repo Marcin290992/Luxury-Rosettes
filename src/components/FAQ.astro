@@ -1,6 +1,7 @@
 ---
 // Hard-coded for now; later this comes from the CMS
 import { faqs } from '../data/faqs';
+import LetterButton from './LetterButton.astro';
 
 // each sentence is its own line of the answer, so the answer writes itself in line by line
 const lines = (text: string) => text.split(/(?<=[.!?])\s+/);
@@ -36,6 +37,21 @@ const lines = (text: string) => text.split(/(?<=[.!?])\s+/);
         </div>
       ))
     }
+    <!-- the last message of the chat: from us, with the ways to ask a question directly -->
+    <div class="faq-item">
+      <div class="faq-row faq-answer-slot">
+        <div class="faq-answer faq-message">
+          <div class="typing-indicator" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="faq-content">
+            <p>Still have a question? Ask us directly, we answer personally.</p>
+            <p class="faq-actions">
+              <LetterButton label="Get in touch" contact solid />
+              <LetterButton label="WhatsApp" href="https://wa.me/447514951289" />
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -154,6 +170,15 @@ const lines = (text: string) => text.split(/(?<=[.!?])\s+/);
     font-size: 0.9rem;
     line-height: 1.75;
     opacity: 0.88;
+  }
+
+  /* the buttons under the last message (a paragraph, so the script fades them in with the text) */
+  .faq-answer p.faq-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.4rem;
+    opacity: 1;
   }
 
   /* only while the script runs: the bubble starts as a dot with typing dots */

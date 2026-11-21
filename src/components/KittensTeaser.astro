@@ -10,7 +10,7 @@ import { getKittens, getLitters, nextLitter, monthLabel } from '../data/litters'
 
 const photos = { candy, cosmo, charlie, chester };
 
-// Sold kittens never show. With nobody left, the section turns into "next litter + waiting list".
+// Sold kittens never show. With nobody left, the section turns into "next litter + get in touch".
 const kittens = getKittens().filter((k) => k.status !== 'sold');
 const next = nextLitter(getLitters());
 ---
@@ -53,10 +53,10 @@ const next = nextLitter(getLitters());
         <p class="kit-text kit-empty-text" data-reveal>
           {next
             ? `Expected in ${monthLabel(next.expected)}, from ${next.dam} and ${next.sire}. Their kittens will be ready to go home around ${monthLabel(next.ready)}.`
-            : 'No litters are planned at the moment. Join the waiting list and you will hear from us before anyone else.'}
+            : 'No litters are planned at the moment. Get in touch and you will hear from us before anyone else.'}
         </p>
         <p class="kit-empty-actions" data-reveal>
-          <LetterButton label="Join the waiting list" href="#" solid light />
+          <LetterButton label="Get in touch" contact solid light />
           <LetterButton label="Meet the parents" href="#cats" link light />
         </p>
       </div>

@@ -1,11 +1,8 @@
-// Hard-coded for now; later this comes from the CMS
+// Hard-coded for now; later this comes from the CMS. Five questions, short answers (two sentences at most): the chat ends with a way to ask us directly.
 export const faqs = [
-  { q: 'How much does a Bengal kitten cost?', a: 'Pricing varies based on lineage, markings, and show potential. Please contact us directly for current availability and personalised pricing. Each kitten is individually assessed for quality and temperament.' },
-  { q: 'Are your kittens health tested?', a: 'Yes. All kittens receive comprehensive health testing including HCM and PK-Def screening, a full veterinary examination, and age-appropriate vaccinations. Every kitten leaves with a written health guarantee.' },
-  { q: 'What is the adoption process?', a: 'We begin with a short consultation to understand your lifestyle, followed by an application and contract. A deposit secures your chosen kitten, after which you receive regular updates, photos, and videos until collection day.' },
-  { q: 'Do you offer shipping and delivery?', a: 'We offer ground transport within the UK and a flight nanny service for international families. Personal collection at our location is always preferred. Contact us to discuss timing and logistics.' },
-  { q: 'What age do kittens go to their new homes?', a: 'Our kittens are ready at 12 to 14 weeks. This ensures a complete vaccination course, proper socialisation with mother and littermates, and the confidence and independence your kitten needs to settle into your home.' },
-  { q: 'What care do Bengal cats require?', a: 'Bengals thrive on high-quality protein-rich food, daily interactive play, and mental enrichment such as climbing structures and puzzle toys. Weekly brushing keeps their coat in condition. We provide a full care guide with every kitten.' },
-  { q: 'Can I visit your cattery before adopting?', a: 'Approved applicants are warmly welcome to visit by appointment. You will meet our cats and kittens, see our home environment, and ask any questions in person. Biosecurity protocols are in place to protect our cats.' },
-  { q: 'What support do you offer after adoption?', a: "We remain available for guidance throughout your Bengal's lifetime: nutrition, behaviour, health, and anything else that arises. We also love receiving updates as your kitten grows." },
+  { q: 'How much does a Bengal kitten cost?', a: 'Pricing varies with lineage, markings and show potential. Contact us for current availability and personalised pricing.' },
+  { q: 'Are your kittens health tested?', a: 'Yes: HCM and PK-Def screening, a full veterinary examination and age-appropriate vaccinations. Every kitten leaves with a written health guarantee.' },
+  { q: 'How does adoption work?', a: 'A short chat about your home, then an application and contract, and a deposit secures your kitten. Approved applicants are welcome to visit by appointment, and you receive photos and videos until collection day.' },
+  { q: 'When do kittens go home, and do you deliver?', a: 'Our kittens are ready at 12 to 14 weeks, fully vaccinated and well socialised. Personal collection is preferred, and we can arrange transport within the UK and a flight nanny abroad.' },
+  { q: 'What care and support do you offer?', a: 'Every kitten comes with a full care guide, and we stay available for advice on nutrition, behaviour and health for your Bengal’s whole life. We love hearing how your kitten grows.' },
 ];

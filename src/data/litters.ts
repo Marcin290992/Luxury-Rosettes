@@ -31,7 +31,7 @@ export type Kitten = {
 
 /**
  * Kittens looking for a home. Example data for now; an empty list is fine: the page then shows the next litter and
- * the waiting list instead. Later this is replaced by a query to Sanity, like getLitters().
+ * a "get in touch" button instead. Later this is replaced by a query to Sanity, like getLitters().
  */
 export function getKittens(): Kitten[] {
   return [

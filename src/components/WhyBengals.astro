@@ -282,16 +282,7 @@ const colours = [
       tl.fromTo(eyebrow, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out', immediateRender: false }, 'cover+=1.7');
       tl.fromTo(headLines, { yPercent: 115, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 1.5, stagger: 0.35, ease: 'power2.out', immediateRender: false }, 'cover+=1.8');
       tl.to({}, { duration: 0.3 }); // a beat on the finished heading before the first photo rises
-      const tail = (tl.duration() * share) / (1 - share);
-      if (window.innerWidth < 1024 && pullUp > 0) {
-        // Phones and tablets: the first photo must not slide up from the bottom over the heading's screen. During the tail the page scrolls
-        // the dark block up by exactly the pull-up; the block is held back by the same distance (y from -pullUp to 0), so it stands still in its
-        // final place, right under the heading, while the photo opens there from its slit (that is scrolled by the real position). When the tail
-        // ends the hold is zero and the block scrolls on with the page.
-        tl.fromTo(more, { y: () => -pullUp }, { y: 0, duration: tail, ease: 'none', immediateRender: false });
-      } else {
-        tl.to({}, { duration: tail });
-      }
+      tl.to({}, { duration: (tl.duration() * share) / (1 - share) });
 
       // 6. the long scroll. Each scene is a photo cut to the shape of a spot of the coat, beside one trait. A clip-path opens the
       //    photo from a narrow slit to its full width as the scene arrives; the spot drifts against the page while it passes
@@ -924,7 +915,7 @@ const colours = [
       --screens: 5.7;
     }
     /* On a phone the heading stands in the upper part of the screen (under the pill), not in the middle: the first photo then rises into the free
-       lower half at once, so heading and photo are one screen and there is no gap between them (the pull-up is stronger for the same reason; the
+       lower half at once, and there is no screen of empty dark between the heading and the photo (the pull-up is stronger for the same reason; the
        script reads it from the margin) */
     .why[data-live] .why-stage > .why-copy {
       justify-content: flex-start;

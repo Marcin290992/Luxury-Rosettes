@@ -276,7 +276,7 @@ export const SCROLL_STACK = {
   scrollLength: 1, // screens of scrolling given to each card
   peek: 26, // px a covered card slides up so its edge shows above the next one
   scaleStep: 0.07, // how much a covered card shrinks per step
-  blur: 3, // px, covered cards
+  blur: 0, // px, covered cards
   dim: 0.3, // how far covered cards darken
   smooth: 0.16, // 0 = follows the scroll exactly, 1 = very loose
   depth: 3, // covered cards kept painted behind the front one

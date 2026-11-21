@@ -126,6 +126,8 @@ const lines = (text: string) => text.split(/(?<=[.!?])\s+/);
   .faq-row {
     display: flex;
     align-items: flex-start;
+    /* the bubble grows inside a row that already holds its full height: its layout does not reach the rest of the page */
+    contain: layout;
   }
   .faq-answer-slot {
     justify-content: flex-end;

@@ -279,9 +279,9 @@ const colours = [
       // the heading rises into its lines once the stripes have closed (scrubbed with the scroll, so scrolling back puts it away again)
       // It arrives slowly, as the next sentence of a story, not as a slam: a moment of the closed dark screen first, then the small line, then the
       // two words one after the other, each rising and fading in over a long stretch of scrolling.
-      tl.fromTo(eyebrow, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out', immediateRender: false }, 'cover+=2.35');
-      tl.fromTo(headLines, { yPercent: 115, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 1.5, stagger: 0.35, ease: 'power2.out', immediateRender: false }, 'cover+=2.6');
-      tl.to({}, { duration: 0.6 }); // a beat on the finished heading before the first photo rises
+      tl.fromTo(eyebrow, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out', immediateRender: false }, 'cover+=1.7');
+      tl.fromTo(headLines, { yPercent: 115, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 1.5, stagger: 0.35, ease: 'power2.out', immediateRender: false }, 'cover+=1.8');
+      tl.to({}, { duration: 0.3 }); // a beat on the finished heading before the first photo rises
       tl.to({}, { duration: (tl.duration() * share) / (1 - share) });
 
       // 6. the long scroll. Each scene is a photo cut to the shape of a spot of the coat, beside one trait. A clip-path opens the
@@ -923,8 +923,8 @@ const colours = [
       padding-top: 24svh;
     }
     .why[data-live] .why-more {
-      margin-top: -40vh;
-      margin-top: -40lvh;
+      margin-top: -85vh;
+      margin-top: -85lvh;
     }
     /* the photos are larger on a narrow screen */
     .why-spot {

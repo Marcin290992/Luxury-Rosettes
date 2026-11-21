@@ -79,7 +79,7 @@ export const STAGE_PHONE = {
   scrubHero: 0.7,
   scrubStory: 0.7, // the animation eases towards the finger: how far you scroll is how far the story goes
   pinScreens: 3, // screens of swiping: the dive takes the first part, the entrance of the story the rest
-  enterAfterZoom: 0.1, // the story is shown once the screen is fully cream
+  enterAfterZoom: 0, // the story starts at the very moment the screen is fully cream (a gap here was a blank cream screen)
   entranceLength: 1.55, // the hero timeline ends right after the entrance (the last bit of an ease-out is not visible)
   storyScreens: 3.2, // screens of swiping the three steps take: about a screen per step
   eyeFallbackWidth: 0.12, // share of the screen width, when the hero could not measure the eye

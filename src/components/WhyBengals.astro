@@ -923,12 +923,19 @@ const colours = [
       padding-top: 24svh;
     }
     .why[data-live] .why-more {
-      margin-top: -85vh;
-      margin-top: -85lvh;
+      margin-top: -61vh;
+      margin-top: -61lvh;
     }
     /* the photos are larger on a narrow screen */
     .why-spot {
       width: 90%;
+    }
+  }
+  /* a tablet is taller and its heading sits lower: the first photo comes up a little less, so it ends right under the heading and not over it */
+  @media (min-width: 700px) and (max-width: 1023px) {
+    .why[data-live] .why-more {
+      margin-top: -58vh;
+      margin-top: -58lvh;
     }
   }
   .why[data-live] .why-copy + .why-scene {

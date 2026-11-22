@@ -36,7 +36,7 @@ async function optimise() {
     SOURCES.map(async (src) => {
       const small = await getImage({ src, width: 1000 });
       const full = await getImage({ src, width: 2000 });
-      // the first two pictures of a gallery are shown large and side by side (and turned over like pages): they are cut to the same 4:3, so they are
+      // the first two pictures of a gallery are shown large and side by side (and turned over onto the page): they are cut to the same 4:3, so they are
       // exactly the same size and what is turned over is exactly the picture that stays
       const crop = await getImage({ src, width: 1000, height: 750, fit: 'cover' });
       const cropFull = await getImage({ src, width: 2000, height: 1500, fit: 'cover' });

@@ -16,14 +16,17 @@ import { getLenis } from './lenis';
 import { transitionDone } from './lifecycle';
 import { disposeLayer } from './lumen-layer';
 import { createSpiral, type Spiral } from './lumen-spiral';
-import { foldIn } from './lumen-fold';
+import { createFlight } from './lumen-arrive';
+import { hopSheet, type Hop, type Rect } from './lumen-hop';
 import { WEBGL_ENABLED, SMOOTH_WHEEL, SMOOTH_TOUCH } from './settings';
 
 gsap.registerPlugin(Flip);
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
+const PHOTO_RADIUS = 10; // px, the rounding of the photos (the CSS of .lg-item img and .lg-box-img says the same)
 const CLOSE_FLIGHT = 0.65; // seconds the opened picture takes to fly back to its tile
+const SHEET_FLIGHT = 0.9; // seconds the picture takes as a sheet of paper, there and back
 
 export function initLumenGallery(root: HTMLElement): () => void {
   const q = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
@@ -92,6 +95,14 @@ export function initLumenGallery(root: HTMLElement): () => void {
       const total = heights[0] + heights[1] + s.gapY;
       paddingTop = Math.max(100, (window.innerHeight - total) / 2);
     }
+    // the two large pictures of the opening are the same size (the proportions of the first one; the second is cropped to it)
+    const equal = startGrid && level === 'intro' && isDesktop;
+    const ratio = Number(images[0]?.getAttribute('width')) / Number(images[0]?.getAttribute('height')) || 4 / 3;
+    [0, 1].forEach((i) => {
+      if (!images[i]) return;
+      images[i].style.aspectRatio = equal ? String(ratio) : '';
+      images[i].style.objectFit = equal ? 'cover' : '';
+    });
     grid.style.paddingTop = `${paddingTop}px`;
     grid.style.paddingBottom = `${s.paddingBottom}px`;
     grid.style.paddingLeft = `${s.paddingLeft}px`;
@@ -119,7 +130,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
   let pagesDone = false;
   const reveal = (item: HTMLElement) => {
     const index = Number(item.dataset.index);
-    if (startGrid && index < 2) return; // the two large pictures come in turned over like pages (see enterGrid)
+    if (startGrid && index < 2) return; // the two large pictures are uncovered by a mask (see enterGrid)
     if (firstBatch) {
       const top = item.getBoundingClientRect().top;
       const order = Math.max(0, Math.min(top / window.innerHeight, 1)) * 0.35 + index * 0.015;
@@ -134,7 +145,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
-          // on the grid page nothing but the two large pictures shows until they have turned over; the rest is let in as the grid forms
+          // on the grid page nothing but the two large pictures shows until they have been uncovered; the rest is let in as the grid forms
           if (startGrid && !pagesDone) continue;
           reveal(entry.target as HTMLElement);
           revealer?.unobserve(entry.target);
@@ -308,6 +319,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
   let currentIndex = 0;
   let boxReady = false; // the strip and the arrows work once the picture has finished growing, and not while it is closing
   let switching = false;
+  let switchHop: Hop | undefined; // the sheet that carries a picture chosen in the strip to the middle
   let fastUntil = 0; // while the person is going quickly (a page was just given up) the next pictures melt in too, no page is turned for each
   let switchId = 0; // counts the switches: a turn that is no longer the latest stops touching the picture
   let wanted = 0; // the picture asked for last (it may be ahead of the one shown while a switch is running)
@@ -335,8 +347,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
     if (window.innerWidth < 1024) strip.scrollTo({ left: t.offsetLeft - strip.clientWidth / 2 + t.clientWidth / 2, behavior });
     else strip.scrollTo({ top: t.offsetTop - strip.clientHeight / 2 + t.clientHeight / 2, behavior });
   };
-  // Another picture (from the strip, keys or wheel): the open one turns like a page of a book and the next is under it. The page is made flat
-  // over the picture first and only then the picture under it is changed, so there is never a frame without a picture.
+  // Another picture (from the strip, keys or wheel): the picture shown melts into the next one, which is laid in the second image first, and only
+  // then is the picture under it changed, so there is never a frame without a picture.
   // (The grid moves behind the box so the one the box flies back to on closing is on screen.)
   // The picture melts into another without a cut: the old one stays on the second image and fades while the new one comes in over it. Used when
   // a turn is given up for a later request, and when the box is closed on the way to another picture.
@@ -363,7 +375,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       if (!switching && index === currentIndex) return;
       fastUntil = performance.now() + 900;
       switchId++;
-      turns.splice(0).forEach((d) => d());
+      switchHop?.kill();
       gsap.killTweensOf([ghost, boxImg]);
       wanted = index;
       navIndex = index;
@@ -446,7 +458,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       const r = next.getBoundingClientRect();
       vlerp.jump(clamp(position + r.top - (window.innerHeight - r.height) / 2, 0, maxScroll()));
       ghost.src = nextSrc;
-      fitBox(next, ghost); // the second image takes the size and place of the next picture
+      const restNext = fitBox(next, ghost); // the second image takes the size and place of the next picture
       try {
         await ghost.decode();
       } catch {
@@ -454,14 +466,14 @@ export function initLumenGallery(root: HTMLElement): () => void {
       }
       const land = async () => {
         if (mine !== switchId) return;
-        // the box is being closed (or is closed) while the page turned: nothing may touch the picture now, or it is put back at its resting place in
+        // the box is being closed (or is closed) while the picture melted: nothing may touch the picture now, or it is put back at its resting place in
         // the middle of its flight to the tile, the flight's tween is killed and the picture hangs over the grid for good
         if (!lightboxOpen || closing) {
           switching = false;
           gsap.set(ghost, { opacity: 0 });
           return;
         }
-        // the next picture stands where the sheet turned (the second image shows it); the shown one takes its place once it has the new picture
+        // the next picture stands in the second image; the shown one takes its place once it has the new picture
         // loaded, and only then the second image goes: there is never a frame with the old one
         gsap.set(ghost, { opacity: 1 });
         gsap.killTweensOf(boxImg);
@@ -473,7 +485,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
         source = next;
         next.style.visibility = 'hidden';
         currentIndex = index;
-        navIndex = wanted; // a later one may have been asked for while this turned (finish() goes on to it)
+        navIndex = wanted; // a later one may have been asked for while this melted (finish() goes on to it)
         try {
           await boxImg.decode();
         } catch {
@@ -484,15 +496,27 @@ export function initLumenGallery(root: HTMLElement): () => void {
         gsap.set(ghost, { opacity: 0 });
         finish();
       };
-      // the one shown fades away under the sheet while it turns over (it may be a different size)
-      gsap.to(boxImg, { opacity: 0, duration: 0.7, delay: 0.55, ease: 'power1.inOut' });
-      foldIn({ container: ghost, image: ghost, direction: forward ? 1 : -1, delay: 0, duration: 1.3, onComplete: land }).then(
-        (dispose) => {
-          if (lightboxOpen && !closing) turns.push(dispose); // a sheet that is ready only after the close has begun is taken away at once, not left to play over the flying picture
-          else dispose();
-        },
-        land, // no WebGL: the picture is simply changed
-      );
+      if (sheetsOn) {
+        // The same entrance as a picture opening from the grid: the picture asked for lifts off its little picture in the strip as a sheet of paper
+        // and glides to the middle (the second image takes over under it as it lands), while the shown one fades out under it.
+        try {
+          const hop = await hopSheet(nextSrc, PHOTO_RADIUS, {
+            from: () => thumbs[index].getBoundingClientRect(),
+            to: () => restNext,
+            duration: SHEET_FLIGHT * 0.9,
+            onFirstFrame: () => gsap.to(boxImg, { opacity: 0, duration: 0.5, ease: 'power1.inOut', overwrite: true }),
+            onLand: () => void land(),
+          });
+          if (mine !== switchId || !lightboxOpen || closing) hop.kill();
+          else switchHop = hop;
+          return;
+        } catch {
+          /* no sheet: the pictures melt, below */
+        }
+      }
+      // the picture shown melts into the next one (the second image, in the next one's size and place), then the shown one takes its place
+      gsap.to(boxImg, { opacity: 0, duration: 0.55, ease: 'power1.inOut' });
+      gsap.to(ghost, { opacity: 1, duration: 0.55, ease: 'power1.inOut', onComplete: land });
     };
     void change();
   };
@@ -505,7 +529,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
   strip.addEventListener('click', stopStrip);
 
   type Box = { left: number; top: number; width: number; height: number };
-  const turns: Array<() => void> = [];
   // the large picture fills the box as far as it goes (80 % of the window each way) in the proportions of the grid's picture; its size is set from
   // those proportions, so it is known before the file is loaded and the move can start at once (and the file that replaces the small one later has
   // the same size, whatever the screen)
@@ -529,9 +552,34 @@ export function initLumenGallery(root: HTMLElement): () => void {
     el.style.top = `${y}px`;
     return { left: x, top: y, width, height };
   };
+  let openFlight: gsap.core.Tween | undefined;
+  // The grid behind an opened picture dissolves tile by tile, from the one that was picked outwards (blur and fade, the page's own way of going out),
+  // and comes back the same way when the picture returns. Only tiles that are on the screen and shown are touched.
+  let dimmed: HTMLElement[] = [];
+  const spread = (item: HTMLElement, from: DOMRect) => {
+    const r = item.getBoundingClientRect();
+    const d = Math.hypot(r.left + r.width / 2 - (from.left + from.width / 2), r.top + r.height / 2 - (from.top + from.height / 2));
+    return Math.min(d / Math.hypot(window.innerWidth, window.innerHeight), 1) * 0.3;
+  };
+  const dimGrid = (picked: HTMLImageElement, delay: number) => {
+    const from = picked.getBoundingClientRect();
+    const own = picked.closest<HTMLElement>('.lg-item');
+    dimmed = items.filter((item) => {
+      const r = item.getBoundingClientRect();
+      return item !== own && r.bottom > 0 && r.top < window.innerHeight && Number(getComputedStyle(item).opacity) > 0.5;
+    });
+    dimmed.forEach((item) => gsap.to(item, { opacity: 0, filter: 'blur(10px)', duration: 0.5, delay: delay + spread(item, from), ease: SINE, overwrite: 'auto' }));
+  };
+  const undimGrid = (home: HTMLImageElement, delay: number) => {
+    const from = home.getBoundingClientRect();
+    dimmed.forEach((item) => gsap.to(item, { opacity: 1, filter: 'blur(0px)', duration: 0.6, delay: delay + spread(item, from), ease: SINE, overwrite: 'auto' }));
+    dimmed = [];
+  };
+  let openHop: Hop | undefined; // the sheet that carries the picture out of its tile, while it is on its way
+  let closeHop: Hop | undefined;
   const openPicture = (img: HTMLImageElement) => {
     if (lightboxOpen || closing || !heroDismissed || !interactive) return;
-    paper.leave();
+    paper.dismiss(); // not paper.leave(): a copy that fades out would still hang over the picture that is opening
     source = img;
     lightboxOpen = true;
     currentIndex = images.indexOf(img);
@@ -546,16 +594,55 @@ export function initLumenGallery(root: HTMLElement): () => void {
     gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 0 }); // placed over its tile by start() below
     gsap.set(boxBg, { opacity: 0 });
     gsap.set(strip, { opacity: 0 });
-    fitBox(img);
-    box.hidden = false;
-    // the grid stays exactly as it is while the white comes in over it
-    gsap.to(boxBg, { opacity: 1, duration: 0.55, ease: 'power2.out' });
-    gsap.to(strip, { opacity: 1, duration: 0.8, delay: 0.6, ease: 'power1.out' });
     gsap.set(boxClose, { opacity: 0 });
-    gsap.to(boxClose, { opacity: 1, duration: 0.6, delay: 0.6, ease: 'power1.out' });
+    gsap.killTweensOf(thumbs);
+    const rest = fitBox(img);
+    box.hidden = false;
+    // Plain opening (no sheet): the grid stays as it is while the white comes in over it, then the strip and the X fade in.
+    const plainFades = () => {
+      gsap.set(thumbs, { clearProps: 'opacity,transform,filter' });
+      thumbs.forEach((t) => (t.style.transition = ''));
+      gsap.to(boxBg, { opacity: 1, duration: 0.55, ease: 'power2.out' });
+      gsap.to(strip, { opacity: 1, duration: 0.8, delay: 0.6, ease: 'power1.out' });
+      gsap.to(boxClose, { opacity: 1, duration: 0.6, delay: 0.6, ease: 'power1.out' });
+    };
+    // With the sheet (the times are from the moment it lifts off; it flies for SHEET_FLIGHT): the grid is still there as the sheet leaves its tile,
+    // then dissolves behind it, tile by tile from the picture outwards, while the white comes up; the pictures of the strip slide in one after
+    // another from the one shown when the sheet is over halfway, and the X comes last, once the picture is down.
+    const stage = () => {
+      dimGrid(img, 0.12);
+      gsap.to(boxBg, { opacity: 1, duration: SHEET_FLIGHT * 0.7, delay: SHEET_FLIGHT * 0.2, ease: 'power1.inOut' });
+      const fromSide = window.innerWidth >= 1024;
+      gsap.set(strip, { opacity: 1 });
+      thumbs.forEach((t, i) => {
+        const away = Math.min(Math.abs(i - currentIndex), 9);
+        gsap.fromTo(
+          t,
+          { opacity: 0, x: fromSide ? -26 : 0, y: fromSide ? 0 : 26, filter: 'blur(6px)' },
+          {
+            opacity: i === currentIndex ? 1 : 0.32,
+            x: 0,
+            y: 0,
+            filter: 'blur(0px)',
+            duration: 0.7,
+            delay: SHEET_FLIGHT * 0.55 + away * 0.045,
+            ease: SINE,
+            onComplete: () => {
+              gsap.set(t, { clearProps: 'opacity,transform,filter' }); // the stylesheet's own opacities take over again
+              t.style.transition = '';
+            },
+          },
+        );
+      });
+      gsap.to(boxClose, { opacity: 1, duration: 0.5, delay: SHEET_FLIGHT * 0.95, ease: 'power1.out' });
+    };
+    if (sheetsOn) {
+      gsap.set(thumbs, { opacity: 0 });
+      thumbs.forEach((t) => (t.style.transition = 'none')); // the stylesheet's own fade would lag behind the tween
+    } else plainFades();
     const shown = () => {
       if (!lightboxOpen) return;
-      gsap.set(boxImg, { opacity: 1, borderRadius: 0 });
+      gsap.set(boxImg, { opacity: 1 });
       boxReady = true;
       if (wanted !== currentIndex) {
         // another picture was asked for (a tap in the strip, a swipe) while this one was still opening: it is turned to now
@@ -581,39 +668,85 @@ export function initLumenGallery(root: HTMLElement): () => void {
         /* it shows when it is there */
       }
       if (!lightboxOpen) return;
-      // the same turn-over as the two pictures of the intro: the picture is turned onto the page (WebGL), and shown when the turn is done
-      foldIn({ container: boxImg, image: boxImg, direction: 1, delay: 0.15, duration: 1.4, onComplete: () => {
-        if (!lightboxOpen || closing) return; // closed while it turned: the tile must stay as it is
-        img.style.visibility = 'hidden';
-        shown();
-      } }).then(
-        (dispose) => {
-          if (lightboxOpen && !closing) turns.push(dispose); // a sheet that is ready only after the close has begun is taken away at once, not left to play over the flying picture
-          else dispose();
+      if (sheetsOn) {
+        // the picture is a sheet of paper (lumen-hop.ts): it lifts off its tile, bends a little and glides to the middle, where the page's own
+        // picture takes over in the frame it lands
+        try {
+          const hop = await hopSheet(img.currentSrc || img.src, PHOTO_RADIUS, {
+            from: () => img.getBoundingClientRect(),
+            to: () => rest,
+            duration: SHEET_FLIGHT,
+            onFirstFrame: () => {
+              img.style.visibility = 'hidden';
+              stage();
+            },
+            onLand: () => {
+              if (!lightboxOpen || closing) return;
+              gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });
+              shown();
+            },
+          });
+          if (!lightboxOpen || closing) hop.kill();
+          else openHop = hop;
+          return;
+        } catch {
+          plainFades(); // no sheet: the picture itself flies, below
+        }
+      }
+      // The closing played backwards: the picture appears on its tile (which gives way to it), lifts off and glides to the middle with the same
+      // curve and time as when it flies back. The tile is measured at every frame, so it leaves exactly from where the tile is.
+      img.style.visibility = 'hidden';
+      const flight = { p: 1 };
+      const place = () => {
+        const from = img.getBoundingClientRect();
+        const scale = 1 + (from.width / rest.width - 1) * flight.p;
+        gsap.set(boxImg, {
+          x: (from.left + from.width / 2 - (rest.left + rest.width / 2)) * flight.p,
+          y: (from.top + from.height / 2 - (rest.top + rest.height / 2)) * flight.p,
+          scale,
+          borderRadius: PHOTO_RADIUS / scale, // the rounding stays PHOTO_RADIUS px on the screen however much the picture is scaled
+          force3D: true,
+        });
+      };
+      place();
+      gsap.set(boxImg, { opacity: 1 }); // in the same instant as the tile gives way: the picture is an exact copy of it, so nothing shows between them
+      openFlight = gsap.to(flight, {
+        p: 0,
+        duration: CLOSE_FLIGHT,
+        ease: 'power2.inOut',
+        onUpdate: place,
+        onComplete: () => {
+          if (lightboxOpen && !closing) shown();
         },
-        () => {
-          img.style.visibility = 'hidden';
-          shown(); // no WebGL: the picture simply appears
-        },
-      );
+      });
     };
     void start();
   };
   const closePicture = () => {
     if (!lightboxOpen || closing || !source) return;
     closing = true;
+    openFlight?.kill();
+    switchHop?.kill();
     boxReady = false;
     switching = false;
     window.clearTimeout(upgradeTimer);
     gsap.killTweensOf([ghost, boxImg]);
     gsap.set(ghost, { opacity: 0 });
-    turns.splice(0).forEach((d) => d()); // a page still turning is taken away
-    gsap.set(boxImg, { x: 0, y: 0, scale: 1, opacity: 1 });
-    // Closed while another picture was on its way (a page turning, a swipe still loading): the picture that was asked for is the one that goes back,
+    // (with the sheet the picture is left as it is: closed while still opening, it is hidden, and must not pop up at its place before the sheet)
+    gsap.set(boxImg, sheetsOn ? { x: 0, y: 0, scale: 1 } : { x: 0, y: 0, scale: 1, opacity: 1 });
+    // Closed while another picture was on its way (a picture still falling, a swipe still loading): the picture that was asked for is the one that goes back,
     // to its own tile. Without this the old one, still in the box, flew back to its tile (the picture jumped back and then returned to its place).
     const asked = images[navIndex];
     if (asked && asked !== source) {
-      crossfadeTo(asked); // not a cut: the old picture melts into the asked one while they fly back together
+      if (sheetsOn) {
+        // the sheet carries the asked picture; the box takes its size
+        source.style.visibility = '';
+        fitBox(asked);
+        boxImg.src = asked.currentSrc || asked.src;
+        source = asked;
+        asked.style.visibility = 'hidden';
+        currentIndex = images.indexOf(asked);
+      } else crossfadeTo(asked); // not a cut: the old picture melts into the asked one while they fly back together
     }
     const rest = boxImg.getBoundingClientRect(); // where the picture stands now, measured, not remembered
     // the grid stands still while the picture flies, and the tile is on the screen: a tile that is far off (the strip went through many pictures) is
@@ -623,8 +756,67 @@ export function initLumenGallery(root: HTMLElement): () => void {
     if (seen.bottom < 0 || seen.top > window.innerHeight) vlerp.jump(clamp(position + seen.top - (window.innerHeight - seen.height) / 2, 0, maxScroll()));
     // everything leaves softly together: the strip and the X fade first, the white thins out over the flight, the picture glides back and, once at
     // its tile, melts into it (no hard swap)
+    // the strip and the X may still be coming in (they arrive 0.6 s after the opening begins): that tween would win over the fade-out
+    gsap.killTweensOf([strip, boxClose, boxBg]);
     gsap.to([strip, boxClose], { opacity: 0, duration: 0.25, ease: 'power1.out' });
     gsap.to(boxBg, { opacity: 0, duration: 0.55, delay: 0.05, ease: 'power1.inOut' });
+    if (sheetsOn) {
+      // the picture goes back as the sheet it came as, from where it stands (or, closed while still opening, from where the sheet is now)
+      const home = source;
+      let start: Rect = { left: rest.left, top: rest.top, width: rest.width, height: rest.height };
+      // closed while the sheet is still on its way out: it turns round at once, from where it is. Otherwise the strip and the X leave first.
+      const midFlight = !!openHop?.active();
+      const lead = midFlight ? 0 : 0.28;
+      gsap.killTweensOf([strip, boxClose, boxBg, ...thumbs]);
+      gsap.set(strip, { opacity: 1 });
+      thumbs.forEach((t) => (t.style.transition = 'none'));
+      const fromSide = window.innerWidth >= 1024;
+      gsap.to(thumbs, {
+        opacity: 0,
+        x: fromSide ? -16 : 0,
+        y: fromSide ? 0 : 16,
+        duration: 0.3,
+        ease: 'power1.in',
+        stagger: { each: 0.01, from: currentIndex },
+        onComplete: () => {
+          gsap.set(strip, { opacity: 0 });
+          gsap.set(thumbs, { clearProps: 'opacity,transform,filter' });
+          thumbs.forEach((t) => (t.style.transition = ''));
+        },
+      });
+      gsap.to(boxClose, { opacity: 0, duration: 0.25, ease: 'power1.out' });
+      gsap.to(boxBg, { opacity: 0, duration: SHEET_FLIGHT * 0.7, delay: lead + SHEET_FLIGHT * 0.15, ease: 'power1.inOut' });
+      undimGrid(home, lead + 0.1);
+      const finish = () => {
+        home.style.visibility = '';
+        gsap.set(ghost, { x: 0, y: 0, scale: 1, opacity: 0 });
+        box.hidden = true;
+        closing = false;
+        lightboxOpen = false;
+      };
+      hopSheet(home.currentSrc || home.src, PHOTO_RADIUS, {
+        from: () => start,
+        to: () => home.getBoundingClientRect(),
+        duration: SHEET_FLIGHT,
+        delay: lead,
+        onFirstFrame: () => {
+          if (openHop?.active()) start = { ...openHop.rect() };
+          openHop?.kill();
+          openHop = undefined;
+          gsap.killTweensOf([boxImg, ghost]);
+          gsap.set([boxImg, ghost], { opacity: 0 });
+        },
+        onLand: finish,
+      }).then(
+        (hop) => (closeHop = hop),
+        () => {
+          openHop?.kill();
+          gsap.set(boxImg, { opacity: 0 });
+          finish();
+        },
+      );
+      return;
+    }
     // the tile is measured at every frame, so the picture lands exactly on it even if the page moves a little (the address bar, a resize)
     const flight = { p: 0 };
     gsap.to(flight, {
@@ -633,10 +825,12 @@ export function initLumenGallery(root: HTMLElement): () => void {
       ease: 'power2.inOut',
       onUpdate: () => {
         const to = source!.getBoundingClientRect();
+        const scale = 1 + (to.width / rest.width - 1) * flight.p;
         gsap.set([boxImg, ghost], { // the second image (the old picture, melting away) flies with it
           x: (to.left + to.width / 2 - (rest.left + rest.width / 2)) * flight.p,
           y: (to.top + to.height / 2 - (rest.top + rest.height / 2)) * flight.p,
-          scale: 1 + (to.width / rest.width - 1) * flight.p,
+          scale,
+          borderRadius: PHOTO_RADIUS / scale,
           force3D: true,
         });
       },
@@ -663,8 +857,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
     link.addEventListener('click', linkClicks[i]);
   });
   box.addEventListener('click', closePicture);
-  // ---- going through the pictures with the wheel, the swipe or the keys: at once, with no animation (the turn-over is only for a click on a
-  // picture of the grid or of the strip) ----
+  // ---- going through the pictures with the wheel, the swipe or the keys: at once, with no animation (the melt is only for a click on a
+  // picture of the strip) ----
   let navIndex = 0; // the picture asked for last (the one shown follows it as fast as it is loaded)
   let navToken = 0;
   let upgradeTimer = 0;
@@ -797,20 +991,58 @@ export function initLumenGallery(root: HTMLElement): () => void {
   });
 
   // the pictures, the numbers, the header and the zoom buttons come in (at once, or when the spiral of the intro lands)
+  const sheetsOn = !matchMedia('(prefers-reduced-motion: reduce)').matches && WEBGL_ENABLED;
   const enterGrid = () => {
     if (!startGrid || revealOn) return;
     revealOn = true;
     firstBatch = true;
     observeItems(); // the pictures below blur in as they come into view
-    // the two large pictures are turned over onto the page, one after the other (the page-turn the chooser's covers had), then, by itself,
+    // the two large pictures are uncovered one after the other, then, by itself,
     // the pictures part and the grid forms: the same glide as when the grid came up over the hero
     const glide = () => {
-      pagesDone = true;
+      // (pagesDone stays false while the sheets fly: the observer must not uncover the page's pictures under them)
       glideTimer = window.setTimeout(() => {
         if (!alive) return;
-        changeLevel(2);
-        observeItems(); // now the rest may come in, as the pictures glide to their places
-        interactiveTimer = window.setTimeout(() => (interactive = true), 1300); // the glide takes 0.95 s
+        // The pictures part as sheets again (lumen-arrive.ts): each slides from where it stands to its place in the grid, lifting and bending on the
+        // way, and the ones that were below the screen come up from under it, turned over, like the sheets of the intro. The page's own pictures are
+        // shown under them as they land.
+        const plain = () => {
+          pagesDone = true;
+          changeLevel(2);
+          observeItems(); // now the rest may come in, as the pictures glide to their places
+          interactiveTimer = window.setTimeout(() => (interactive = true), 1300); // the glide takes 0.95 s
+        };
+        if (!sheetsOn) return plain();
+        const flying = images.slice(0, 16);
+        // only the two large pictures have been shown so far: the others (even one at the very edge of the screen) come in from below
+        const before = flying.map((img, i) => (i < 2 ? img.getBoundingClientRect() : null));
+        createFlight(flying, before, PHOTO_RADIUS, { arrive: { duration: 1.2, delay: 0.5, stagger: 0.06, soft: true }, glide: 1.3 }).then(
+          (flight) => {
+            if (!alive) {
+              flight.dispose();
+              return;
+            }
+            folds.push(() => flight.dispose());
+            flight.play({
+              start: () => {
+                zoom = 2;
+                applyLayout(2);
+                zoomedByHero = true;
+                gsap.set([items[0], items[1]], { opacity: 0 }); // the sheets are drawn over them in this very frame
+              },
+              tile: (i) => {
+                gsap.killTweensOf(items[i]);
+                gsap.set(items[i], { opacity: 1, filter: 'blur(0px)' });
+              },
+              done: () => {
+                pagesDone = true;
+                observeItems(); // the rest (below the screen) blurs in as it is scrolled to
+                interactive = true;
+              },
+            });
+          },
+          plain,
+        );
       }, 350);
     };
     let turned = 0;
@@ -818,15 +1050,39 @@ export function initLumenGallery(root: HTMLElement): () => void {
       gsap.set(item, { opacity: 1, filter: 'blur(0px)' });
       if (++turned === 2) glide();
     };
-    items.slice(0, 2).forEach((item, i) => {
-      foldIn({ container: item, image: images[i], direction: -i, delay: 0.4 * i, duration: 1.4, onComplete: () => landed(item) }).then(
-        (dispose) => {
-          if (!alive) dispose();
-          else folds.push(dispose);
+    // The two pictures arrive like the sheets of the intro (lumen-arrive.ts): a sheet of paper turns over, curls flat and lands on its place, and the
+    // page's own picture is shown under it in the moment it lands.
+    // Without WebGL (or with reduced motion) each is uncovered from the bottom up by a mask with the rounded corners of the photos instead, while the
+    // picture inside slowly gives up a little zoom; the second follows the first by a quarter of a second.
+    const maskIn = () => items.slice(0, 2).forEach((item, i) => {
+      const img = images[i];
+      const tl = gsap.timeline({
+        delay: 0.25 * i,
+        onComplete: () => {
+          gsap.set(img, { clearProps: 'transform' }); // the hover transition of the picture works as before
+          gsap.set(item, { clearProps: 'clipPath,transform' });
+          landed(item);
         },
-        () => landed(item), // no WebGL texture: the picture simply appears
-      );
+      });
+      tl.set(item, { opacity: 1, filter: 'blur(0px)', clipPath: `inset(100% 0% 0% 0% round ${PHOTO_RADIUS}px)`, y: 44 });
+      tl.to(item, { clipPath: `inset(0% 0% 0% 0% round ${PHOTO_RADIUS}px)`, y: 0, duration: 1.7, ease: 'power4.inOut' }, 0);
+      tl.fromTo(img, { scale: 1.24 }, { scale: 1, duration: 1.7, ease: 'power3.out' }, 0);
+      folds.push(() => tl.kill());
     });
+    if (!sheetsOn) maskIn();
+    else {
+      createFlight(images.slice(0, 2), [null, null], PHOTO_RADIUS, { arrive: { duration: 1.9, delay: 0, stagger: 0.3 }, glide: 1 }).then(
+        (arrival) => {
+          if (!alive) {
+            arrival.dispose();
+            return;
+          }
+          folds.push(() => arrival.dispose());
+          arrival.play({ tile: (i) => landed(items[i]) });
+        },
+        maskIn, // the pictures could not be made into sheets: the mask
+      );
+    }
     window.setTimeout(() => (firstBatch = false), 5200);
   };
   let spiral: Spiral | undefined;
@@ -868,7 +1124,6 @@ export function initLumenGallery(root: HTMLElement): () => void {
     window.clearTimeout(glideTimer);
     window.clearTimeout(interactiveTimer);
     folds.splice(0).forEach((d) => d());
-    turns.splice(0).forEach((d) => d());
     spiral?.dispose();
     stopGestures();
     heroLerp.destroy();
@@ -886,6 +1141,10 @@ export function initLumenGallery(root: HTMLElement): () => void {
     });
     items.forEach((item, i) => item.querySelector('.lg-link')?.removeEventListener('click', linkClicks[i]));
     box.removeEventListener('click', closePicture);
+    openFlight?.kill();
+    openHop?.kill();
+    closeHop?.kill();
+    switchHop?.kill();
     window.clearTimeout(upgradeTimer);
     box.removeEventListener('wheel', onBoxWheel);
     box.removeEventListener('touchstart', onBoxTouchStart);

@@ -14,6 +14,7 @@ interface Props {
   startRadius?: number; // px
   endRadius?: number;
   mediaZoom?: number; // image starts zoomed in by this factor and settles to 1
+  focalMobile?: string; // object-position on a phone or tablet, where the wide photo is cropped to a tall screen (the point that must stay in view)
   scrollDistance?: number; // screens of scrolling the expansion takes
   holdDistance?: number; // screens it stays fully open afterwards
   smoothing?: number; // seconds of easing towards the scroll position (0 = none)
@@ -31,6 +32,7 @@ const {
   startRadius = 18,
   endRadius = 0,
   mediaZoom = 1.35,
+  focalMobile = '50% 50%',
   scrollDistance = 1.2,
   holdDistance = 0.35,
   smoothing = 0.08,
@@ -49,6 +51,7 @@ const has = Astro.slots.has('default');
   data-start-radius={startRadius}
   data-end-radius={endRadius}
   data-media-zoom={mediaZoom}
+  style={`--se-focal-m:${focalMobile}`}
   data-scroll-distance={scrollDistance}
   data-hold-distance={holdDistance}
   data-smoothing={smoothing}
@@ -117,6 +120,7 @@ const has = Astro.slots.has('default');
     let stageH = 0; // the stage is as tall as the LARGEST viewport (lvh) and never changes with the mobile address bar
     let visibleH = 0; // the part that is visible while the bar is showing (svh)
     let boxW = 0;
+    let zoom = c.mediaZoom; // on a phone the photo is already cropped hard, so it starts only slightly zoomed in
     let lastW = window.innerWidth;
     let current = 0;
     let target = 0;
@@ -141,13 +145,9 @@ const has = Astro.slots.has('default');
       const bottom = Math.max(0, 100 - top - h);
       const r = c.startRadius + (c.endRadius - c.startRadius) * e;
       frame.style.clipPath = `inset(${top.toFixed(3)}% ${ix.toFixed(3)}% ${bottom.toFixed(3)}% ${ix.toFixed(3)}% round ${r}px)`;
-      media.style.transform = `scale(${c.mediaZoom + (1 - c.mediaZoom) * e})`;
+      media.style.transform = `scale(${zoom + (1 - zoom) * e})`;
       if (scrim) scrim.style.opacity = `${c.startScrim + (c.overlayScrim - c.startScrim) * e}`;
-      if (title) {
-        const out = smoothstep(0.4, 0.88, p);
-        title.style.opacity = `${1 - out}`;
-        title.style.transform = `translate3d(0, ${-28 * out}px, 0) scale(${1 + 0.06 * out})`;
-      }
+      // the title stays where it is all the way (it is the headline of the section); only the words under it come in once the photo has filled the screen
       if (hint) {
         const gone = smoothstep(0, 0.12, p);
         hint.style.opacity = `${1 - gone}`;
@@ -166,6 +166,7 @@ const has = Astro.slots.has('default');
       // px when the address bar slides away
       boxW = root.clientWidth;
       const phone = boxW < 1024;
+      zoom = phone ? Math.min(c.mediaZoom, 1.1) : c.mediaZoom;
       dist = phone ? Math.min(c.scrollDistance, 0.7) : c.scrollDistance;
       hold = phone ? Math.min(c.holdDistance, 0.5) : c.holdDistance;
       track.style.height = `calc(100vh * ${1 + Math.max(0, dist) + Math.max(0, hold)})`;
@@ -268,6 +269,12 @@ const has = Astro.slots.has('default');
     user-select: none;
     -webkit-user-drag: none;
   }
+  @media (max-width: 1023px) {
+    .se-frame :global(.se-media) {
+      object-position: var(--se-focal-m);
+      transform-origin: var(--se-focal-m);
+    }
+  }
   .se-scrim {
     position: absolute;
     inset: 0;
@@ -283,9 +290,9 @@ const has = Astro.slots.has('default');
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
-    padding: 6%;
+    padding: calc(50svh + var(--se-title-size) * 0.7) 6% 6%; /* under the title, which stays in the middle of the screen */
     color: #fff;
     opacity: 0;
     pointer-events: none;

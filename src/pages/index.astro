@@ -35,9 +35,9 @@ import { faqSchema } from '../data/seo';
   <Preloader />
   <NavPill />
   <Stage />
-  <ScrollExpand image={expandImg} alt="Bengal kittens" title="Meet our kittens" scrollHint="Scroll" scrollDistance={1} holdDistance={1.3}>
-    <h2 class="expand-title">Every kitten, a story</h2>
-    <p class="expand-text">Placeholder text. A calm sentence or two that appears once the photo has filled the screen.</p>
+  <ScrollExpand image={expandImg} alt="Bengal kittens" focalMobile="32% 50%" title="Meet our kittens" scrollDistance={1} holdDistance={1.3}>
+    <p class="expand-text">Every kitten grows up in our home among people, health-tested and TICA registered, until it is ready to meet you.</p>
+    <LetterButton label="Available kittens" href="/available-kittens" solid />
   </ScrollExpand>
   <CatsRow />
   <Corridor />
@@ -177,18 +177,11 @@ import { faqSchema } from '../data/seo';
 </script>
 
 <style>
-  .expand-title {
-    font-family: var(--font-heading);
-    font-weight: 400;
-    font-size: clamp(2.2rem, 5vw, 4.5rem);
-    line-height: 1.05;
-    margin: 0 0 1rem;
-  }
   .expand-text {
     max-width: 34rem;
     font-size: clamp(1.05rem, 1.6vw, 1.35rem);
     line-height: 1.5;
-    margin: 0;
+    margin: 0 0 1.75rem;
   }
   .ending {
     position: relative;

@@ -33,10 +33,16 @@ varying vec2 vUv;
 varying float vProgress;
 uniform sampler2D uTexture;
 uniform float uOpacity;
+uniform vec2 uSize; // the picture in pixels
+uniform float uRadius;
 
 void main() {
+  // the same rounded corners as the real picture that takes its place, so nothing jumps when the sheet lands
+  vec2 q = abs((vUv - 0.5) * uSize) - uSize * 0.5 + uRadius;
+  float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - uRadius;
+  float cornerMask = 1.0 - smoothstep(-0.5, 0.5, d);
   vec4 color = texture2D(uTexture, vUv);
-  float alpha = vProgress * uOpacity; // the parts not yet turned are invisible
+  float alpha = vProgress * uOpacity * cornerMask; // the parts not yet turned are invisible
   if (alpha == 0.0) discard;
   gl_FragColor = vec4(color.rgb, alpha);
 }
@@ -60,6 +66,8 @@ export async function foldIn({ container, image, delay = 0, direction = 1, durat
     uFoldProgress: { value: 0 },
     uOpacity: { value: 0 },
     uDirection: { value: direction },
+    uSize: { value: new THREE.Vector2(100, 100) },
+    uRadius: { value: 10 },
   };
   const material = new THREE.ShaderMaterial({ side: THREE.DoubleSide, transparent: true, uniforms, vertexShader: VERTEX, fragmentShader: FRAGMENT });
   const geometry = new THREE.PlaneGeometry(1, 1, 32, 32);
@@ -71,6 +79,8 @@ export async function foldIn({ container, image, delay = 0, direction = 1, durat
     const size = layer.rectToWorld(image.getBoundingClientRect());
     mesh.position.set(world.x, world.y, 0);
     mesh.scale.set(size.width, size.height, 1);
+    const px = image.getBoundingClientRect();
+    (uniforms.uSize.value as THREE.Vector2).set(px.width, px.height);
   });
 
   let disposed = false;

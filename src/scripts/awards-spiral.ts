@@ -363,7 +363,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
               map: { value: textures[nr] },
               uCrop: crops[nr],
               uSize: { value: new THREE.Vector2(U.width * px, U.height * px) },
-              uRadius: { value: 8 },
+              uRadius: { value: 10 },
             },
             vertexShader: VERT,
             fragmentShader: FRAG_CARD,

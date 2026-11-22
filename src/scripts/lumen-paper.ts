@@ -41,6 +41,8 @@ varying vec2 vUv;
 uniform sampler2D uTexture;
 uniform float uOpacity;
 uniform float uTime;
+uniform vec2 uSize; // the photo in pixels
+uniform float uRadius;
 
 float diagonalLine(vec2 uv, float fadeBottom, float fadeTop) {
   float center = uv.x;
@@ -48,13 +50,18 @@ float diagonalLine(vec2 uv, float fadeBottom, float fadeTop) {
 }
 
 void main() {
+  // rounded corners, like the photo under it (uRadius px)
+  vec2 q = abs((vUv - 0.5) * uSize) - uSize * 0.5 + uRadius;
+  float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - uRadius;
+  float cornerMask = 1.0 - smoothstep(-0.5, 0.5, d);
+  if (cornerMask <= 0.0) discard;
   vec4 color = texture2D(uTexture, vUv);
   vec2 uv1 = vUv - 0.5;
   float t = mod(uTime * 0.2, 2.0);
   uv1.y += t * 2.55 - 1.05;
   float sheen = diagonalLine(uv1, 0.05, 0.5) * 0.01;
   vec3 finalColor = mix(color.rgb, vec3(1.0), sheen);
-  gl_FragColor = vec4(finalColor, color.a * uOpacity);
+  gl_FragColor = vec4(finalColor, color.a * uOpacity * cornerMask);
 }
 `;
 
@@ -93,6 +100,8 @@ export function initPaperHover() {
       uPointerAmplitude: { value: 0 },
       uDistortionStrength: { value: 0.6 },
       uPointerActive: { value: 0 },
+      uSize: { value: new THREE.Vector2(100, 100) },
+      uRadius: { value: 10 },
     };
     const material = new THREE.ShaderMaterial({ transparent: true, side: THREE.DoubleSide, uniforms, vertexShader: VERTEX, fragmentShader: FRAGMENT });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 60, 60), material);
@@ -147,6 +156,7 @@ export function initPaperHover() {
     entry.mesh.scale.set(world.width, world.height, 1);
 
     // bigger pictures bend a little more (k between 0.4 and 1)
+    (u.uSize.value as THREE.Vector2).set(rect.width, rect.height);
     const k = clamp((Math.min(rect.width, rect.height) / Math.min(layer!.width, layer!.height)) * 2.2, 0.4, 1);
     (u.uPointer.value as THREE.Vector2).copy(entry.smoothPointer);
     u.uPointerStrength.value = entry.strength;

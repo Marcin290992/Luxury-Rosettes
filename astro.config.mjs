@@ -18,6 +18,8 @@ export default defineConfig({
   site: 'https://luxuryrosettes.co.uk',
   integrations: [sitemap()],
   // needed for the menu to fetch the next pages ahead of the tap (astro:prefetch); links are not prefetched on their own
+  // photos kept in Sanity are optimised at build time like the local ones
+  image: { domains: ['cdn.sanity.io'] },
   prefetch: { prefetchAll: false },
   vite: {
     define: { __BUILD__: JSON.stringify(build) },

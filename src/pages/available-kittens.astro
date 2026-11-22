@@ -8,23 +8,22 @@ import Closing from '../components/Closing.astro';
 import Footer from '../components/Footer.astro';
 import closeToPhoto from '../assets/img/cats/chester.webp';
 import closingPhoto from '../assets/img/kittens.webp'; // not the photo of the home page's closing screen
+import { spots } from '../scripts/spots';
 import candy from '../assets/img/cats/candy.webp';
 import charlie from '../assets/img/cats/charlie.webp';
 import chester from '../assets/img/cats/chester.webp';
 import cosmo from '../assets/img/cats/cosmo.webp';
-import { spots } from '../scripts/spots';
 import { getKittens } from '../data/litters';
 import { KITTEN_EXPAND as K } from '../scripts/settings';
 
-// Sample page for trying out page transitions: placeholder kittens and copy
-// the short description of each kitten comes from the one place the site keeps them (data/litters.ts)
-const about = Object.fromEntries(getKittens().map((k) => [k.name, k.text]));
-const kittens = [
+// The ring at the top is fixed (the breeder does not edit it). The kittens below it come from Sanity (data/litters.ts); one without a photo waits until it has one
+const ring = [
   { name: 'Candy', line: 'Female, brown rosetted', image: candy },
   { name: 'Charlie', line: 'Male, snow', image: charlie },
   { name: 'Chester', line: 'Male, brown rosetted', image: chester },
   { name: 'Cosmo', line: 'Male, silver', image: cosmo },
 ];
+const kittens = (await getKittens()).filter((k) => k.status !== 'sold' && k.photo);
 import { breadcrumb } from '../data/seo';
 ---
 
@@ -36,14 +35,14 @@ import { breadcrumb } from '../data/seo';
   <NavPill />
   <main>
     <section class="hero">
-      <SpinShutter items={kittens.map((k) => ({ img: k.image, alt: `${k.name}, a Bengal kitten`, title: k.name, subtitle: k.line, href: `#${k.name.toLowerCase()}` }))}>
+      <SpinShutter items={ring.map((k) => ({ img: k.image, alt: `${k.name}, a Bengal kitten`, title: k.name, subtitle: k.line }))}>
         <header class="head">
           <h1>Available kittens</h1>
-          <p class="lead">Placeholder text. Every kitten is TICA registered, health-tested and raised at home.</p>
+          <p class="lead">Every kitten is TICA registered, health-tested and raised at home.</p>
         </header>
       </SpinShutter>
     </section>
-    <div class="page">
+    {kittens.length > 0 && <div class="page">
     <svg class="kp-defs" width="0" height="0" aria-hidden="true" focusable="false">
       <defs>
         {kittens.map((_, i) => (
@@ -58,22 +57,22 @@ import { breadcrumb } from '../data/seo';
       {
         kittens.map((k, i) => (
           <li class="row" id={k.name.toLowerCase()}>
-            <div class="photo" data-clip={`kp-${i}`} style={`--clip:url(#kp-${i});--clip-closed:url(#kp-${i}-closed)`}><Photo src={k.image} alt={k.name} widths={[600, 1000]} sizes="(min-width:1024px) 40vw, 90vw" /></div>
+            <div class="photo" data-clip={`kp-${i}`} style={`--clip:url(#kp-${i});--clip-closed:url(#kp-${i}-closed)`}><Photo src={k.photo!.src} width={k.photo!.width} height={k.photo!.height} alt={k.photo!.alt} widths={[600, 1000]} sizes="(min-width:1024px) 40vw, 90vw" /></div>
             <div class="text">
               <h2 data-line-reveal>{k.name}</h2>
               <p class="line" data-line-reveal>{k.line}</p>
-              <p class="about" data-line-reveal>{about[k.name]}</p>
+              <p class="about" data-line-reveal>{k.text}</p>
               <p class="cta"><a href="#">Reserve {k.name} →</a></p>
             </div>
           </li>
         ))
       }
     </ul>
-    </div>
+    </div>}
     <CloseTo
-      words={['Placeholder', 'text', 'goes', 'here']}
-      above="Placeholder text. A calm sentence that stays above the picture and"
-      below="one more that follows below it."
+      words={['Every', 'kitten,', 'a', 'family']}
+      above="Each one is raised among people and goes home only when it is ready, and"
+      below="we stay beside you long after."
       image={closeToPhoto}
       alt="A Bengal kitten"
     />
@@ -123,6 +122,7 @@ import { breadcrumb } from '../data/seo';
   .head {
     padding: 0 1.5rem;
   }
+  
   h1 {
     font-family: var(--font-heading);
     font-weight: 400;

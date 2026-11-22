@@ -1,18 +1,12 @@
 ---
 import Photo from './Photo.astro';
 import LetterButton from './LetterButton.astro';
-import candy from '../assets/img/cats/candy.webp';
-import cosmo from '../assets/img/cats/cosmo.webp';
-import charlie from '../assets/img/cats/charlie.webp';
-import chester from '../assets/img/cats/chester.webp';
 
 import { getKittens, getLitters, nextLitter, monthLabel } from '../data/litters';
 
-const photos = { candy, cosmo, charlie, chester };
-
 // Sold kittens never show. With nobody left, the section turns into "next litter + get in touch".
-const kittens = getKittens().filter((k) => k.status !== 'sold');
-const next = nextLitter(getLitters());
+const kittens = (await getKittens()).filter((k) => k.status !== 'sold');
+const next = nextLitter(await getLitters());
 ---
 
 <section class="kit" id="kittens">
@@ -32,7 +26,7 @@ const next = nextLitter(getLitters());
           {kittens.map((k, i) => (
             <article class="kit-card" data-reveal>
               <div class="kit-photo">
-                <Photo src={photos[k.photo]} alt={`${k.name}, a Bengal kitten`} widths={[400, 700]} sizes="(min-width:1024px) 22vw, 70vw" loading="lazy" />
+                {k.photo && <Photo src={k.photo.src} width={k.photo.width} height={k.photo.height} alt={k.photo.alt} widths={[400, 700]} sizes="(min-width:1024px) 22vw, 70vw" loading="lazy" />}
                 <span class={`kit-badge${k.status === 'reserved' ? ' kit-badge--reserved' : ''}`}>{k.status === 'reserved' ? 'Reserved' : 'Available'}</span>
               </div>
               <div class="kit-info">

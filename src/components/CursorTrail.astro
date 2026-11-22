@@ -1,9 +1,11 @@
 ---
 // Ribbon cursor: a bundle of thin gold spring-lines that swirl after the pointer.
+// Over anything clickable a thin gold ring pulses out from the pointer. The arrow stays as it is.
 // Desktop (hover + fine pointer) only; skipped for reduced-motion users.
 ---
 
 <canvas id="cursor-canvas" aria-hidden="true"></canvas>
+<div id="cursor-dot" aria-hidden="true"></div>
 
 <script>
   import { mount } from '../scripts/lifecycle';
@@ -17,8 +19,10 @@
       window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
       !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    const dot = document.getElementById('cursor-dot');
     if (!enabled) {
       canvas.remove();
+      dot?.remove();
       return;
     }
     const config = {
@@ -144,7 +148,31 @@
     };
     window.addEventListener('mousemove', onMove);
 
+    // the pulse: on the pointer (no lag), shown only over what is clickable: what the browser itself would show a hand over (cursor: pointer, which
+    // what is inside a button or a tile inherits), plus links, buttons and the page's own triggers
+    const clickable = 'a[href], button, [role="button"], [data-contact-trigger], [data-href], summary, label';
+    let hot = false;
+    const onDotMove = (e: MouseEvent) => {
+      if (!dot) return;
+      dot.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+      const el = e.target instanceof Element ? e.target : null;
+      const now = !!el && (el.closest(clickable) !== null || getComputedStyle(el).cursor === 'pointer');
+      if (now !== hot) {
+        hot = now;
+        dot.classList.toggle('is-hot', now);
+      }
+    };
+    const onDotLeave = () => {
+      hot = false;
+      dot?.classList.remove('is-hot');
+    };
+    window.addEventListener('mousemove', onDotMove, { passive: true });
+    document.documentElement.addEventListener('mouseleave', onDotLeave);
+
     return () => {
+      window.removeEventListener('mousemove', onDotMove);
+      document.documentElement.removeEventListener('mouseleave', onDotLeave);
+      onDotLeave();
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMove);
       cancelAnimationFrame(raf);
@@ -161,5 +189,40 @@
     height: 100dvh;
     pointer-events: none;
     z-index: 2000; /* above the nav (1000) */
+  }
+  /* the pulse: nothing at rest; over anything clickable a thin gold ring spreads from the pointer and fades, again and again */
+  #cursor-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 1999; /* under the ribbon (2000) and, as always, under the system arrow */
+  }
+  #cursor-dot::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    border-radius: 50%;
+    border: 1px solid rgba(186, 142, 71, 0.9); /* gold from the logo */
+    opacity: 0;
+  }
+  #cursor-dot.is-hot::after {
+    animation: cursor-pulse 1.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+  @keyframes cursor-pulse {
+    0% {
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(3);
+    }
   }
 </style>

@@ -226,6 +226,14 @@ const first = gallery.photos[0];
     height: auto;
     user-select: none;
     -webkit-user-drag: none;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* a mouse on a desktop: the photo grows a little under the cursor, so it is clear it can be clicked (the paper effect follows the photo's box) */
+  @media (hover: hover) and (pointer: fine) {
+    .lg-link:hover img,
+    .lg-link:focus-visible img {
+      transform: scale(1.035);
+    }
   }
   /* the photo opened large (it grows from its place in the grid) */
   .lg-box {

@@ -569,6 +569,24 @@ const isCurrent = (href: string) =>
     color: var(--text);
     text-decoration: none;
   }
+  /* the page you are on: a gold dot to the left of the word. The word itself is untouched, so the hover (letters slide up, gold copy comes in)
+     stays the one thing that happens to the letters and the two never get in each other's way. Equal padding on both sides keeps the word centred. */
+  .nav-links a[aria-current='page'] {
+    position: relative;
+    padding: 0 1.5rem;
+  }
+  .nav-links a[aria-current='page']::before {
+    content: '';
+    position: absolute;
+    left: 0.45rem;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    margin-top: -3.5px;
+    border-radius: 50%;
+    background: var(--gold);
+    pointer-events: none;
+  }
   .nav-word { display: block; white-space: pre; }
   /* Menu <-> Close (see rollLabel in the script): the old word slides up and out, the new one comes in from below. They are whole words
      with their own letter widths, so the plain word that replaces the new one at the end looks exactly the same. */

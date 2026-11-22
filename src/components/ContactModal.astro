@@ -64,6 +64,7 @@ const STRIPES = 5;
           }
         </div>
 
+        <div class="panels">
         <div class="panel" role="tabpanel" id="panel-email" aria-labelledby="tab-email" data-panel="email">
           <form class="contact-form" novalidate>
             <div class="field">
@@ -111,6 +112,7 @@ const STRIPES = 5;
             </div>
           ))
         }
+        </div>
       </div>
     </div>
   </div>
@@ -543,7 +545,7 @@ const STRIPES = 5;
     max-height: 68svh;
     margin: 0 auto;
     overflow: hidden;
-    border-radius: 2px;
+    border-radius: 10px;
     clip-path: inset(50% 50% 50% 50%);
     transition: clip-path 0.4s ease;
   }
@@ -649,8 +651,18 @@ const STRIPES = 5;
     background: rgba(239, 233, 220, 0.22);
   }
   /* the panels take turns in the same place; each arrives by rising a little */
+  /* all the panels sit in one cell of a grid, so the block is always as tall as the tallest one: switching tabs never changes the height */
+  .panels {
+    display: grid;
+  }
+  .panels > .panel {
+    grid-area: 1 / 1;
+    align-self: start;
+  }
   .panel[hidden] {
-    display: none;
+    display: block;
+    visibility: hidden;
+    pointer-events: none;
   }
   .panel {
     opacity: 0;
@@ -661,12 +673,12 @@ const STRIPES = 5;
     transition: opacity 0.8s ease 1.7s;
   }
   .panel.enter {
-    animation: view-in 0.9s var(--ease) both;
+    animation: view-in 0.25s ease both;
   }
+  /* only a quick fade: no movement, so the page never grows for a moment and no scrollbar flashes when the tabs are switched */
   @keyframes view-in {
     from {
       opacity: 0;
-      transform: translateY(18px);
     }
   }
   .way-note {

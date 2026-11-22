@@ -216,7 +216,7 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
       textures[i] = texture;
     });
 
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x9e9e9e });
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xc29a2e });
 
     // the ribbons on the spiral
     const ribbons = urls

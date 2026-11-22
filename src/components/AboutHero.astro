@@ -94,11 +94,6 @@ const { eyebrow, title, photos } = Astro.props;
     color: var(--gold-deep);
     margin: 0 0 1.5rem;
   }
-  .ah-eyebrow::before {
-    content: '';
-    width: 2.5rem;
-    border-top: 1px solid var(--gold-deep);
-  }
   .ah-title {
     font-family: var(--font-heading);
     font-weight: 300;
@@ -134,7 +129,7 @@ const { eyebrow, title, photos } = Astro.props;
   }
   .ah-pic {
     overflow: hidden;
-    border-radius: 2px;
+    border-radius: 10px;
     opacity: var(--o);
     will-change: transform, opacity;
   }

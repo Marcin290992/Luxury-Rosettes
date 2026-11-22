@@ -1,23 +1,23 @@
-// A "Lumen" gallery page (markup and phases: LumenGallery.astro).
+// A "Luxury Bengal" gallery page (markup and phases: LuxuryBengalGallery.astro).
 // Hero: opens full height and settles to 75 % after 0.9 s. Wheel, swipe or key gestures are caught (the page itself never scrolls) and turned
 // into a number, `heroLerp`, which eases towards its target. It pulls the grid up over the hero, shrinks and blurs the wordmark and fades it;
 // past halfway the page finishes the move alone, and at 80 % the header appears and the grid switches to zoom level 2 (GSAP Flip).
 // Grid: moves inside a box by transform (`vlerp`); the faster it moves the more the whole grid shrinks (to 96 %), springing back at rest.
-// A mouse over a photo lifts it like paper (lumen-paper.ts). A click opens the photo large with a FLIP from its place, plus a strip to choose from.
-// initLumenGallery(root) returns destroy().
+// A mouse over a photo lifts it like paper (luxurybengal-paper.ts). A click opens the photo large with a FLIP from its place, plus a strip to choose from.
+// initLuxuryBengalGallery(root) returns destroy().
 
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip';
-import { QUART, SINE } from './lumen-ease';
-import { createLerp, scrollGestures } from './lumen-scroll';
-import { placeItem, spacingFor, type Level } from './lumen-grid';
-import { initPaperHover } from './lumen-paper';
+import { QUART, SINE } from './luxurybengal-ease';
+import { createLerp, scrollGestures } from './luxurybengal-scroll';
+import { placeItem, spacingFor, type Level } from './luxurybengal-grid';
+import { initPaperHover } from './luxurybengal-paper';
 import { getLenis } from './lenis';
 import { transitionDone } from './lifecycle';
-import { disposeLayer } from './lumen-layer';
-import { createSpiral, type Spiral } from './lumen-spiral';
-import { createFlight } from './lumen-arrive';
-import { hopSheet, type Hop, type Rect } from './lumen-hop';
+import { disposeLayer } from './luxurybengal-layer';
+import { createSpiral, type Spiral } from './luxurybengal-spiral';
+import { createFlight } from './luxurybengal-arrive';
+import { hopSheet, type Hop, type Rect } from './luxurybengal-hop';
 import { WEBGL_ENABLED, SMOOTH_WHEEL, SMOOTH_TOUCH } from './settings';
 
 gsap.registerPlugin(Flip);
@@ -28,7 +28,7 @@ const PHOTO_RADIUS = 10; // px, the rounding of the photos (the CSS of .lg-item 
 const CLOSE_FLIGHT = 0.65; // seconds the opened picture takes to fly back to its tile
 const SHEET_FLIGHT = 0.9; // seconds the picture takes as a sheet of paper, there and back
 
-export function initLumenGallery(root: HTMLElement): () => void {
+export function initLuxuryBengalGallery(root: HTMLElement): () => void {
   const q = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
   const hero = q<HTMLElement>('.lg-hero');
   const heroLabel = q<HTMLElement>('.lg-hero-label');
@@ -85,19 +85,20 @@ export function initLumenGallery(root: HTMLElement): () => void {
     let paddingTop = startGrid ? Math.max(s.paddingTop, isDesktop ? 150 : 120) : s.paddingTop;
     // the two large pictures of the grid page's opening, on a phone: one above the other in the middle of the screen (not at the top with a big gap
     // under them)
-    if (startGrid && level === 'intro' && !isDesktop) {
-      const colW = window.innerWidth - s.paddingLeft - s.paddingRight;
-      const heights = [0, 1].map((i) => {
-        const w = Number(images[i]?.getAttribute('width'));
-        const h = Number(images[i]?.getAttribute('height'));
-        return w && h ? (colW * h) / w : colW * 0.75;
-      });
-      const total = heights[0] + heights[1] + s.gapY;
+    // the two large pictures of the opening are the same size (the proportions of the first one; the second is cropped to it)
+    const equal = startGrid && level === 'intro';
+    const ratio = Number(images[0]?.getAttribute('width')) / Number(images[0]?.getAttribute('height')) || 4 / 3;
+    let sideLeft = s.paddingLeft;
+    let sideRight = s.paddingRight;
+    if (equal && !isDesktop) {
+      // both pictures fit on the screen together (a tablet standing up would otherwise push the second below the fold): the column is only as wide
+      // as lets two pictures of this proportion stand one above the other between the pill and the bottom edge
+      const maxH = Math.max(140, (window.innerHeight - 124 - s.gapY) / 2);
+      const colW = Math.min(window.innerWidth - s.paddingLeft - s.paddingRight, Math.max(maxH * ratio, window.innerWidth * 0.35));
+      sideLeft = sideRight = (window.innerWidth - colW) / 2;
+      const total = (2 * colW) / ratio + s.gapY;
       paddingTop = Math.max(100, (window.innerHeight - total) / 2);
     }
-    // the two large pictures of the opening are the same size (the proportions of the first one; the second is cropped to it)
-    const equal = startGrid && level === 'intro' && isDesktop;
-    const ratio = Number(images[0]?.getAttribute('width')) / Number(images[0]?.getAttribute('height')) || 4 / 3;
     [0, 1].forEach((i) => {
       if (!images[i]) return;
       images[i].style.aspectRatio = equal ? String(ratio) : '';
@@ -105,8 +106,8 @@ export function initLumenGallery(root: HTMLElement): () => void {
     });
     grid.style.paddingTop = `${paddingTop}px`;
     grid.style.paddingBottom = `${s.paddingBottom}px`;
-    grid.style.paddingLeft = `${s.paddingLeft}px`;
-    grid.style.paddingRight = `${s.paddingRight}px`;
+    grid.style.paddingLeft = `${sideLeft}px`;
+    grid.style.paddingRight = `${sideRight}px`;
     grid.style.gridTemplateColumns = `repeat(${s.cols}, minmax(0, 1fr))`;
     grid.style.columnGap = `${s.gapX}px`;
     grid.style.rowGap = `${s.gapY}px`;
@@ -669,7 +670,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       }
       if (!lightboxOpen) return;
       if (sheetsOn) {
-        // the picture is a sheet of paper (lumen-hop.ts): it lifts off its tile, bends a little and glides to the middle, where the page's own
+        // the picture is a sheet of paper (luxurybengal-hop.ts): it lifts off its tile, bends a little and glides to the middle, where the page's own
         // picture takes over in the frame it lands
         try {
           const hop = await hopSheet(img.currentSrc || img.src, PHOTO_RADIUS, {
@@ -1003,7 +1004,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       // (pagesDone stays false while the sheets fly: the observer must not uncover the page's pictures under them)
       glideTimer = window.setTimeout(() => {
         if (!alive) return;
-        // The pictures part as sheets again (lumen-arrive.ts): each slides from where it stands to its place in the grid, lifting and bending on the
+        // The pictures part as sheets again (luxurybengal-arrive.ts): each slides from where it stands to its place in the grid, lifting and bending on the
         // way, and the ones that were below the screen come up from under it, turned over, like the sheets of the intro. The page's own pictures are
         // shown under them as they land.
         const plain = () => {
@@ -1050,7 +1051,7 @@ export function initLumenGallery(root: HTMLElement): () => void {
       gsap.set(item, { opacity: 1, filter: 'blur(0px)' });
       if (++turned === 2) glide();
     };
-    // The two pictures arrive like the sheets of the intro (lumen-arrive.ts): a sheet of paper turns over, curls flat and lands on its place, and the
+    // The two pictures arrive like the sheets of the intro (luxurybengal-arrive.ts): a sheet of paper turns over, curls flat and lands on its place, and the
     // page's own picture is shown under it in the moment it lands.
     // Without WebGL (or with reduced motion) each is uncovered from the bottom up by a mask with the rounded corners of the photos instead, while the
     // picture inside slowly gives up a little zoom; the second follows the first by a quarter of a second.

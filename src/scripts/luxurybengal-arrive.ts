@@ -9,8 +9,8 @@
 // Sheets are measured against their pictures at every frame, so they land on them whatever the screen.
 
 import * as THREE from 'three';
-import { getLayer, loadTexture, textureRatio, coverWindow } from './lumen-layer';
-import { createPictureSheet, createShadowSheet, type Sheet } from './lumen-sheet';
+import { getLayer, loadTexture, textureRatio, coverWindow } from './luxurybengal-layer';
+import { createPictureSheet, createShadowSheet, type Sheet } from './luxurybengal-sheet';
 
 const RISE = 0.75; // how far below its place an arriving sheet starts, in screen heights
 const DEPTH = 7; // world units behind its place an arriving sheet starts
@@ -101,7 +101,9 @@ export async function createFlight(images: HTMLImageElement[], from: Array<DOMRe
       if (f.active) (f.glide ? gliding : arriving).push({ f, to });
     });
     arriving.sort((a, b) => order(a.to, b.to));
-    arriving.forEach(({ f }, rank) => {
+    arriving.forEach(({ f, to }, rank) => {
+      // pictures standing one above the other in the middle (a phone, a tablet) have no side: their hinges alternate
+      if (Math.abs(to.left + to.width / 2 - vw / 2) < vw * 0.08) f.hinge = rank % 2 ? 1 : -1;
       f.duration = options.arrive.duration;
       f.delay = options.arrive.delay + rank * options.arrive.stagger;
     });

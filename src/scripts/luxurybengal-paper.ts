@@ -5,7 +5,7 @@
 // const paper = initPaperHover();   paper.enter(event, img) / paper.move(event, img) / paper.leave(event?, img?) / paper.dismiss() / paper.destroy()
 
 import * as THREE from 'three';
-import { getLayer, loadTexture, textureRatio, coverWindow } from './lumen-layer';
+import { getLayer, loadTexture, textureRatio, coverWindow } from './luxurybengal-layer';
 
 const VERTEX = /* glsl */ `
 uniform vec2 uPointer;   // in the picture's own 0..1 space, y up

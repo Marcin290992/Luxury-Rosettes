@@ -4,8 +4,8 @@
 
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { getLayer, loadTexture, textureRatio, coverWindow } from './lumen-layer';
-import { createPictureSheet, createShadowSheet, type Sheet } from './lumen-sheet';
+import { getLayer, loadTexture, textureRatio, coverWindow } from './luxurybengal-layer';
+import { createPictureSheet, createShadowSheet, type Sheet } from './luxurybengal-sheet';
 
 const COUNT = 21;
 const STAGGER = 0.2; // s between two sheets leaving

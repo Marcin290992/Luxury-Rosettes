@@ -1,4 +1,4 @@
-// Smooth scrolling without the browser's scrollbar, as on the "Lumen" gallery pages.
+// Smooth scrolling without the browser's scrollbar, as on the "Luxury Bengal" gallery pages.
 //  1. scrollGestures() listens to the wheel, swipes and keys (with preventDefault, so the page never really scrolls) and reports how many
 //     pixels were asked for.
 //  2. createLerp() keeps a target and a current value; every frame current moves a fixed share of the way to target, which gives the soft glide.

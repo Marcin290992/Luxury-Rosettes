@@ -24,7 +24,7 @@ export interface Layer {
 
 function buildLayer(zIndex: number): Layer {
   const host = document.createElement('div');
-  host.className = 'lumen-layer';
+  host.className = 'luxurybengal-layer';
   host.style.cssText = `position:fixed;inset:0;pointer-events:none;z-index:${zIndex}`;
   // On touch devices the page lives in #scroll-root, a box with its own stacking context (the menu is inside it): a layer in <body> would be
   // drawn over the open menu, so there it goes into the same box.

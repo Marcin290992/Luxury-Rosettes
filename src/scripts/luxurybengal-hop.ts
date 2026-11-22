@@ -1,11 +1,11 @@
 // One sheet of paper that carries a picture from one rectangle to another: a photo opening large from its tile, and flying back to it. It lifts off
-// towards the viewer, bends a little on the way and settles, with a shadow under it, in the language of the intro's sheets (lumen-arrive.ts).
+// towards the viewer, bends a little on the way and settles, with a shadow under it, in the language of the intro's sheets (luxurybengal-arrive.ts).
 // The sheet is drawn on the shared layer over the page; the page's own picture is shown under it in the frame it lands, and the sheet goes two
 // frames later, so nothing jumps. Both rectangles are asked for at every frame, so the sheet lands exactly on a tile that moves a little.
 
 import * as THREE from 'three';
-import { getLayer, loadTexture, textureRatio, coverWindow } from './lumen-layer';
-import { createPictureSheet, createShadowSheet } from './lumen-sheet';
+import { getLayer, loadTexture, textureRatio, coverWindow } from './luxurybengal-layer';
+import { createPictureSheet, createShadowSheet } from './luxurybengal-sheet';
 
 export type Rect = { left: number; top: number; width: number; height: number };
 

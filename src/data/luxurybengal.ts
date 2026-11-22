@@ -8,12 +8,12 @@ import draco from '../assets/img/cats/draco.webp';
 import charlie from '../assets/img/cats/charlie.webp';
 import heroPhoto from '../assets/img/hero_img.webp';
 
-// The two "Lumen" galleries (intro chooser + gallery pages). Placeholders: the photos are the site's cats, the names and captions are sample
+// The two "Luxury Bengal" galleries (intro chooser + gallery pages). Placeholders: the photos are the site's cats, the names and captions are sample
 // text, to be replaced with the real galleries. One place for both pages, so the chooser and the gallery agree on names, colours and links.
 
-export type LumenPhoto = { id: string; title: string; time: string; credit: string; src: string; full: string; width: number; height: number; alt: string };
+export type LuxuryBengalPhoto = { id: string; title: string; time: string; credit: string; src: string; full: string; width: number; height: number; alt: string };
 
-export interface LumenGallery {
+export interface LuxuryBengalGallery {
   id: 'one' | 'two';
   href: string;
   name: string; // the big wordmark of the gallery's hero (also its name in the chooser)
@@ -24,7 +24,7 @@ export interface LumenGallery {
   coverSrc: string; // the chooser cover (3:4)
   coverWidth: number;
   coverHeight: number;
-  photos: LumenPhoto[];
+  photos: LuxuryBengalPhoto[];
 }
 
 const SOURCES: ImageMetadata[] = [candy, kita, cosmo, chester, draco, charlie, heroPhoto];
@@ -52,7 +52,7 @@ async function optimise() {
   );
 }
 
-function makePhotos(count: number, offset: number, prefix: string, optimised: Awaited<ReturnType<typeof optimise>>): LumenPhoto[] {
+function makePhotos(count: number, offset: number, prefix: string, optimised: Awaited<ReturnType<typeof optimise>>): LuxuryBengalPhoto[] {
   return Array.from({ length: count }, (_, i) => {
     const n = i + 1;
     const o = optimised[(i + offset) % optimised.length];
@@ -70,15 +70,15 @@ function makePhotos(count: number, offset: number, prefix: string, optimised: Aw
   });
 }
 
-export async function getLumenGalleries() {
+export async function getLuxuryBengalGalleries() {
   const optimised = await optimise();
   const coverOne = await getImage({ src: kita, width: 720, height: 960, fit: 'cover' });
   const coverTwo = await getImage({ src: draco, width: 720, height: 960, fit: 'cover' });
-  const galleries: LumenGallery[] = [
+  const galleries: LuxuryBengalGallery[] = [
     {
       id: 'one',
       href: '/gallery/one/',
-      name: 'LUMEN',
+      name: 'LUXURY BENGAL',
       title: 'Gallery One',
       background: '#252525',
       accent: '#7D7676',

@@ -161,7 +161,7 @@ const jsonLd = [business, ...schema];
   document.addEventListener('astro:page-load', later);
 
   initDebug(); // only does anything when the page is opened with ?debug=1
-  setupScrollRestore(); // every page opens at its top; the router's restored position is put right while the page settles
+  setupScrollRestore(); // going back returns to the section the reader left; any other way in opens a page at its top
 
   // The new page's picture is taken right after the swap callback returns, but the page is not built yet then: its pins and spacers appear a
   // few hundred ms later. So the callback is not finished until the layout is measured, or the picture would differ from the page that

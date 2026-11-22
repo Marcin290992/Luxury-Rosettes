@@ -434,10 +434,11 @@ const jsonLd = [business, ...schema];
   html {
     background: #0d0b09;
   }
-  /* the intro of the home page: dark from the very first paint (the preloader's own dark veil takes over once it exists) */
+  /* the intro of the home page: the same cream as the preloader from the very first paint, so there is no dark flash before the preloader
+     (the preloader's own cream veil takes over once it exists) */
   html.preloading,
   html.preloading body {
-    background: #000;
+    background: var(--paper);
   }
   /* ?vtlab=1 (see debug-log.ts): the transition is held at its first frame for 4s and its layers are outlined, to read the geometry off a screenshot */
   html.vt-lab::view-transition-group(root) {

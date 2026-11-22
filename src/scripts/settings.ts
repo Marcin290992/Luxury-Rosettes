@@ -319,11 +319,10 @@ export const PRELOADER = {
   fadeInStagger: 0.1, // s between those coming in (brand, frame, word, count)
   fadeInAt: 0.25, // s before the first of them starts
   blur: 6, // px of blur the brand clears from while it comes in
-  count: 2.4, // s the counter and the photos take (and so each word stays long enough to be read)
+  count: 2.4, // s the counter takes; it is shared evenly by the words, each with its own photo (so each stays count / words.length s)
   exit: { dur: 0.6, stagger: 0.08, rise: 24, openAt: 0.3 }, // the words leave upwards one by one; the frame starts opening openAt s into it
   open: 1.2, // s the frame takes to grow to the full screen
   fade: 0.7, // s the preloader takes to melt away over the hero
-  rounds: 0.85, // how many times the photos go round while counting (each one stays long enough to be seen)
   photo: { fade: 0.45, zoom: 1.12, zoomTime: 1.1 }, // s of a photo's cross-fade; the scale each starts at and the s it takes to settle
   frame: { width: 240, height: 300 }, // px, the small frame
 };

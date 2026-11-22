@@ -10,8 +10,10 @@ import hero from '../assets/img/hero_img.webp';
 import logo from '../assets/logo/logo-cat.svg';
 import { PRELOADER as P } from '../scripts/settings';
 
-// the photos that pass through the frame; the last one is the hero's own, so the frame opens onto the page it hands over to
-const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
+// One photo for each word: the frame shows the photo of the word that is on, and the two change at the same moment. The last word's photo is
+// the hero's own, so the frame opens onto the page it hands over to. (More words than photos: the photos go round again.)
+const frames = [kita, candy, draco, cosmo, charlie, chester];
+const photos = [...Array.from({ length: P.words.length - 1 }, (_, i) => frames[i % frames.length]), hero];
 ---
 
 <!--
@@ -105,11 +107,9 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
         // each word rises in softly from below, instead of the text just being swapped
         gsap.fromTo(wordIn, { yPercent: 45, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.7, ease: 'power3.out', overwrite: true });
       }
-      // the photos go round `rounds` times and the count ends on the last one (the hero's)
+      // the photo of the word that is on (one photo for each word, changed in the same moment); the last word shows the hero's own
       const last = photos.length - 1;
-      // the same number of changes as always (photos.length * rounds), but only through the frame's own photos: the last one is the wallpaper
-      const step = Math.floor((progress.n / 100) * photos.length * P.rounds) % last;
-      const idx = progress.n >= 100 ? last : step;
+      const idx = Math.min(w, last);
       if (idx !== shownPhoto) {
         shownPhoto = idx;
         if (idx === last) placeWindow();
@@ -133,7 +133,8 @@ const photos = [kita, candy, draco, cosmo, charlie, chester, hero];
     tl.to(parts, { opacity: 1, y: 0, duration: P.fadeIn, ease: 'power2.out', stagger: P.fadeInStagger }, P.fadeInAt);
     tl.fromTo(brand, { filter: `blur(${P.blur}px)` }, { filter: 'blur(0px)', duration: P.fadeIn, ease: 'power2.out' }, '<');
     // 2. then the count starts
-    tl.to(progress, { n: 100, duration: P.count, ease: 'power1.inOut', onUpdate: draw }, '>-0.2');
+    // an even pace (not eased), so that every word, and its photo, stays on for the same time
+    tl.to(progress, { n: 100, duration: P.count, ease: 'none', onUpdate: draw }, '>-0.2');
     // 3. the words leave upwards one after another and the frame starts opening before they are gone
     tl.addLabel('exit');
     tl.to(texts, { opacity: 0, y: -P.exit.rise, duration: P.exit.dur, stagger: P.exit.stagger, ease: 'power2.in' }, 'exit');

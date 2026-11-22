@@ -2,8 +2,8 @@
 import type { ImageMetadata } from 'astro';
 import Layout from '../layouts/Layout.astro';
 import NavPill from '../components/NavPill.astro';
-import AwardsSpiral from '../components/AwardsSpiral.astro';
-import AwardsList from '../components/AwardsList.astro';
+import LuxuryRosettesSpiral from '../components/LuxuryRosettesSpiral.astro';
+import LuxuryRosettesList from '../components/LuxuryRosettesList.astro';
 import Closing from '../components/Closing.astro';
 import Footer from '../components/Footer.astro';
 import closingPhoto from '../assets/img/story/award3.webp'; // placeholder: swap for the real closing photo
@@ -34,13 +34,13 @@ import { breadcrumb } from '../data/seo';
   schema={[breadcrumb(['Awards', '/awards'])]}
 >
   <NavPill />
-  <AwardsSpiral
+  <LuxuryRosettesSpiral
     top="Champions"
     bottom="by right"
     line="Every title earned in the show ring, kept as a quiet record of the line."
     photos={Array.from({ length: 9 }, (_, i) => pool[(i * 4) % pool.length])}
   />
-  <AwardsList items={awards} />
+  <LuxuryRosettesList items={awards} />
   <!-- the last screen, as on the home page: the photo shrinks as the footer rises -->
   <div class="ending">
     <Closing photo={closingPhoto} eyebrow="The line continues" heading={['Meet the next', 'champion']} cta={{ label: 'Available kittens', href: '/available-kittens' }} />

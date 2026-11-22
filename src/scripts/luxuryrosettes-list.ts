@@ -3,22 +3,22 @@
 // After the Codegrid "PrototypeStudio Scroll Animation".
 // The scroll is smoothed once and everything is drawn from that one number, so counter, photos, names and words always agree.
 // On entering, the photos open from the bottom edge and the text rises out of masks; scrolling back undoes it.
-// initAwardsList(root) returns destroy(). Wide screens with motion only; otherwise the CSS shows a plain list. Markup: AwardsList.astro.
+// initLuxuryRosettesList(root) returns destroy(). Wide screens with motion only; otherwise the CSS shows a plain list. Markup: LuxuryRosettesList.astro.
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
-import { AWARDS_LIST } from './settings';
+import { LUXURY_ROSETTES_LIST } from './settings';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const clamp = gsap.utils.clamp;
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
-export function initAwardsList(root: HTMLElement, o = AWARDS_LIST) {
+export function initLuxuryRosettesList(root: HTMLElement, o = LUXURY_ROSETTES_LIST) {
   const mm = gsap.matchMedia();
 
-  // every width: on a laptop the three columns, on a tablet and a phone the same pinned screen laid out upright (see AwardsList.astro)
+  // every width: on a laptop the three columns, on a tablet and a phone the same pinned screen laid out upright (see LuxuryRosettesList.astro)
   mm.add('(prefers-reduced-motion: no-preference)', () => {
     const pin = root.querySelector<HTMLElement>('.al-pin')!;
     const index = root.querySelector<HTMLElement>('.al-index')!;

@@ -39,15 +39,19 @@ precision highp float;
 uniform sampler2D uMap;
 uniform vec4 uCrop;
 uniform float uOpacity;
+uniform float uLight;  // brightness of the whole sheet (1 = as printed)
+uniform float uBack;   // how much of the print shows on the back (0.2: pale paper; 1: the picture itself, the right way round)
 uniform vec2 uPx;      // size on the screen in pixels (for the rounded corners)
 uniform float uRadius; // px; 0 = square corners
 varying vec2 vUv;
 varying float vTurn;
 
 void main() {
-  vec3 print = texture2D(uMap, uCrop.xy + vUv * uCrop.zw).rgb;
+  vec2 st = vUv;
+  if (!gl_FrontFacing && uBack > 0.99) st.x = 1.0 - st.x;
+  vec3 print = texture2D(uMap, uCrop.xy + st * uCrop.zw).rgb;
   // seen from behind, the sheet is pale paper with the picture only showing through
-  vec3 colour = gl_FrontFacing ? print : mix(vec3(0.94, 0.93, 0.9), print, 0.2);
+  vec3 colour = gl_FrontFacing ? print : mix(vec3(0.94, 0.93, 0.9), print, uBack);
   float facing = abs(cos(vTurn));
   float light = gl_FrontFacing ? mix(0.62, 1.0, facing) : mix(0.88, 1.0, facing); // the back of the paper stays pale, not grey
   float cover = 1.0;
@@ -55,7 +59,7 @@ void main() {
     vec2 q = abs((vUv - 0.5) * uPx) - (uPx * 0.5 - uRadius);
     cover = 1.0 - smoothstep(-0.8, 0.8, length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius);
   }
-  gl_FragColor = vec4(colour * light, uOpacity * cover);
+  gl_FragColor = vec4(colour * light * uLight, uOpacity * cover);
 }
 `;
 
@@ -79,6 +83,10 @@ export interface BendState {
   angle: number;
   curl: number;
   opacity: number;
+  /** Brightness of the picture's paper (default 1): a sheet turned away from the light is darker. */
+  light?: number;
+  /** How much of the print shows on the back of the sheet (default 0.2, pale paper; 1 shows the picture itself). */
+  back?: number;
 }
 
 export interface Sheet {
@@ -124,6 +132,8 @@ function wrap(mesh: THREE.Mesh): Sheet {
       u.uAngle.value = state.angle;
       u.uCurl.value = state.curl;
       u.uOpacity.value = state.opacity;
+      if (u.uLight) u.uLight.value = state.light ?? 1;
+      if (u.uBack) u.uBack.value = state.back ?? 0.2;
     },
     setCrop(crop) {
       (u.uCrop?.value as THREE.Vector4 | undefined)?.set(...crop);
@@ -145,6 +155,8 @@ export function createPictureSheet(texture: THREE.Texture, crop: [number, number
     uCrop: { value: new THREE.Vector4(...crop) },
     uPx: { value: new THREE.Vector2(1, 1) },
     uRadius: { value: 0 },
+    uLight: { value: 1 },
+    uBack: { value: 0.2 },
   });
   return wrap(new THREE.Mesh(strip, material));
 }

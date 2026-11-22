@@ -1,10 +1,10 @@
 ---
 import Photo from './Photo.astro';
 import type { ImageMetadata } from 'astro';
-import { AWARDS_LIST as S } from '../scripts/settings';
+import { LUXURY_ROSETTES_LIST as S } from '../scripts/settings';
 
 /**
- * The list of the awards, one at a time (after the Codegrid "PrototypeStudio Scroll Animation", see scripts/awards-list.ts): a pinned
+ * The list of the awards, one at a time (after the Codegrid "PrototypeStudio Scroll Animation", see scripts/luxuryrosettes-list.ts): a pinned
  * screen where a counter goes down the left side, a column of photos goes up through the middle, the names of the awards roll up on the
  * right and the words of the current award (where, when, the story) are shown in the middle of its photo.
  * When it comes up, everything arrives the way things do on the rest of the site: the photos open from the bottom, the counter, the
@@ -51,18 +51,18 @@ const total = String(items.length).padStart(2, '0');
 
 <script>
   import { mount } from '../scripts/lifecycle';
-  import { initAwardsList } from '../scripts/awards-list';
+  import { initLuxuryRosettesList } from '../scripts/luxuryrosettes-list';
 
   mount(() => {
     const root = document.querySelector<HTMLElement>('.al');
-    return root ? initAwardsList(root) : undefined;
+    return root ? initLuxuryRosettesList(root) : undefined;
   });
 </script>
 
 <style>
   .al {
     position: relative;
-    background: var(--ink-warm); /* the colour of the spiral's stripes (see AwardsSpiral): the list is what is left when they have covered the scene */
+    background: var(--ink-warm); /* the colour of the spiral's stripes (see LuxuryRosettesSpiral): the list is what is left when they have covered the scene */
     color: var(--cream);
   }
 

@@ -103,7 +103,7 @@
       rollLabel(open ? 'Close' : 'Menu');
       panel.toggleAttribute('inert', !open);
       lockScroll(open);
-      // the scenes that follow the scroll hold still while the menu is open (see `nav-menu` in awards-spiral.ts)
+      // the scenes that follow the scroll hold still while the menu is open (see `nav-menu` in luxuryrosettes-spiral.ts)
       document.dispatchEvent(new CustomEvent('nav-menu', { detail: { open, leaving: false } }));
     };
 

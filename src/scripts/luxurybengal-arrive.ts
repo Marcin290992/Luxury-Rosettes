@@ -171,7 +171,10 @@ export async function createFlight(images: HTMLImageElement[], from: Array<DOMRe
         const q = 1 - Math.pow(1 - u, 2.4);
         const away = Math.pow(1 - u, 3);
         // a soft one starts entirely below the screen (even one whose tile is at the very bottom), so it slides in and never appears from nowhere
-        const below = soft ? Math.max(window.innerHeight * 0.22, window.innerHeight - to.top + 30) * (view.height / window.innerHeight) : view.height * RISE;
+        // (a sheet that starts a fixed distance below its place would start in the middle of a phone's screen for a picture that stands high up)
+        // (and the sheet starts deep, where perspective pulls it towards the middle of the screen: that distance is scaled up by the same shrinking)
+        const shrink = (5 + DEPTH * k) / 5; // the layer's camera is 5 units from the plane of the page
+        const below = Math.max(window.innerHeight * (soft ? 0.22 : RISE), window.innerHeight - to.top + 30) * shrink * (view.height / window.innerHeight);
         f.group.position.set(box.x, box.y - below * away, -DEPTH * k * away * (1 - u));
         f.group.rotation.set(0, 0, 0.18 * k * f.hinge * Math.sin(Math.PI * u) * (1 - u));
         state = { hinge: f.hinge, angle: Math.PI * (1 - q) * k, curl: (CURL * k / box.width) * Math.sin(Math.PI * q), opacity: clamp01(u / (soft ? 0.05 : 0.14)) };

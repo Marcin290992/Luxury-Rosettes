@@ -17,7 +17,7 @@ import { transitionDone } from './lifecycle';
 import { disposeLayer } from './luxurybengal-layer';
 import { createSpiral, type Spiral } from './luxurybengal-spiral';
 import { createFlight } from './luxurybengal-arrive';
-import { hopSheet, type Hop, type Rect } from './luxurybengal-hop';
+import { hopSheet, warmSheet, type Hop, type Rect } from './luxurybengal-hop';
 import { WEBGL_ENABLED, SMOOTH_WHEEL, SMOOTH_TOUCH } from './settings';
 
 gsap.registerPlugin(Flip);
@@ -569,7 +569,9 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
       const r = item.getBoundingClientRect();
       return item !== own && r.bottom > 0 && r.top < window.innerHeight && Number(getComputedStyle(item).opacity) > 0.5;
     });
-    dimmed.forEach((item) => gsap.to(item, { opacity: 0, filter: 'blur(10px)', duration: 0.5, delay: delay + spread(item, from), ease: SINE, overwrite: 'auto' }));
+    // (on a touch screen only the fade: a blur on a dozen tiles at once is too heavy for a phone's GPU and made the flight stutter)
+    const blur = finePointer.matches ? 'blur(10px)' : 'blur(0px)';
+    dimmed.forEach((item) => gsap.to(item, { opacity: 0, filter: blur, duration: 0.5, delay: delay + spread(item, from), ease: SINE, overwrite: 'auto' }));
   };
   const undimGrid = (home: HTMLImageElement, delay: number) => {
     const from = home.getBoundingClientRect();
@@ -852,10 +854,17 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
     });
   };
   const linkClicks: Array<() => void> = [];
+  // The finger (or the pointer) is down a moment before the click: that is when the sheet's shader and the picture are put on the GPU, so the flight
+  // that starts with the click does not stutter at its first frame.
+  const linkWarms: Array<() => void> = [];
   items.forEach((item, i) => {
     const link = item.querySelector<HTMLElement>('.lg-link')!;
     linkClicks[i] = () => openPicture(images[i]);
+    linkWarms[i] = () => {
+      if (sheetsOn && interactive && !lightboxOpen) void warmSheet(images[i].currentSrc || images[i].src);
+    };
     link.addEventListener('click', linkClicks[i]);
+    link.addEventListener('pointerdown', linkWarms[i], { passive: true });
   });
   box.addEventListener('click', closePicture);
   // ---- going through the pictures with the wheel, the swipe or the keys: at once, with no animation (the melt is only for a click on a
@@ -1011,7 +1020,10 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
           pagesDone = true;
           changeLevel(2);
           observeItems(); // now the rest may come in, as the pictures glide to their places
-          interactiveTimer = window.setTimeout(() => (interactive = true), 1300); // the glide takes 0.95 s
+          interactiveTimer = window.setTimeout(() => {
+            interactive = true;
+            void warmSheet(images[0].currentSrc || images[0].src);
+          }, 1300); // the glide takes 0.95 s
         };
         if (!sheetsOn) return plain();
         const flying = images.slice(0, 16);
@@ -1039,6 +1051,7 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
                 pagesDone = true;
                 observeItems(); // the rest (below the screen) blurs in as it is scrolled to
                 interactive = true;
+                void warmSheet(images[0].currentSrc || images[0].src); // the shader of the sheets is compiled before the first tap
               },
             });
           },
@@ -1140,7 +1153,11 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
       img.removeEventListener('pointermove', hoverMoves[i]);
       img.removeEventListener('pointerleave', hoverLeaves[i]);
     });
-    items.forEach((item, i) => item.querySelector('.lg-link')?.removeEventListener('click', linkClicks[i]));
+    items.forEach((item, i) => {
+      const link = item.querySelector('.lg-link');
+      link?.removeEventListener('click', linkClicks[i]);
+      link?.removeEventListener('pointerdown', linkWarms[i]);
+    });
     box.removeEventListener('click', closePicture);
     openFlight?.kill();
     openHop?.kill();

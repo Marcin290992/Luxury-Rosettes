@@ -1,12 +1,12 @@
 ---
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
-import { AWARDS_SPIRAL } from '../scripts/settings';
+import { LUXURY_ROSETTES_SPIRAL } from '../scripts/settings';
 
 /**
- * The opening of the awards page (after a three.js "photo vortex"): photos ride a spiral ribbon up the screen while two huge words
- * slide in from the sides around a small line, then six of them fly into a grid, and stripes rise to cover the scene (the list of
- * the awards comes after it). It is a tall track with a sticky screen, scrubbed by the scroll (see scripts/awards-spiral.ts).
+ * The opening of the Luxury Rosettes page of the champions: photos, as sheets of paper, climb and turn on a spiral round a cylinder while two huge
+ * words slide in from the sides around a small line, then six of them arrive in a grid, and stripes rise to cover the scene (the list of the
+ * awards comes after it). It is a tall track with a sticky screen, scrubbed by the scroll (see scripts/luxuryrosettes-spiral.ts).
  * Without WebGL (or with reduced motion) it is the two words, the line and a plain grid of the photos.
  */
 interface Props {
@@ -17,12 +17,12 @@ interface Props {
 }
 const { top, bottom, line, photos } = Astro.props;
 const urls = (await Promise.all(photos.map((p) => getImage({ src: p, width: 1200, format: 'webp' })))).map((i) => i.src);
-const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
+const grid = LUXURY_ROSETTES_SPIRAL.grid.map((n) => urls[n % urls.length]);
 ---
 
 <!-- Until the scene is built (or the script has decided not to build one), the words and the plain grid are hidden: the page would
      otherwise show them unstyled for a moment (in the fallback font, stacked) and then jump. The scene's script lifts `sp-pending` as soon
-     as it has built the scene and the fonts are in (awards-spiral.ts); the lifts here are the page's own end (a full load: DOMContentLoaded;
+     as it has built the scene and the fonts are in (luxuryrosettes-spiral.ts); the lifts here are the page's own end (a full load: DOMContentLoaded;
      a click through: astro:page-load) and a safety timeout, so the words can never stay hidden. -->
 <script is:inline>
   try {
@@ -47,7 +47,7 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
     </div>
     <canvas class="sp-canvas" aria-hidden="true"></canvas>
     <div class="sp-stripes" aria-hidden="true">
-      {Array.from({ length: AWARDS_SPIRAL.stripes }, () => <div></div>)}
+      {Array.from({ length: LUXURY_ROSETTES_SPIRAL.stripes }, () => <div></div>)}
     </div>
   </div>
 </section>
@@ -56,7 +56,7 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
   import { mountLazy } from '../scripts/lifecycle';
 
   // three.js comes as a separate file, fetched when this page runs
-  mountLazy(async () => (await import('../scripts/awards-spiral')).initAwardsSpiral, '.sp');
+  mountLazy(async () => (await import('../scripts/luxuryrosettes-spiral')).initLuxuryRosettesSpiral, '.sp');
 </script>
 
 <style is:global>
@@ -133,7 +133,7 @@ const grid = AWARDS_SPIRAL.grid.map((n) => urls[n % urls.length]);
   .sp[data-live] .sp-words {
     position: absolute;
     inset: 0;
-    z-index: 0;
+    z-index: 2; /* over the cards: the words stay readable as the photos pass behind them */
     display: flex;
     flex-direction: column;
     justify-content: center;

@@ -110,3 +110,52 @@ export async function hopSheet(src: string, radius: number, o: HopOptions): Prom
 
   return { kill: cleanup, active: () => alive && !landedAt, rect: () => current };
 }
+
+// ---- warming up: the first sheet of a page costs a shader to compile and a picture to upload to the GPU, and that must not happen in the frame where
+// a flight starts (on a phone it showed as a stutter). `warmSheet` draws a sheet that cannot be seen (fully transparent) for a moment, so the shader is
+// compiled and the picture is on the GPU before it is needed; a sheet that is kept alive holds the compiled shader for the life of the layer. ----
+
+let keeper: { layer: ReturnType<typeof getLayer>; group: THREE.Group } | undefined;
+
+export async function warmSheet(src: string): Promise<void> {
+  try {
+    const layer = getLayer('top', 900);
+    const tex = await loadTexture(src);
+    const make = () => {
+      const sheet = createPictureSheet(tex, [0, 0, 1, 1]);
+      const shadow = createShadowSheet();
+      sheet.apply({ hinge: -1, angle: 0, curl: 0, opacity: 0 });
+      shadow.apply({ hinge: -1, angle: 0, curl: 0, opacity: 0 });
+      sheet.mesh.frustumCulled = false;
+      shadow.mesh.frustumCulled = false;
+      const group = new THREE.Group();
+      group.add(shadow.mesh, sheet.mesh);
+      layer.scene.add(group);
+      return { group, sheet, shadow };
+    };
+    if (!keeper || keeper.layer !== layer) {
+      // the kept sheet stays in the scene (hidden after its first frame) so the compiled shader is never let go
+      const k = make();
+      keeper = { layer, group: k.group };
+      let frames = 0;
+      const stop = layer.every(() => {
+        if (++frames >= 2) {
+          k.group.visible = false;
+          stop();
+        }
+      });
+      return;
+    }
+    const w = make();
+    let frames = 0;
+    const stop = layer.every(() => {
+      if (++frames < 2) return;
+      stop();
+      layer.scene.remove(w.group);
+      w.sheet.dispose();
+      w.shadow.dispose();
+    });
+  } catch {
+    /* it is only a head start */
+  }
+}

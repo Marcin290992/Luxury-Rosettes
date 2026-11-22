@@ -1,7 +1,7 @@
 // Every tunable number of the scroll sequences, in one place. Times are in timeline seconds (one unit of a
 // scrubbed timeline is "one beat" of scrolling), distances in px / vw / screens as named.
 
-// TEMPORARY: false = the WebGL scenes (awards spiral) are off and their plain fallbacks show. Used to test whether
+// TEMPORARY: false = the WebGL scenes (Luxury Rosettes spiral) are off and their plain fallbacks show. Used to test whether
 // WebGL causes the flicker at the start of the page transition on iPhone. Set back to true to turn them on.
 export const WEBGL_ENABLED = true;
 
@@ -350,7 +350,7 @@ export const SHRINK_INTRO = {
 
 // ---- awards list (the awards as a spotlight: the counter goes down, the photos go up, the names roll, the words of the front one change) ---
 // After the Codegrid "PrototypeStudio Scroll Animation". The pinned part is `length` screens long.
-export const AWARDS_LIST = {
+export const LUXURY_ROSETTES_LIST = {
   length: 5, // screens of scrolling the whole list takes
   dim: 0.35, // opacity of a photo that is not the one at the middle of the screen
   detailFade: 2.2, // how fast the words of an award fade as the list moves on from it (higher = faster)
@@ -375,9 +375,9 @@ export const FAQ_CHAT = {
 // ---- nav pill ---------------------------------------------------------------------------------------------------------
 export const NAV_SCROLLED_AT = 40; // px of scrolling after which the glass gets stronger
 
-// ---- awards spiral (the intro of the awards page: photos ride a spiral ribbon, then fly into a grid, then stripes cover the screen) ----
-export const AWARDS_SPIRAL = {
-  spinScreens: 5, // screens of scrolling the spiral takes
+// ---- Luxury Rosettes spiral (the intro of the awards page: photos ride a spiral ribbon, then fly into a grid, then stripes cover the screen) ----
+export const LUXURY_ROSETTES_SPIRAL = {
+  spinScreens: 7, // screens of scrolling the opening takes (the photos fall, the spiral rises and leaves, then the grid is laid)
   exitScreens: 1.5, // screens the stripes take to cover the scene
   hover: 1.12, // how much a photo grows under the mouse
   grid: [0, 1, 4, 2, 7, 6], // which of the photos (counted from 0) land in the grid at the end

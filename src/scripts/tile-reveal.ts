@@ -1,12 +1,7 @@
-// Tile reveal: photo tiles fly into a grid, the grid zooms past the camera, the tiles step aside and the headline with its
-// text is left on the empty stage.
-//
-// Adapted from React Bits' TileReveal to Vanilla TS for this site (see docs/SCRIPTING.md, section 3):
-//  - no React: initTileReveal(root, options) is `init` and returns destroy(),
-//  - the scroll is read by ScrollTrigger (so it agrees with Lenis and the other pins); a tiny tween smooths it,
-//  - everything is looked up inside `root`; every trigger and observer is released in destroy().
-//
-// Expected markup (see TileReveal.astro): root > .tr-stage (sticky) > .tr-content (> .tr-headline, .tr-reveal) + .tr-frame > .tr-grid > .tr-tile.
+// Tile reveal: photo tiles fly into a grid, the grid zooms past the camera, the tiles step aside and the headline with its text is left on
+// the empty stage. After React Bits' TileReveal.
+// The scroll is read by ScrollTrigger (so it agrees with Lenis and the other pins) and smoothed by a tiny tween.
+// initTileReveal(root, options) returns destroy(). Markup: TileReveal.astro (root > .tr-stage > .tr-content + .tr-frame > .tr-grid > .tr-tile).
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';

@@ -1,15 +1,8 @@
-// The intro's spiral of papers. 21 bendable sheets (planes of 20 x 20 segments) travel along a widening spiral from deep in the scene towards the
-// camera, each one starting 0.2 s after the one before. Each sheet:
-//  - is curled at first (bend 2 -> 0) and straightens out,
-//  - is turned over like a page (flip 1 -> 0), the turn sweeping across it from left to right,
-//  - spins around its own centre as it goes round (the angle follows its place on the spiral),
-//  - fades in, and out again at about 5 s,
-//  - has a soft shadow under it (a larger plane behind it, bent and turned by the same numbers).
-// At 3 s the whole spiral is pushed towards the viewer (cameraZ 0 -> 1). The motion and the times are the original's; what this site adds is the
-// start from below the screen's bottom edge (nothing appears in mid-air), the shadow, and the last two sheets: they show the two
-// gallery covers, they are not faded out, and landOn() brings them to the places where the chooser's covers are, straightening and growing to
-// the covers' size, so that they ARE the covers.
-// A rewrite for this site of the idea of such an intro (three.js + GSAP, no React).
+// The intro's spiral of papers: 21 bendable sheets (planes of 20 x 20 segments) travel along a widening spiral from deep in the scene
+// towards the camera, each starting 0.2 s after the one before. A sheet starts curled (bend 2 -> 0), turns over like a page (flip 1 -> 0),
+// spins as it goes round, fades in and out again at about 5 s, and has a soft shadow (a larger plane behind it).
+// At 3 s the whole spiral is pushed towards the viewer (cameraZ 0 -> 1). Added here: the start below the bottom edge of the screen, the
+// shadow, and the last two sheets, which show the two gallery covers: landOn() brings them to the chooser's covers, so they ARE the covers.
 
 import * as THREE from 'three';
 import gsap from 'gsap';

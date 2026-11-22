@@ -1,14 +1,9 @@
-// A "Lumen" gallery page (markup and the description of the two phases: LumenGallery.astro).
-//
-// HERO: the hero opens at the full screen height and settles to 75 % after 0.9 s. A "scroll" (wheel, swipe or key; the page itself never scrolls:
-//   the gestures are caught and turned into a number) moves `heroLerp`, which eases 6 % of the way to its target each frame. That number
-//   pulls the grid layer up over the hero (the grid's top edge is the hero's bottom edge), shrinks the wordmark to 60 %, blurs it to 8 px and
-//   fades it. Past halfway the page finishes the move by itself; at 80 % the header comes in and the grid leaves its "intro" layout for zoom
-//   level 2 (the pictures glide to their new places with GSAP Flip).
-// GRID: the hero is gone. The grid moves inside a box by transform (`vlerp`: a wheel turn glides, a finger follows at once and a flick carries on);
-//   the faster it moves the more the whole grid shrinks (to 96 %), springing back when it stops. On a desktop a mouse over a photo lifts it like
-//   paper (lumen-paper.ts). A click opens the photo large: it grows from its place in the grid to the middle of the screen (FLIP: measure First and
-//   Last, Invert with a transform, Play), with a strip of the other pictures to choose from.
+// A "Lumen" gallery page (markup and phases: LumenGallery.astro).
+// Hero: opens full height and settles to 75 % after 0.9 s. Wheel, swipe or key gestures are caught (the page itself never scrolls) and turned
+// into a number, `heroLerp`, which eases towards its target. It pulls the grid up over the hero, shrinks and blurs the wordmark and fades it;
+// past halfway the page finishes the move alone, and at 80 % the header appears and the grid switches to zoom level 2 (GSAP Flip).
+// Grid: moves inside a box by transform (`vlerp`); the faster it moves the more the whole grid shrinks (to 96 %), springing back at rest.
+// A mouse over a photo lifts it like paper (lumen-paper.ts). A click opens the photo large with a FLIP from its place, plus a strip to choose from.
 // initLumenGallery(root) returns destroy().
 
 import gsap from 'gsap';
@@ -340,11 +335,11 @@ export function initLumenGallery(root: HTMLElement): () => void {
     if (window.innerWidth < 1024) strip.scrollTo({ left: t.offsetLeft - strip.clientWidth / 2 + t.clientWidth / 2, behavior });
     else strip.scrollTo({ top: t.offsetTop - strip.clientHeight / 2 + t.clientHeight / 2, behavior });
   };
-  // another picture (from the strip, the keys or the wheel): the opened one is a page of a book that turns over and the next is under it. The page is
-  // made over the picture first (flat, exactly over it) and only then the picture under it is changed, so there is no frame without a picture.
-  // (The grid moves behind the box so that the one the box will fly back to on closing is on the screen.)
-  // The picture in the box melts into another one (no cut): the one that was there stays on the second image and fades while the asked one comes in over
-  // it, in its place. Used when a turn is given up for a later request, and when the box is closed on the way to another picture.
+  // Another picture (from the strip, keys or wheel): the open one turns like a page of a book and the next is under it. The page is made flat
+  // over the picture first and only then the picture under it is changed, so there is never a frame without a picture.
+  // (The grid moves behind the box so the one the box flies back to on closing is on screen.)
+  // The picture melts into another without a cut: the old one stays on the second image and fades while the new one comes in over it. Used when
+  // a turn is given up for a later request, and when the box is closed on the way to another picture.
   const crossfadeTo = (asked: HTMLImageElement) => {
     ghost.src = boxImg.currentSrc || boxImg.src;
     Object.assign(ghost.style, { left: boxImg.style.left, top: boxImg.style.top, width: boxImg.style.width, height: boxImg.style.height });

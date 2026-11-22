@@ -1,11 +1,7 @@
-// About hero: a statement whose letters rise out of their masks, then photos arrive around it one by one in a random order (some sharp, some
-// faint like a memory), drift up at their own speeds while the page scrolls, and lean a little towards the pointer.
-// The idea is the "collage" of a page whose animations were studied for this (scattered pictures, random order, drift by size, pointer follow);
-// written new for this site in GSAP + Vanilla TS, with the house curve (scripts/house-ease.ts).
-//  - initAboutHero(root) is `init` and returns destroy(); everything is looked up inside `root`,
-//  - reduced motion: the CSS shows everything in place, nothing moves.
-//
-// Expected markup (see AboutHero.astro): root > .ah-copy > (.ah-eyebrow, .ah-title), .ah-slot[data-reveal][data-opacity][data-scale] > .ah-drift > .ah-mouse[data-mouse] > .ah-pic.
+// About hero: a statement whose letters rise out of their masks, then photos arrive around it in random order (some sharp, some faint),
+// drift at their own speeds while the page scrolls and lean towards the pointer. Uses the house curve (house-ease.ts).
+// initAboutHero(root) returns destroy(). With reduced motion the CSS shows everything in place.
+// Markup: AboutHero.astro (root > .ah-copy, .ah-slot[data-reveal][data-opacity][data-scale] > .ah-drift > .ah-mouse[data-mouse] > .ah-pic).
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';

@@ -1,14 +1,7 @@
-// Awards spiral: photos ride a spiral ribbon up the screen (three.js) while two huge words slide in from the sides around a small line;
-// then six of the photos fly into a grid, a line is drawn between the rows and stripes rise to cover the scene.
-//
-// Adapted from a "photo vortex" demo to Vanilla TS for this site (see docs/SCRIPTING.md, section 3):
-//  - initAwardsSpiral(root) is `init` and returns destroy(); everything is looked up inside `root`,
-//  - the scene is a CSS sticky screen in a tall track, ScrollTrigger gives the scroll position (0..1) and it is smoothed here,
-//  - the photos are cropped to cover (a photo of any shape fills the ribbon and the cards), the words are the page's own,
-//  - the numbers are in settings.ts (AWARDS_SPIRAL); the ones of the shape of the spiral are below.
-//
-// Expected markup (see AwardsSpiral.astro): root(data-photos="url|url|...") > .sp-scene > .sp-words (.sp-top, .sp-line, .sp-bottom),
-// canvas.sp-canvas, .sp-stripes > div x n.
+// Awards spiral: photos ride a spiral ribbon up the screen (three.js) while two huge words slide in from the sides; then six photos fly
+// into a grid, a line is drawn between the rows and stripes rise to cover the scene. After a "photo vortex" demo.
+// A sticky screen in a tall track; ScrollTrigger gives the progress (0..1), which is smoothed here. Photos are cropped to cover.
+// Numbers are in settings.ts (AWARDS_SPIRAL); the spiral's shape is below. initAwardsSpiral(root) returns destroy(). Markup: AwardsSpiral.astro.
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -551,15 +544,12 @@ export function initAwardsSpiral(root: HTMLElement, o = AWARDS_SPIRAL) {
     };
     gsap.ticker.add(draw);
 
-    // When a page transition starts while the scene is on the screen, the live WebGL canvas is swapped for a still picture of its last
-    // frame: a WebGL canvas inside the transition's snapshot is composited on its own (on phones it came out with another height than the
-    // rest of the page, and on iOS it blinked), while a plain image is part of the page like everything else. Only the picture is lost:
-    // the page is leaving. The order matters (this was the iOS blink):
-    //  1. all of it in the same task as the event, because the router reads `loader` right after it and the buffer still holds the frame;
-    //  2. the picture goes OVER the canvas, and the canvas is hidden only once the picture is decoded, so no frame has neither;
-    //  3. one more frame, so that this is painted before the browser takes the picture of the old page;
-    //  4. the scene stops drawing from the moment of the picture. The picture lies over the live canvas for a few frames, and a scene that
-    //     went on easing towards the scroll position showed under it as a second, slightly shifted copy of the photos.
+    // When a page transition starts while the scene is on screen, the live WebGL canvas is replaced by a still image of its last frame:
+    // a canvas inside the transition's snapshot is composited on its own (wrong height on phones, a blink on iOS). The order matters:
+    //  1. all in the same task as the event, while the buffer still holds the frame;
+    //  2. the image goes over the canvas, and the canvas is hidden only once the image is decoded;
+    //  3. wait one more frame so it is painted before the old page is captured;
+    //  4. stop drawing from then on, or the scene keeps easing and shows under the image as a shifted copy.
     let still: HTMLImageElement | undefined;
     let unfreeze = 0;
     const thaw = () => {

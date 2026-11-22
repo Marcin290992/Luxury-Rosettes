@@ -30,8 +30,8 @@ export const SMOOTH_TOUCH = { syncTouch: true, syncTouchLerp: 0.15, touchMultipl
 export const PX_PER_SEC = 520; // higher = the whole sequence is spread over more scrolling (slower)
 export const ZOOM = 2.4; // zoom into the eye
 export const WASH = 1.7; // cream wash starts (ends with the zoom)
-export const INTRO = ZOOM + 0.25; // photos + text enter only once the screen is fully cream — never over the eye, in either direction
-export const FIRST_STEP = 4.2; // when step 01 → 02 starts
+export const INTRO = ZOOM + 0.25; // photos + text enter only once the screen is fully cream, never over the eye, in either direction
+export const FIRST_STEP = 4.2; // when step 01 > 02 starts
 export const STEP_GAP = 2.4; // distance between transitions
 export const STEP_DUR = 1.6;
 export const HOLD_END = 9; // step 03 stays until here; the last screen of the pin is the next section covering it
@@ -347,44 +347,6 @@ export const SHRINK_INTRO = {
   ],
 };
 
-// ---- award orbit (the awards on a ring that turns; the front one is shown big in the middle with its words under it) -----------
-// After the Codegrid "3D Orbit Slider". The sizes are for a screen 900px high and are scaled with the height of the real one.
-export const AWARD_ORBIT = {
-  radius: 400, // px, of the ring
-  panel: { width: 100, height: 125 }, // px, of a photo on the ring
-  preview: { width: 250, height: 325 }, // px, of the big one in the middle
-  perspective: 2000, // px
-  centre: 44, // % of the screen height at which the middle of the ring is (the words go under it)
-  maxTilt: 14, // degrees the whole scene leans towards the pointer
-  tiltSmoothing: 0.05,
-  smoothing: 0.06, // how much of the way to the target the ring covers each frame (lower = softer, heavier)
-  wheelSensitivity: 0.005, // photos per unit of wheel (100 = half a photo, which already counts as one: a notch is a photo)
-  touchSensitivity: 0.0075, // photos per px of a swipe
-  maxWheelDelta: 200, // a single wheel event counts for no more than this
-  snapDelay: 250, // ms without input after which the ring settles on a photo
-  swapThreshold: 0.5, // how far past a photo (0..1) the ring has to be turned to go on to the next one, not back
-  textFade: 2.2, // how fast the words of a photo fade as the ring turns away from it (higher = faster)
-  exit: 0.6, // screens of scrolling left after the last award (and before the first) before the page moves on
-  intro: {
-    // the photos come in one behind the other along a ribbon that sweeps through the screen (after the trionn.com "Design in motion"),
-    // big and tilted, and as they reach the end of it they draw together into the ring and shrink to its size
-    duration: 3.8, // s, the whole of it
-    spread: 0.05, // share of that time between one photo's start and the next one's
-    ease: 'power2.inOut', // of a photo along the ribbon
-    startAt: 'top 40%', // when the section is this far up the screen the photos come in
-    ribbon: {
-      x: 1000, // px: the ribbon runs from this far right of the middle to this far left
-      y: 380, // px: from this far below the middle to this far above it
-      bow: 170, // px: how far the ribbon swings out of that straight line
-      z: 520, // px: how far it comes towards you in the middle of its run
-      zBase: -200, // px: where it is at its ends (negative = far)
-      tilt: 35, // degrees the photos are turned along the ribbon
-      roll: 14, // degrees they lean
-      lift: 1.5, // how much bigger than on the ring they are on the ribbon (1.5 = 2.5 times)
-    },
-    gather: [0.6, 1], // the part of a photo's run in which it leaves the ribbon and closes into the ring
-  },
-};
 
 // ---- awards list (the awards as a spotlight: the counter goes down, the photos go up, the names roll, the words of the front one change) ---
 // After the Codegrid "PrototypeStudio Scroll Animation". The pinned part is `length` screens long.
@@ -494,23 +456,4 @@ export const ABOUT_HERO = {
   mouse: 14, // px a photo leans towards the pointer (times its own weight)
 } as const;
 
-// ---- gallery dome (an endless wall of photos seen through a lens; drag to move; plain WebGL2, scripts/gallery-dome.ts) ----
-// After the "Inverted Dome" component (React + three.js), rewritten without libraries. Sizes follow the room, so a phone gets the same picture.
-export const GALLERY_DOME = {
-  tileShare: 0.27, // width of a photo, as a share of the shorter side of the section
-  tileMin: 110, // px: but never smaller / bigger than this
-  tileMax: 230,
-  aspect: 0.8, // width / height of a photo
-  gap: 0.12, // between photos, as a share of a photo's width
-  radius: 14, // px of the rounded corners
-  curve: 0.4, // how strongly the wall bends away at the edges
-  curveRadius: 1.5, // how wide the lens is (higher = flatter)
-  zoom: 0.35, // base scale of the lens
-  vignette: 0, // how far the edges fade into the page colour (0 = not at all)
-  drift: { x: 9, y: 14 }, // px per second the wall slides by itself (0 = still)
-  friction: 3, // how fast a flick dies down (per second)
-  wheel: 0.5, // a sideways wheel / trackpad swipe; the vertical wheel is left to the page
-  segments: 14, // the lens is calculated on a grid this fine, per photo
-  dpr: 2, // top device pixel ratio
-} as const;
 

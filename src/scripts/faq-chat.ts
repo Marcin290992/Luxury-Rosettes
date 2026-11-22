@@ -1,10 +1,7 @@
-// FAQ chat: every question and answer is a bubble. It appears as a small dot with typing dots, and as it scrolls up the
-// screen it opens into the full message. Scrubbing back up closes it again.
-//
-// Adapted from a Codegrid demo to Vanilla TS for this site (see docs/SCRIPTING.md, section 3):
-//  - initFaqChat(root) is `init` and returns destroy(); everything is looked up inside `root`,
-//  - the smooth scroll is the site's own Lenis (scripts/lenis.ts), not a second one,
-//  - the bubbles are measured at their full size, so they are built again when the width of the list changes.
+// FAQ chat: each question and answer is a bubble that starts as a small dot with typing dots and opens into the full message as it scrolls
+// up the screen (scrolling back closes it). After a Codegrid demo.
+// Uses the site's own Lenis. Bubbles are measured at full size, so they are rebuilt when the list's width changes.
+// initFaqChat(root) returns destroy().
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';

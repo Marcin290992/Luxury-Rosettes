@@ -1,46 +1,45 @@
-# Astro Starter Kit: Basics
+# Luxury Rosettes
 
-```sh
-npm create astro@latest -- --template basics
-```
+Website of Luxury Rosettes, a TICA Bengal cattery in High Wycombe, UK.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Built with [Astro](https://astro.build) (static output), GSAP and Lenis for the motion, and a little WebGL (three.js).
+The kittens on the Available kittens page are managed in [Sanity](https://www.sanity.io); everything else is in the code.
 
-## 🚀 Project Structure
+## Commands
 
-Inside of your Astro project, you'll see the following folders and files:
+| Command | Action |
+| :-- | :-- |
+| `npm install` | Install dependencies |
+| `npm run dev` | Dev server at `localhost:4321` |
+| `npm run build` | Build the site into `dist/` |
+| `npm run preview` | Preview the build locally |
+| `npm run check` | Type-check the project |
+
+The Sanity Studio is a separate project in `studio/`: run the commands above from that folder
+(`npm run dev` for `localhost:3333`, `npm run deploy` to publish it to `*.sanity.studio`).
+
+## Structure
 
 ```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+src/
+  pages/        one file per page (index, about, our-cats, available-kittens, awards, gallery/)
+  components/   sections and widgets, one .astro file each
+  scripts/      animation and behaviour (GSAP, Lenis, WebGL); settings.ts holds the timings and sizes
+  data/         content the pages read (kittens, galleries, FAQ, SEO data)
+  lib/          Sanity client
+  layouts/      the shared page shell
+  styles/       styles shared by several components
+studio/         Sanity Studio (schema and configuration)
+docs/           working notes
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Sanity
 
-## 🧞 Commands
+Copy `.env.example` to `.env` and set `SANITY_PROJECT_ID` and `SANITY_DATASET`. Without them the site builds with
+sample kittens. The site reads the content when it is built, so a deploy has to follow every publish in the Studio
+(a Netlify build hook called from a Sanity webhook does this). Steps still open before launch are in
+`docs/sanity-premiere-steps.md`.
 
-All commands are run from the root of the project, from a terminal:
+## Deploy
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Netlify builds `npm run build` and publishes `dist/` (see `netlify.toml`). Node 22 or newer is required.

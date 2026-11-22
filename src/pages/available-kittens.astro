@@ -23,7 +23,7 @@ const ring = [
   { name: 'Chester', line: 'Male, brown rosetted', image: chester },
   { name: 'Cosmo', line: 'Male, silver', image: cosmo },
 ];
-const kittens = (await getKittens()).filter((k) => k.status !== 'sold' && k.photo);
+const kittens = (await getKittens()).filter((k) => k.photo);
 import { breadcrumb } from '../data/seo';
 ---
 

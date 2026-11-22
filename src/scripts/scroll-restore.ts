@@ -1,14 +1,9 @@
-// Going back returns the reader to the SECTION they left (and the place inside it), not to a pixel position.
-//
-// Why not the pixels: the router restores the scroll position right after it swaps the pages - while the page is still short: its pinned
-// sections (their spacers) are only built afterwards by the components' setup. ScrollTrigger then re-measures the page, which has become much
-// longer, and moves the scroll to the same PROPORTIONAL place (on the home page a position of 4200 became 9324, 6500 became 16620). So the
-// saved pixels are useless. What survives the page being built is "which section, and how far through it": on leaving, the section at the top
-// of the screen is saved with the fraction of it that has been scrolled past; on coming back the same section is looked up once the page has
-// been built and the scroll is put at the same fraction of it. The scroll is put there again and again until the page has settled (the
-// sections change size while the pins and the pictures arrive), and it stops the moment the reader touches the page.
-//
-// Going to a page any other way (a link, the menu) still opens it at its top (the hero). A link to an #anchor keeps the browser's own behaviour.
+// Going back returns the reader to the section they left (and the place inside it), not to a pixel position.
+// Pixels cannot be restored: the router restores the scroll while the page is still short (the pin spacers are built afterwards), and
+// ScrollTrigger then re-measures and moves the scroll to the same proportional place (4200 became 9324 on the home page).
+// So on leaving, the section at the top of the screen is saved with the fraction of it already scrolled past; on coming back it is looked
+// up once the page is built and the scroll is set again and again until the page has settled. Touching the page stops it.
+// Any other way into a page (a link, the menu) opens it at its top. A link to an #anchor keeps the browser's behaviour.
 
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { getLenis } from './lenis';

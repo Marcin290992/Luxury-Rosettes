@@ -1,16 +1,10 @@
-// Spin shutter: photos on a tilted ring in 3D that turns slowly, with a depth of field (the card in focus is sharp, the ones away from it
-// are soft and fade into the background). Hover or click a card and the ring brings it forward; drag turns the ring; arrow keys step.
-//
-// Adapted from the React Bits "Spin Shutter" (React + three.js) to Vanilla TS with NO libraries: plain WebGL2, one instanced draw call
-// for all the cards (a rounded rectangle each, drawn by a fragment shader that also does the blur, the haze and the shadow).
-//  - the photos are read from the markup (see SpinShutter.astro): the <img> elements are uploaded straight into one texture array, no
-//    second download; without WebGL2 (or the script) the same markup is a plain grid of photos with their names,
-//  - the sizes live in settings.ts (SPIN_SHUTTER); the wheel is off by default so the page keeps scrolling over the ring,
-//  - initSpinShutter(root) is `init` and returns destroy(); everything is looked up inside `root`; it only draws while on screen;
-//    with reduced motion the ring stands still, no intro, no fades.
-//
-// Expected markup: root > .ss-stage (the canvas goes in), ul.ss-items > li[data-href] > (img, .ss-title, .ss-sub),
-// .ss-caption > (.ss-caption-title, .ss-caption-sub), .ss-live. The centre of the ring is published as --ss-cx / --ss-cy on root.
+// Spin shutter: photos on a tilted 3D ring that turns slowly, with depth of field (the card in focus is sharp, the others soft and fading).
+// Hover or click brings a card forward, dragging turns the ring, arrow keys step. After the React Bits "Spin Shutter", rewritten in plain
+// WebGL2: one instanced draw call for all the cards (a fragment shader draws each rounded rectangle, the blur, the haze and the shadow).
+// The photos come from the markup (SpinShutter.astro): the <img> elements go straight into one texture array. Without WebGL2 the same
+// markup is a plain grid. Sizes: SPIN_SHUTTER in settings.ts; the wheel is off by default so the page keeps scrolling over the ring.
+// initSpinShutter(root) returns destroy(); it only draws while on screen. Reduced motion: the ring stands still.
+// Markup: root > .ss-stage, ul.ss-items > li[data-href] > (img, .ss-title, .ss-sub), .ss-caption, .ss-live. The ring's centre is published as --ss-cx / --ss-cy.
 
 import { SPIN_SHUTTER } from './settings';
 

@@ -1,8 +1,7 @@
-// "Paper" hover (a mouse only, not touch). While the mouse is over a gallery photo, a WebGL copy of it (a plane of 60 x 60 segments) is laid over the
-// <img>. Its vertex shader lifts the paper towards the viewer around the mouse: the faster the mouse moves, the stronger the bulge, with a soft
-// ripple ring travelling outwards. The pointer position itself is smoothed (it eases 5 % of the way each frame), so the bulge trails a little
-// behind the cursor, like cloth. A very faint diagonal sheen crosses the paper every 10 seconds.
-// initPaperHover(images) returns { enter, move, leave, destroy }; the gallery wires them to its photos' pointer events.
+// "Paper" hover (mouse only). While the mouse is over a gallery photo, a WebGL copy of it (a plane of 60 x 60 segments) is laid over the <img>.
+// The vertex shader lifts the paper towards the viewer around the mouse: the faster the mouse moves, the stronger the bulge, with a soft ripple
+// ring going outwards. The pointer is smoothed (5 % per frame), so the bulge trails the cursor like cloth; a faint sheen crosses every 10 s.
+// initPaperHover(images) returns { enter, move, leave, destroy }, wired to the photos' pointer events by the gallery.
 
 import * as THREE from 'three';
 import { getLayer, disposeLayer, loadTexture } from './lumen-layer';

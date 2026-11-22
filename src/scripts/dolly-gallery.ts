@@ -1,8 +1,6 @@
-// Dolly gallery in plain TypeScript, no dependencies.
-// Ported from the React component: tiles sit on a line of depth, the "camera" moves along it, tiles scale with
-// perspective, fade in ahead and out behind. The camera offset is eased towards a target, and the speed adds a
-// little sway, pulse and tilt. Drive the target with setTarget() (e.g. from scroll), or enable `interactive`
-// for wheel / drag / keyboard.
+// Dolly gallery, no dependencies (a port of a React component): tiles sit on a line of depth and the "camera" moves along it; tiles scale
+// with perspective and fade in ahead and out behind. The camera offset eases towards a target (setTarget(), e.g. from scroll, or
+// `interactive` for wheel, drag and keys).
 
 import { clamp } from './math';
 

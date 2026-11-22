@@ -5,9 +5,9 @@ import Story from './Story.astro';
 
 <!--
   Desktop: hero + story share one pinned stage. A SINGLE scroll-scrubbed timeline drives everything
-  (zoom into the eye → cream wash → photos/text enter → steps 01-03 → fade out), so scroll position is
+  (zoom into the eye > cream wash > photos/text enter > steps 01-03 > fade out), so scroll position is
   the only state: wheel, scrollbar, keys and touch all behave the same, and going back is the exact reverse.
-  Mobile / reduced motion: no pin — plain hero followed by the stacked story.
+  Mobile / reduced motion: no pin, plain hero followed by the stacked story.
 -->
 <div id="stage">
   <Hero />
@@ -58,7 +58,7 @@ import Story from './Story.astro';
     opacity: 0;
     pointer-events: none;
   }
-  /* explicit layer order: hero (its own stacking context, so the cream wash can't climb above the story) → story → dim */
+  /* explicit layer order: hero (its own stacking context, so the cream wash can't climb above the story) > story > dim */
   #stage[data-stage] :global(.hero) {
     position: absolute;
     inset: 0;

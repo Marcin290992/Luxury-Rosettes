@@ -1,9 +1,7 @@
 // A transparent three.js canvas laid over the page (pointer-events: none), shared by the "Lumen" pieces: the intro's spiral of papers, the
-// turning covers of the gallery chooser and the paper that lifts under the pointer on a gallery photo. Each piece adds its objects to a named
-// layer and gives them back when it is done; a layer with nothing in it does not draw, and disposeLayer() takes the whole canvas away
-// (called from each piece's destroy, so a page swap leaves nothing behind).
-//
-// The camera stands 5 units in front of the z = 0 plane with a 75° field of view, so rectToWorld() can lay a plane exactly over any DOM rectangle.
+// gallery chooser's turning covers and the paper that lifts under the pointer. Each piece adds its objects to a named layer and gives them
+// back when done; an empty layer does not draw, and disposeLayer() removes the canvas (called from each piece's destroy).
+// The camera is 5 units in front of the z = 0 plane with a 75-degree field of view, so rectToWorld() can lay a plane exactly over any DOM rectangle.
 
 import * as THREE from 'three';
 

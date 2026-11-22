@@ -33,3 +33,15 @@ src/intro awwards/
 src/intro luxury/
 src/story awwards/
 src/white desert animation/
+
+# tooling and notes that live on this machine only
+.agents/
+.claude/
+AGENTS.md
+skills-lock.json
+
+# demo sites kept next to the project for reference
+71three-com/
+era-residence-com/
+hollywoodexhibit2026-com/
+white-desert-com-3/

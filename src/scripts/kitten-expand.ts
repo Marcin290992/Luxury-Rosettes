@@ -1,9 +1,8 @@
-// The kitten photos are cut to the spots of the home page (scripts/spots.ts, an SVG clipPath each) and open like the photo of the second section
-// of the home page (ScrollExpand): the spot starts small in the middle of the frame (the picture zoomed in) and grows to its full size as the
-// photo comes up the screen. The spot is scaled through the `transform` of the path inside its clipPath (the frame's `data-clip` names it).
-//
-// initKittenExpand(frames) is `init` and returns destroy(). The CSS holds each frame in a small, static copy of its spot until this runs
-// (no flash of the full photo), and with reduced motion nothing is done (the CSS leaves the spots at full size).
+// The kitten photos are cut to the spots (spots.ts, one SVG clipPath each) and open like the second section of the home page: the spot
+// starts small in the middle of the frame, the picture zoomed in, and grows to full size as the photo comes up the screen. The spot is
+// scaled through the `transform` of the path inside its clipPath (the frame's `data-clip` names it).
+// initKittenExpand(frames) returns destroy(). The CSS holds each frame at a small static copy of its spot until this runs; with reduced
+// motion nothing is done and the spots stay full size.
 
 import { smoothstep } from './math';
 import { onPageScroll } from './scroller';

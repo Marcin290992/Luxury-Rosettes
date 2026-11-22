@@ -98,7 +98,7 @@
 - `onPageScroll(fn)` — nasłuch na `window` w fazie przechwytywania (zdarzenie `scroll` kontenera nie bąbelkuje do `window`),
 - `ScrollTrigger.defaults({ scroller: <element #scroll-root>, pinType: 'fixed' })` ustawiane przy starcie i po każdym `astro:after-swap`.
 
-**4. Podmiana odczytów scrolla** na funkcje z `scroller.ts`: `NavPill.astro` (stan `is-scrolled`, „wróć na górę”), `Corridor.astro`, `ScrollExpand.astro`, `scroll-stack.ts` (nasłuch scrolla), `award-orbit.ts` (`setScrollY`), `scroll-restore.ts` (wymuszanie pozycji 0 po swapie), `touch-transition.ts` (kopia strony przewija się razem z kontenerem, wysokość liczona z kontenera). `lifecycle.ts` importuje `scroller.ts`, żeby domyślny scroller był ustawiony zanim komponenty utworzą triggery.
+**4. Podmiana odczytów scrolla** na funkcje z `scroller.ts`: `NavPill.astro` (stan `is-scrolled`, „wróć na górę”), `Corridor.astro`, `ScrollExpand.astro`, `scroll-stack.ts` (nasłuch scrolla), `scroll-restore.ts` (powrót do zapisanej sekcji po cofnięciu), `touch-transition.ts` (kopia strony przewija się razem z kontenerem, wysokość liczona z kontenera). `lifecycle.ts` importuje `scroller.ts`, żeby domyślny scroller był ustawiony zanim komponenty utworzą triggery.
 
 **5. Włączenie przejścia.** Usunięto skrypt zerujący `document.startViewTransition` i flagę `PT_OFF`; własne karty (`touch-transition.ts`) są tylko opcją testową (`?vt=cards`, `?vt=calm`, `?vt=native` wyłącza). Usunięto kod korygujący przesunięcie zrzutu (pomiary, `lift`, sondę `probeScb`, owijkę `startViewTransition`), bo przy `scrollY = 0` nic nie robi.
 

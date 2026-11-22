@@ -1,15 +1,8 @@
-// Shrink intro: one pinned screen scrubbed by the scroll. The headline slides up and away, and the photo that filled the screen shrinks to a small rounded tile. The next section rises under it while it does: four
-// columns of small photos that drift up at different speeds around a line of text.
-//
-// Adapted from the Codegrid "Waabi Scroll Animation" to Vanilla TS for this site (see docs/SCRIPTING.md, section 3):
-//  - initShrinkIntro(root) is `init` and returns destroy(); everything is looked up inside `root` (the whole intro block),
-//  - the pin is CSS sticky inside a tall track (as in the other chapters), not a GSAP pin with a margin trick, and the next section
-//    rises under it by a negative margin in the CSS,
-//  - the scroll position is smoothed once (a proxy that ScrollTrigger scrubs) and everything is drawn from that one number, so the
-//    headline, the words and the photo always agree; the words are set once, not by a `gsap.set` per word per scroll event,
-//  - the numbers are in settings.ts (SHRINK_INTRO).
-//
-// Expected markup (see ShrinkIntro.astro): root > .si-hero (the track) > .si-pin > .si-img, .si-header; .si-about > .si-col x4.
+// Shrink intro: one pinned screen scrubbed by the scroll. The headline slides up and away and the full-screen photo shrinks to a small
+// rounded tile while the next section rises under it: four columns of small photos drifting up at different speeds around a line of text.
+// After the Codegrid "Waabi Scroll Animation". The pin is CSS sticky in a tall track, and the next section rises by a negative margin.
+// The scroll is smoothed once and everything is drawn from that number, so headline, words and photo always agree. Numbers: SHRINK_INTRO.
+// initShrinkIntro(root) returns destroy(). Markup: ShrinkIntro.astro.
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';

@@ -1,10 +1,8 @@
 // Where the page scrolls.
-//
-// On a phone or a tablet (touch) the page does not scroll the document but a full-screen box, #scroll-root (see Layout.astro), as in
-// codegrid's demo (its .projects box). The document itself never scrolls, so the browser's address bar never slides in or out and the
-// window never changes its height: the page transition's snapshot has nothing to jump against (on Chrome Android it was drawn one
-// address-bar height too high on a scrolled page), and Safari on iOS keeps its toolbars still.
-// On a laptop or a desktop nothing changes: the window scrolls (and Lenis smooths it).
+// On a phone or tablet (touch) the page scrolls a full-screen box, #scroll-root (see Layout.astro), not the document, as in a Codegrid demo.
+// The document never scrolls, so the browser's address bar never slides in or out, the window never changes height and the page
+// transition's snapshot has nothing to jump against (on Chrome Android it was drawn one address-bar height too high); Safari on iOS keeps
+// its toolbars still. On a laptop or desktop nothing changes: the window scrolls (smoothed by Lenis).
 
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 

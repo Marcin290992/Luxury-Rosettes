@@ -1,21 +1,9 @@
-// Awards list: one pinned screen, scrubbed by the scroll. A counter ("03/10") stands top left, a column of photos goes up through
-// the middle (the photo at the middle line is bright, the others dim), the names of the awards roll up on the right (the one that is
-// current is dark, the others grey), and the words of the current award (where, when, the story) stand on the left, level with the middle of its photo.
-//
-// Adapted from the Codegrid "PrototypeStudio Scroll Animation" to Vanilla TS for this site (see docs/SCRIPTING.md, section 3):
-//  - initAwardsList(root) is `init` and returns destroy(); everything is looked up inside `root`; it runs on wide screens with motion
-//    allowed (otherwise the CSS shows a plain list of the awards),
-//  - the pin is CSS sticky inside a tall track (as in the other chapters),
-//  - the scroll position is smoothed once (a proxy that ScrollTrigger scrubs) and everything is drawn from that number: where the
-//    column of photos is gives one continuous "current award" (`at`, in awards), and the counter, the dimming of the photos, the
-//    names and the words are all drawn from it, so they always agree. (The original asks every photo where it is on every scroll
-//    event and switches them on and off; here the photos fade smoothly with their distance from the middle line.)
-//
-//  - when the section comes up, everything arrives as on the rest of the site (and goes back when it is scrolled out below): the photos
-//    open from the bottom edge, the counter, the names and the words of the first award rise out of masks, one after another.
-//
-// Expected markup (see AwardsList.astro): root > .al-pin > .al-index > .al-mask > .al-roll (> .al-num, .al-total), .al-images > .al-img x n,
-// .al-names > li > .al-name x n, .al-details > .al-detail x n.
+// Awards list: one pinned screen scrubbed by the scroll. A counter stands top left, a column of photos rises through the middle (the one on
+// the middle line is bright, the rest dim), the award names roll up on the right and the words of the current award sit on the left.
+// After the Codegrid "PrototypeStudio Scroll Animation".
+// The scroll is smoothed once and everything is drawn from that one number, so counter, photos, names and words always agree.
+// On entering, the photos open from the bottom edge and the text rises out of masks; scrolling back undoes it.
+// initAwardsList(root) returns destroy(). Wide screens with motion only; otherwise the CSS shows a plain list. Markup: AwardsList.astro.
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';

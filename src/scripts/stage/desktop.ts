@@ -110,7 +110,7 @@ function build(stage: HTMLElement, story: HTMLElement) {
   gsap.set('.fill', { clipPath: CLIP.closedX });
 
   // First real section after the stage (Astro can put <script>/<style> tags in between). Found before the
-  // pin exists — pinning wraps the stage in a spacer element. It starts one screen early (margin-top: -100vh)
+  // pin exists, pinning wraps the stage in a spacer element. It starts one screen early (margin-top: -100vh)
   // so that it slides over the last step instead of following it.
   let next = stage.nextElementSibling as HTMLElement | null;
   while (next && /^(SCRIPT|STYLE|LINK)$/.test(next.tagName)) next = next.nextElementSibling as HTMLElement | null;
@@ -178,7 +178,7 @@ function build(stage: HTMLElement, story: HTMLElement) {
     INTRO + S.fillAt,
   );
 
-  // 3. Step transitions 01→02→03: text swaps, photos cross-fade, shapes morph, counter flips
+  // 3. Step transitions 01>02>03: text swaps, photos cross-fade, shapes morph, counter flips
   for (let i = 0; i < last; i++) {
     const s = FIRST_STEP + i * STEP_GAP;
     const next = i + 1;
@@ -199,7 +199,7 @@ function build(stage: HTMLElement, story: HTMLElement) {
       .fromTo(smallPath, { attr: { d: smallShapes[i] } }, { attr: { d: smallShapes[next] }, duration: arriving, ease: SHAPE_EASE }, s);
     // layout swap: photos glide left (or back right), the new text appears on the opposite side
     const toOdd = next % 2 === 1;
-    // the photo in front travels first, so at the halfway point the two have a gap between them —
+    // the photo in front travels first, so at the halfway point the two have a gap between them,
     // that is when their layers trade places, where it can't be seen
     const glide = { duration: STEP.duration, ease: SHAPE_EASE };
     tl.fromTo(bigShape, LAYOUT.big[i], { ...LAYOUT.big[next], ...glide }, s + (toOdd ? S.lead : 0))
@@ -212,7 +212,7 @@ function build(stage: HTMLElement, story: HTMLElement) {
       .fromTo(nums[next], { autoAlpha: 0, y: RISE.count }, { autoAlpha: 1, y: 0, duration: STEP.countIn }, s + STEP.countInAt);
   }
 
-  // The timeline simply holds on step 03 for the last screen of the pin — that is where the next section
+  // The timeline simply holds on step 03 for the last screen of the pin, that is where the next section
   // slides over the stage (it has margin-top: -100vh, see ScrollExpand). The parallax below is tied 1:1 to
   // that section's position (no scrub lag), so the stage drifts up and dims exactly as it is being covered.
   tl.set({}, {}, total);

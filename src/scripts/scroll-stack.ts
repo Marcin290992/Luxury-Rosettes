@@ -1,16 +1,9 @@
-// A stack of cards pinned to the screen: scrolling moves through them, the next card arriving over the last.
-//
-// Adapted from React Bits' ScrollStack to Vanilla TS for this site (see docs/SCRIPTING.md, section 3):
-//  - no React: initScrollStack(root, options) is `init` and returns `destroy`,
-//  - every element is looked up inside `root` (.stack-pin, .stack-frame, .stack-slot, .stack-fill),
-//  - named listeners, all removed in destroy(); the observer is disconnected; the animation frame is cancelled,
-//  - the card face is plain markup (the Astro component renders it), so the React-only parts (custom children, item
-//    props, the counter state) are gone. The six variants of the original are kept.
-//
-// How it works: the section is taller than the screen (one screen plus `scrollLength` screens per extra card) and its
-// .stack-pin sticks while the section scrolls past. Scroll position gives a fractional "progress" through the cards (0 = the
-// first is in front, 1 = the second, ...); every card is posed from `progress - its index`. The shown value follows the real
-// one with a little damping, in a requestAnimationFrame loop that goes to sleep when it has caught up.
+// A stack of cards pinned to the screen: scrolling moves through them, the next card arriving over the last. After React Bits' ScrollStack
+// (the six variants are kept; the React-only parts are gone).
+// The section is taller than the screen and .stack-pin sticks while it scrolls past. Scroll gives a fractional progress through the cards
+// (0 = first in front, 1 = second, ...); each card is posed from `progress - its index`. The shown value follows the real one with a
+// little damping in a requestAnimationFrame loop that sleeps once it has caught up.
+// initScrollStack(root, options) returns destroy(). Elements are looked up inside root (.stack-pin, .stack-frame, .stack-slot, .stack-fill).
 
 import { onPageScroll } from './scroller';
 

@@ -1,8 +1,7 @@
-// Smooth scrolling without the browser's scrollbar, as the "Lumen" gallery pages do it.
-//  1. scrollGestures() listens to the mouse wheel, finger swipes and the keys (with preventDefault, so the page itself never really scrolls) and
-//     reports how many pixels the person asked to move.
-//  2. createLerp() keeps a "target" and a "current" value. Every frame current moves a fixed share of the remaining distance towards the
-//     target: current += (target - current) * factor. That is what gives the soft, slightly lagging glide.
+// Smooth scrolling without the browser's scrollbar, as on the "Lumen" gallery pages.
+//  1. scrollGestures() listens to the wheel, swipes and keys (with preventDefault, so the page never really scrolls) and reports how many
+//     pixels were asked for.
+//  2. createLerp() keeps a target and a current value; every frame current moves a fixed share of the way to target, which gives the soft glide.
 
 export interface Lerp {
   setTarget(value: number | ((target: number) => number), kind?: 'wheel' | 'touch' | 'inertia'): void;

@@ -1,11 +1,8 @@
-// Close-to: the words of a heading start far apart and slide together while the picture between the two lines below opens (grows from nothing),
-// all on one scrubbed timeline. Adapted from the 71three "Close to the work" section to Vanilla TS + GSAP for this site (docs/SCRIPTING.md).
-//  - the END state is the CSS (words close, picture open): without the script, or with reduced motion, that is what you see; the script only
-//    reads those end values (so phone / tablet / desktop sizes live in one place, the CSS) and plays the way to them,
-//  - three sizes (phone, tablet, desktop) through gsap.matchMedia: other start gaps, start points and scrub speeds (settings.ts CLOSE_TO),
-//  - initCloseTo(root) is `init` and returns destroy(); everything is looked up inside `root`.
-//
-// Expected markup (see CloseTo.astro): root > h2.ct-words > span x n, .ct-media (the picture), the two lines around it.
+// Close-to: the words of a heading start far apart and slide together while the picture between the two lines below opens, on one scrubbed
+// timeline. After the 71three "Close to the work" section.
+// The end state is the CSS (words together, picture open), so without the script or with reduced motion that is what you see; the script
+// reads those values and plays the way to them. Three sizes (phone, tablet, desktop) via gsap.matchMedia (settings.ts CLOSE_TO).
+// initCloseTo(root) returns destroy(). Markup: CloseTo.astro.
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';

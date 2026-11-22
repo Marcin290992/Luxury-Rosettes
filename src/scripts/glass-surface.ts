@@ -1,13 +1,8 @@
-// Liquid glass for any element that has a `backdrop-filter`, without a framework (a port of the React GlassSurface, SVG renderer only).
-//
-// An SVG filter is used as the element's backdrop-filter: feDisplacementMap shifts the pixels behind the element along its border, once
-// per colour channel (a slightly different amount each, so the edge splits into colours). How far each pixel moves is read from a
-// "displacement map": two gradients plus a soft neutral rectangle inside, drawn here for the element's size.
-//
-// Only Chromium accepts an SVG filter as a backdrop-filter. Anywhere else (Safari, Firefox, touch screens, where the glass is solid anyway)
-// this does nothing and the element keeps its plain CSS blur.
-//
-// Usage: add a class with the plain look, call `glassSurface(el)` and style `.glass-refract` (see NavPill.astro):
+// Liquid glass for any element with a `backdrop-filter`, without a framework (a port of the React GlassSurface, SVG renderer only).
+// An SVG filter is the element's backdrop-filter: feDisplacementMap shifts the pixels behind it along its border, once per colour channel,
+// so the edge splits into colours; the amounts come from a displacement map drawn here for the element's size.
+// Only Chromium accepts an SVG filter as a backdrop-filter; elsewhere this does nothing and the element keeps its plain CSS blur.
+// Usage: give the element a class with the plain look, call glassSurface(el) and style .glass-refract (see NavPill.astro):
 //   .glass-refract { backdrop-filter: blur(8px) var(--glass-filter) saturate(140%); }
 
 export interface GlassOptions {

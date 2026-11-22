@@ -14,11 +14,9 @@ import chester from '../assets/img/cats/chester.webp';
 import charlie from '../assets/img/cats/charlie.webp';
 import draco from '../assets/img/cats/draco.webp';
 
-// Two of the beats carry a photo (PLACEHOLDERS: the breeder's two new photos replace charlie and chester; give them an alt when real).
-// The words of the statements are the breeder's own (the About text of the original site), cut into the beats of the story.
-// PLACEHOLDERS: the milestones (the breeder fills in the real years and events) and the closing photo.
-// The opening: the breeder's photo is the sharp one (first), the cats of the site are faint around it (PLACEHOLDERS: the breeder swaps in her own photos).
-// d = top, left, width on a wide screen; m = the same on a phone.
+// Placeholders for the breeder's own material: the two beat photos (charlie, chester), the milestones, the hero's side photos and the closing photo.
+// The statement texts are hers, from the original About page, cut into the beats of the story.
+// d / m = top, left, width of a hero photo on a wide screen / on a phone.
 const heroPhotos = [
   { src: aboutPhoto, alt: 'The breeder with a Bengal cat and show rosettes', aspect: '4 / 3', d: ['20%', '50%', 'min(38%, 580px)'] as [string, string, string], m: ['47%', '6%', '88%'] as [string, string, string], opacity: 1, reveal: 'right' as const, scale: false, mouse: 0.8, z: 3 },
   { src: kita, alt: '', aspect: '4 / 5', d: ['64%', '70%', 'min(15%, 230px)'] as [string, string, string], m: ['84%', '66%', '30%'] as [string, string, string], opacity: 0.95, reveal: 'right' as const, scale: true, mouse: 1, z: 4 },

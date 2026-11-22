@@ -180,7 +180,7 @@ export const CATS = {
   smooth: 1.2, // scrub lag on laptops: same "cinematic" feel as the stage before it
   hold: 0.5, // screens of scrolling spent resting on the last cat, so the row doesn't end abruptly
   arrivalExit: { stage: 0.18, dim: 0.7 }, // the photo behind the arriving sheet: share of a screen it drifts up, final dim
-  photoDrift: 7, // % the photos drift against their card while the row slides
+  photoDrift: 4.5, // % the photos drift against their card while the row slides
   firstShare: 0.55, // share of the arrival after which the cats already on screen play
   visibleAtStart: 0.98, // a card counts as on screen when its left edge is left of this share of the width
   laterStart: 'left 92%',

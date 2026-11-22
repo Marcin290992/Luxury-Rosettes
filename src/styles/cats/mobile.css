@@ -54,6 +54,7 @@
   border-radius: 6px;
 }
 .cats[data-mobile] .cat-photo img {
+  object-position: 50% 22%; /* if it is cropped at all, the head stays */
   will-change: transform; /* its own layer: the drift while the row slides must not repaint the photo */
 }
 .cats[data-mobile] .cat h3 {

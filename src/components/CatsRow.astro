@@ -1,31 +1,27 @@
 ---
 import Photo from './Photo.astro';
 import LetterButton from './LetterButton.astro';
-import draco from '../assets/img/cats/draco.webp';
-import kita from '../assets/img/cats/kita.webp';
-import candy from '../assets/img/cats/candy.webp';
-import charlie from '../assets/img/cats/charlie.webp';
-import chester from '../assets/img/cats/chester.webp';
-import cosmo from '../assets/img/cats/cosmo.webp';
+import kita1 from '../assets/img/Hera Draco/Kita 1.webp';
+import draco1 from '../assets/img/Hera Draco/Draco 1.webp';
+import kita2 from '../assets/img/Hera Draco/Kita 2.webp';
+import draco2 from '../assets/img/Hera Draco/Draco 2.webp';
 import '../styles/cats/base.css';
 import '../styles/cats/desktop.css';
 import '../styles/cats/mobile.css';
 
-// Placeholder copy — names come from the old site, the detail lines are to be replaced
+// The two parents, in turn: Kita, Draco, Kita, Draco (the studio portraits of the breeder). Only the photos for now: the names, tags and descriptions are removed (to be written later; the titles belong on the Awards page). The name stays as the photo's alt text.
 const cats = [
-  { name: 'Draco', line: 'Silver Bengal king with a bold, high-contrast pattern and a gentle, loving nature.', image: draco },
-  { name: 'Kita', line: 'Our golden queen: elegant, intelligent and an exceptional mother.', image: kita },
-  { name: 'Candy', line: 'Details coming soon', image: candy },
-  { name: 'Charlie', line: 'Details coming soon', image: charlie },
-  { name: 'Chester', line: 'Details coming soon', image: chester },
-  { name: 'Cosmo', line: 'Details coming soon', image: cosmo },
+  { name: 'Kita', image: kita1 },
+  { name: 'Draco', image: draco2 },
+  { name: 'Kita', image: kita2, still: true, focus: '44% 22%' }, // a wide close-up: no drift, and the crop is shifted a little to the left so the left ear is not cut
+  { name: 'Draco', image: draco1, still: true }, // still: the ear is at the very edge of this photo, so it is shown whole (no drift, no side crop)
 ];
 
 // Last stop of the row. Wording taken from the story section; to be replaced with the final copy
 const pillars = [
-  { title: 'Champion bloodlines', text: 'TICA registered parents with proven show records.' },
-  { title: 'Raised at home', text: 'Born in our family home and well socialised from the first days.' },
-  { title: 'Cared for, for life', text: 'Health guarantees and lifetime breeder support.' },
+  { title: 'Champion bloodlines', text: 'TICA registered parents with proven show records. Their titles are on our Awards page.' },
+  { title: 'Raised at home', text: 'Born in our family home and well socialised from the first days. Every kitten grows up among people.' },
+  { title: 'Cared for, for life', text: 'Health guarantees and lifetime breeder support. We stay close long after they leave.' },
 ];
 ---
 
@@ -39,28 +35,24 @@ const pillars = [
     <div class="cats-sheet">
     <div class="cats-track">
       <div class="cats-intro">
-        <p class="eyebrow">The family</p>
-        <h2>Meet the cats behind every litter</h2>
+        <h2>Where they come from</h2>
         <p class="lead">
-          Placeholder text. A few calm sentences about the parents and the kittens you are about to meet.
+          Every litter begins with the two of them. Kita and Draco are part of our family, and everything we hope for in a Bengal. Every litter is planned with care.
         </p>
-        <p class="cue" aria-hidden="true">Keep scrolling →</p>
       </div>
       {
         cats.map((c) => (
           <article class="cat">
             <div class="cat-photo">
-              <Photo src={c.image} alt={c.name} widths={[500, 800, 1100]} sizes="(min-width:1024px) 28vw, 80vw" />
+              <Photo src={c.image} alt={c.name} widths={[500, 800, 1100]} sizes="(min-width:1024px) 28vw, 80vw" data-still={c.still ? "" : undefined} style={c.focus ? `object-position:${c.focus}` : undefined} />
             </div>
-            <h3>{c.name}</h3>
-            <p>{c.line}</p>
           </article>
         ))
       }
       <div class="fin">
         <div class="fin-head">
           <p class="eyebrow">The promise</p>
-          <h2>Raised at home, guaranteed for life</h2>
+          <h2>What comes with every kitten</h2>
         </div>
         <ul class="fin-pillars">
           {
@@ -74,7 +66,7 @@ const pillars = [
           }
         </ul>
         <div class="fin-foot">
-          <LetterButton label="Meet the kittens" href="#kittens" light />
+          <LetterButton label="Available kittens" href="/available-kittens" light />
         </div>
       </div>
       <div class="cats-end" aria-hidden="true"></div>

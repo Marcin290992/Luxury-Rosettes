@@ -17,7 +17,7 @@ export function initDesktop() {
     const sheet = section.querySelector<HTMLElement>('.cats-sheet')!; // animated; the section only gets pinned
     const track = section.querySelector<HTMLElement>('.cats-track')!;
     const cards = gsap.utils.toArray<HTMLElement>('.cat', section);
-    const photos = gsap.utils.toArray<HTMLElement>('.cat-photo img', section);
+    const photos = gsap.utils.toArray<HTMLElement>('.cat-photo img:not([data-still])', section);
     const intro = gsap.utils.toArray<HTMLElement>('.cats-intro > *', section);
     const distance = () => Math.max(0, track.scrollWidth - window.innerWidth); // sideways travel
     const arrival = () => window.innerHeight; // scroll spent sliding the sheet in

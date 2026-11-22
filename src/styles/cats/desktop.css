@@ -37,18 +37,24 @@
   opacity: 0.55;
 }
 .cats[data-pinned] .cat {
-  flex: 0 0 26vw;
+  flex: 0 0 calc(62vh * 0.75); /* the card is as wide as a 3:4 portrait of the photo's height: the studio portraits are shown almost whole */
 }
 .cats[data-pinned] .cat-photo {
   height: 62vh;
   aspect-ratio: auto;
 }
-/* photos are wider than their frame so they can drift sideways inside it */
+/* photos are a little wider than their frame so they can drift sideways inside it (a little only: the portraits must not be cropped) */
 .cats[data-pinned] .cat-photo img {
-  width: 125%;
+  width: 112%;
   max-width: none;
-  margin-left: -12.5%;
+  margin-left: -6%;
+  object-position: 50% 22%; /* if it is cropped at all, the head stays */
   will-change: transform;
+}
+/* a photo whose subject touches the edge: shown whole, it does not drift */
+.cats[data-pinned] .cat-photo img[data-still] {
+  width: 100%;
+  margin-left: 0;
 }
 /* the closing panel is a full page: exactly one screen wide, so when the row ends nothing of the cats is beside it */
 .cats[data-pinned] .fin {

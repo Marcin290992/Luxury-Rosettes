@@ -1,8 +1,7 @@
 ---
 import Photo from './Photo.astro';
-import LetterButton from './LetterButton.astro';
 import about from '../assets/img/story/about.webp';
-import parent from '../assets/img/story/champion-parent.webp';
+import parent from '../assets/img/Hera Draco/Hera Draco.webp';
 import kittens from '../assets/img/story/our-kittens.webp';
 import care from '../assets/img/story/premium-care.webp';
 import plaque from '../assets/img/story/awards.webp';
@@ -53,10 +52,8 @@ const items = [
         <div class="cor-finale-copy">
           <p class="cor-eyebrow">Your Bengal awaits</p>
           <h2>Meet your Bengal</h2>
-          <p class="cor-finale-text">Placeholder text. A calm sentence or two about the next litter and how to reserve a kitten.</p>
-          <div class="cor-ctas">
-            <LetterButton label="View available kittens" href="/available-kittens" solid />
-          </div>
+          <p class="cor-finale-text">Luxury Rosettes is a small, TICA registered Bengal cattery in High Wycombe. Wild in looks and gentle at heart: a breed we have lived with, and loved, for fifteen years.</p>
+          <div class="cor-ctas" aria-hidden="true"></div> <!-- no button here: the script still animates this element -->
         </div>
       </div>
 
@@ -345,6 +342,8 @@ const items = [
     justify-content: center;
     text-align: center;
     padding: 8%;
+    /* the shadow follows the colour change of the text (white on the dark photo, dark on the light page at the start): it is the opposite colour of the text, so it never shows as a dirty halo */
+    text-shadow: 0 1px 18px color-mix(in srgb, var(--inv) 55%, transparent);
   }
   .cor-finale-copy h2 {
     font-size: clamp(2.4rem, 8vw, 3.5rem);
@@ -356,7 +355,10 @@ const items = [
     max-width: 34rem;
     font-size: 1.1rem;
     line-height: 1.5;
-    margin: 0 0 2rem;
+    margin: 0;
+  }
+  .cor-ctas:empty {
+    display: none;
   }
   .cor-ctas {
     display: flex;
@@ -366,6 +368,7 @@ const items = [
   }
   .cor-finale-copy .cor-eyebrow {
     color: var(--fg);
+    opacity: 1; /* the small line must not be fainter than the rest */
   }
 
   /* ---- Desktop: sticky corridor (script sets data-pinned) ---- */

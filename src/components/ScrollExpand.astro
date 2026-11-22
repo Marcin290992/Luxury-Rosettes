@@ -147,14 +147,17 @@ const has = Astro.slots.has('default');
       frame.style.clipPath = `inset(${top.toFixed(3)}% ${ix.toFixed(3)}% ${bottom.toFixed(3)}% ${ix.toFixed(3)}% round ${r}px)`;
       media.style.transform = `scale(${zoom + (1 - zoom) * e})`;
       if (scrim) scrim.style.opacity = `${c.startScrim + (c.overlayScrim - c.startScrim) * e}`;
-      // the title stays where it is all the way (it is the headline of the section); only the words under it come in once the photo has filled the screen
+      // the title of the small frame and the headline of the open photo are the same words: one goes out as the other comes in, in the same window,
+      // so the headline, the text and the button all arrive together
+      const swap = smoothstep(0.6, 0.95, p);
+      if (title) title.style.opacity = `${1 - swap}`;
       if (hint) {
         const gone = smoothstep(0, 0.12, p);
         hint.style.opacity = `${1 - gone}`;
         hint.style.transform = `translate3d(0, ${8 * gone}px, 0)`;
       }
       if (overlay) {
-        const inn = smoothstep(0.68, 1, p);
+        const inn = swap;
         overlay.style.opacity = `${inn}`;
         overlay.style.transform = `translate3d(0, ${18 * (1 - inn)}px, 0)`;
         overlay.style.pointerEvents = inn > 0.5 ? 'auto' : 'none';
@@ -290,9 +293,9 @@ const has = Astro.slots.has('default');
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     text-align: center;
-    padding: calc(50svh + var(--se-title-size) * 0.7) 6% 6%; /* under the title, which stays in the middle of the screen */
+    padding: 6%;
     color: #fff;
     opacity: 0;
     pointer-events: none;
@@ -307,6 +310,16 @@ const has = Astro.slots.has('default');
     height: 100svh;
     visibility: hidden;
     pointer-events: none;
+  }
+  /* the headline of the open photo: the same look as the title of the small frame */
+  .se-overlay :global(.se-headline) {
+    margin: 0 0 1.25rem;
+    font-family: var(--font-heading);
+    font-size: var(--se-title-size);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-shadow: 0 2px 28px rgba(0, 0, 0, 0.6);
   }
   .se-title {
     position: absolute;

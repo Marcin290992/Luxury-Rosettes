@@ -19,8 +19,8 @@ interface Props {
 const {
   images,
   word = 'Your Bengal',
-  text = 'Every Bengal is raised in our home: handled daily, health-tested and ready to share yours.',
-  cta = { label: 'Available kittens', href: '/available-kittens' },
+  text = 'Every Bengal has a character of its own. Meet the family behind ours.',
+  cta = { label: 'Our cats', href: '/our-cats' },
 } = Astro.props;
 const [front, top, right] = images;
 
@@ -50,7 +50,7 @@ const SHAPES = [spots[1], spots[0], spots[3]];
 
     <div class="rt-col">
       <p class="rt-text">{text}</p>
-      <div class="rt-btn"><LetterButton label={cta.label} href={cta.href} arrow /></div>
+      <div class="rt-btn"><LetterButton label={cta.label} href={cta.href} /></div>
     </div>
   </div>
 </section>

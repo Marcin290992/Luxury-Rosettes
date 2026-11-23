@@ -9,7 +9,7 @@ import { createPictureSheet, createShadowSheet } from './luxurybengal-sheet';
 
 export type Rect = { left: number; top: number; width: number; height: number };
 
-const LIFT = 0.3; // world units the sheet rises towards the viewer at the middle of the flight
+const LIFT = 0.1; // world units the sheet rises towards the viewer at the middle of the flight (small: the perspective must not make it swell on top of its real growth)
 const CURL = 0.45; // radians it bends through at the most
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const inOutCubic = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
@@ -95,7 +95,9 @@ export async function hopSheet(src: string, radius: number, o: HopOptions): Prom
     }
     const u = clamp01(time / span);
     const e = softFlight(u);
-    const eSize = inOutCubic(clamp01((u - 0.08) / 0.92));
+    // the size is the final one before the sheet arrives (at 55 % of the flight): the last part is only a glide into place, never a resize
+    const s = clamp01(u / 0.55);
+    const eSize = 0.35 * (0.5 - 0.5 * Math.cos(Math.PI * s)) + 0.65 * (1 - (1 - s) ** 3);
     // the bow: perpendicular to the way, always bulging upwards, nothing at either end
     const bow = Math.min(dist * 0.1, 90) * Math.sin(Math.PI * e);
     const nx = dist ? -dy / dist : 0;
@@ -115,7 +117,8 @@ export async function hopSheet(src: string, radius: number, o: HopOptions): Prom
     sheet.resize(box.width, box.height);
     sheet.setCrop(coverWindow(ratio, rect.width / rect.height));
     sheet.setScreenSize(rect.width, rect.height, radius);
-    const lift = Math.sin(Math.PI * Math.min(u * 1.0, 1)) ** 0.8;
+    // the rise towards the viewer (and the bend) is over before the end, so the perspective cannot change the size at the landing
+    const lift = Math.sin(Math.PI * clamp01(u / 0.65)) ** 1.5;
     group.visible = true;
     group.position.set(box.x, box.y, LIFT * lift);
     // a tilt that follows the bow and a small sway that dies away as the sheet settles

@@ -56,16 +56,21 @@ function buildLayer(zIndex: number): Layer {
   let raf = 0;
   let before = performance.now();
   let elapsed = 0;
-  let drewSomething = false;
+  let drewSomething = true; // (so the first frame with nothing to show hides the layer)
   const loop = (now: number) => {
     raf = requestAnimationFrame(loop);
     const dt = Math.min((now - before) / 1000, 0.1);
     before = now;
     elapsed += dt;
     ticks.forEach((fn) => fn(dt, elapsed));
-    const has = scene.children.length > 0;
-    // an empty scene is not drawn, except once to clear what was there
+    // only what is visible counts: the warm-up sheet (luxurybengal-hop.ts) stays in the scene, hidden, to keep its shader compiled, and drawing a
+    // full-screen canvas on every frame for it made the page's scrolling heavy
+    const has = scene.children.some((child) => child.visible);
+    // a scene with nothing to show is not drawn, except once to clear what was there
     if (has || drewSomething) renderer.render(scene, camera);
+    // and while there is nothing on it the canvas is taken out of the page's compositing altogether (a full-screen transparent layer over the page costs
+    // on every frame of every scroll)
+    if (has !== drewSomething) host.style.display = has ? '' : 'none';
     drewSomething = has;
   };
   raf = requestAnimationFrame(loop);

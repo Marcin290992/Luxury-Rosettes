@@ -205,11 +205,12 @@ const first = gallery.photos[0];
   }
   .lg-grid {
     display: grid;
-    grid-auto-rows: auto;  }
+    grid-auto-rows: auto;
+    will-change: transform; /* its own layer: the breathing while scrolling must not repaint every picture on each frame */
+  }
   .lg-item {
     position: relative;
     opacity: 0;
-    filter: blur(6px);
   }
   .lg-link {
     display: block;
@@ -258,9 +259,7 @@ const first = gallery.photos[0];
     position: absolute;
     will-change: transform;
     border-radius: 10px; /* the same rounding as the photos on the page and as the sheet that falls onto it, from start to end */
-    max-height: 80vh;
-    max-height: 80svh;
-    max-width: 80vw;
+    /* no max-width / max-height here: the size is set by fitBox (luxurybengal-gallery.ts), and the sheet that flies in lands on exactly that size */
     width: auto;
     height: auto;
   }

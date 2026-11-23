@@ -23,6 +23,7 @@ export function createLerp({ lerpFactor = 0.1, threshold = 0.01, glide = 0, onUp
   let gliding = false;
   let from = 0;
   let startedAt = 0;
+  let lastAt = 0;
 
   const tick = () => {
     if (gliding) {
@@ -42,7 +43,11 @@ export function createLerp({ lerpFactor = 0.1, threshold = 0.01, glide = 0, onUp
       frame = 0;
       return;
     }
-    current += diff * lerpFactor;
+    // the share of the way covered is per 1/60 s, so the glide takes the same time at 30, 60 or 144 Hz (and a dropped frame does not freeze it)
+    const now = performance.now();
+    const frames = Math.min(Math.max((now - lastAt) / FRAME_MS, 0.5), 4);
+    lastAt = now;
+    current += diff * (1 - (1 - lerpFactor) ** frames);
     onUpdate(current);
     frame = requestAnimationFrame(tick);
   };
@@ -55,7 +60,10 @@ export function createLerp({ lerpFactor = 0.1, threshold = 0.01, glide = 0, onUp
         from = current;
         startedAt = performance.now();
       }
-      if (!frame) frame = requestAnimationFrame(tick);
+      if (!frame) {
+        lastAt = performance.now() - FRAME_MS;
+        frame = requestAnimationFrame(tick);
+      }
     },
     jump(value) {
       if (frame) cancelAnimationFrame(frame);

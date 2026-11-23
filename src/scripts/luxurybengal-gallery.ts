@@ -26,7 +26,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), h
 
 const PHOTO_RADIUS = 10; // px, the rounding of the photos (the CSS of .lg-item img and .lg-box-img says the same)
 const CLOSE_FLIGHT = 0.65; // seconds the opened picture takes to fly back to its tile
-const SHEET_FLIGHT = 0.9; // seconds the picture takes as a sheet of paper, there and back
+const SHEET_FLIGHT = 1.15; // seconds the picture takes as a sheet of paper, there and back
 
 export function initLuxuryBengalGallery(root: HTMLElement): () => void {
   const q = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
@@ -109,8 +109,11 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
     grid.style.paddingLeft = `${sideLeft}px`;
     grid.style.paddingRight = `${sideRight}px`;
     grid.style.gridTemplateColumns = `repeat(${s.cols}, minmax(0, 1fr))`;
-    grid.style.columnGap = `${s.gapX}px`;
-    grid.style.rowGap = `${s.gapY}px`;
+    // the two large pictures of the opening on a desktop: the gap grows with the screen, so that the hover growth of a wide picture (3.5 %, which is
+    // more than 16 px on a big monitor) and the paper lift never close it
+    const wideGap = equal && isDesktop ? Math.round(Math.min(Math.max(window.innerWidth * 0.025, 28), 72)) : 0;
+    grid.style.columnGap = `${Math.max(s.gapX, wideGap)}px`;
+    grid.style.rowGap = `${Math.max(s.gapY, wideGap)}px`;
     items.forEach((item, i) => {
       const place = placeItem(i, level, isDesktop);
       item.style.gridColumn = place.gridColumn;
@@ -135,10 +138,10 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
     if (firstBatch) {
       const top = item.getBoundingClientRect().top;
       const order = Math.max(0, Math.min(top / window.innerHeight, 1)) * 0.35 + index * 0.015;
-      gsap.to(item, { opacity: 1, filter: 'blur(0px)', duration: 0.85, delay: order, ease: SINE, overwrite: 'auto' });
+      gsap.to(item, { opacity: 1, duration: 0.85, delay: order, ease: SINE, overwrite: 'auto' });
       return;
     }
-    gsap.to(item, { opacity: 1, filter: 'blur(0px)', duration: 0.6, delay: Math.min(0.08 * index, 0.2), ease: SINE, overwrite: 'auto' });
+    gsap.to(item, { opacity: 1, duration: 0.6, delay: Math.min(0.08 * index, 0.2), ease: SINE, overwrite: 'auto' });
   };
   const observeItems = () => {
     revealer?.disconnect();
@@ -195,15 +198,19 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
 
   const onGridUpdate = (v: number) => {
     position = v;
-    const speed = Math.abs(v - lastForScale);
     lastForScale = v;
-    const goal = speed < 0.1 ? 1 : 1 - 0.04 * Math.min(speed / 80, 1);
+    // (no breathing of the grid while it scrolls: scaling a whole grid of pictures on every frame is what kept it from gliding as smoothly as the
+    // rest of the site. To bring it back: speed = Math.abs(v - lastForScale), goal = speed < 0.1 ? 1 : 1 - 0.04 * Math.min(speed / 80, 1))
+    const goal = 1;
     scale += (goal - scale) * 0.15;
-    grid.style.transform = `scale(${scale})`; // only the grid breathes while scrolling, not the footer under it
+    // only the grid breathes while scrolling, not the footer under it. It breathes around the middle of what is on the screen: around the middle of
+    // the whole (very tall) grid the pictures on the screen would slide up and down every time the speed changes, and the scroll would not feel smooth
+    grid.style.transformOrigin = `50% ${clamp(v, 0, maxScroll()) + sizes.container / 2}px`;
+    grid.style.transform = scale > 0.9995 ? '' : `scale(${scale})`;
     track.style.transform = `translate3d(0, ${-clamp(v, 0, maxScroll())}px, 0)`;
     updateEnding();
   };
-  const vlerp = createLerp({ lerpFactor: 0.15, glide: SMOOTH_WHEEL.duration, onUpdate: onGridUpdate });
+  const vlerp = createLerp({ lerpFactor: 0.07, onUpdate: onGridUpdate }); // one continuous glide towards the target (a new glide for every wheel notch stalled for a frame at each one)
 
   const measureGrid = () => {
     sizes.content = track.offsetHeight; // the grid and the closing block under it
@@ -570,12 +577,11 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
       return item !== own && r.bottom > 0 && r.top < window.innerHeight && Number(getComputedStyle(item).opacity) > 0.5;
     });
     // (on a touch screen only the fade: a blur on a dozen tiles at once is too heavy for a phone's GPU and made the flight stutter)
-    const blur = finePointer.matches ? 'blur(10px)' : 'blur(0px)';
-    dimmed.forEach((item) => gsap.to(item, { opacity: 0, filter: blur, duration: 0.5, delay: delay + spread(item, from), ease: SINE, overwrite: 'auto' }));
+    dimmed.forEach((item) => gsap.to(item, { opacity: 0, duration: 0.5, delay: delay + spread(item, from), ease: SINE, overwrite: 'auto' }));
   };
   const undimGrid = (home: HTMLImageElement, delay: number) => {
     const from = home.getBoundingClientRect();
-    dimmed.forEach((item) => gsap.to(item, { opacity: 1, filter: 'blur(0px)', duration: 0.6, delay: delay + spread(item, from), ease: SINE, overwrite: 'auto' }));
+    dimmed.forEach((item) => gsap.to(item, { opacity: 1, duration: 0.6, delay: delay + spread(item, from), ease: SINE, overwrite: 'auto' }));
     dimmed = [];
   };
   let openHop: Hop | undefined; // the sheet that carries the picture out of its tile, while it is on its way
@@ -1045,7 +1051,7 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
               },
               tile: (i) => {
                 gsap.killTweensOf(items[i]);
-                gsap.set(items[i], { opacity: 1, filter: 'blur(0px)' });
+                gsap.set(items[i], { opacity: 1 });
               },
               done: () => {
                 pagesDone = true;
@@ -1061,7 +1067,7 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
     };
     let turned = 0;
     const landed = (item: HTMLElement) => {
-      gsap.set(item, { opacity: 1, filter: 'blur(0px)' });
+      gsap.set(item, { opacity: 1 });
       if (++turned === 2) glide();
     };
     // The two pictures arrive like the sheets of the intro (luxurybengal-arrive.ts): a sheet of paper turns over, curls flat and lands on its place, and the
@@ -1078,7 +1084,7 @@ export function initLuxuryBengalGallery(root: HTMLElement): () => void {
           landed(item);
         },
       });
-      tl.set(item, { opacity: 1, filter: 'blur(0px)', clipPath: `inset(100% 0% 0% 0% round ${PHOTO_RADIUS}px)`, y: 44 });
+      tl.set(item, { opacity: 1, clipPath: `inset(100% 0% 0% 0% round ${PHOTO_RADIUS}px)`, y: 44 });
       tl.to(item, { clipPath: `inset(0% 0% 0% 0% round ${PHOTO_RADIUS}px)`, y: 0, duration: 1.7, ease: 'power4.inOut' }, 0);
       tl.fromTo(img, { scale: 1.24 }, { scale: 1, duration: 1.7, ease: 'power3.out' }, 0);
       folds.push(() => tl.kill());

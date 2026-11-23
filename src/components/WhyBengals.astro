@@ -179,6 +179,10 @@ const colours = [
           ))}
         </div>
         <p class="guide-note">Bengals also come in snow and charcoal. Every cat is an individual, and so is every coat.</p>
+        <aside class="guide-fun">
+          <p class="eyebrow">Did you know?</p>
+          <p>Around two to three months old, Bengal kittens go “fuzzy”: the rosettes blur for a while, then come back sharper than before.</p>
+        </aside>
       </div>
     </div>
   </div></section>
@@ -558,6 +562,27 @@ const colours = [
     font-family: var(--font-body);
     font-size: 0.9rem;
     opacity: 0.6;
+  }
+  /* a quiet curiosity at the end of the guide: a thin gold line above, calm type on the paper */
+  .guide-fun {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--gold-deep);
+    max-width: 36rem;
+  }
+  .guide-fun .eyebrow {
+    margin: 0 0 0.6rem;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+  }
+  .guide-fun p:last-child {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+    line-height: 1.35;
   }
   /* tablet: the facts in one row, the colours side by side, the lists in three narrow columns */
   @media (min-width: 700px) {

@@ -14,6 +14,7 @@ interface Props {
   startRadius?: number; // px
   endRadius?: number;
   mediaZoom?: number; // image starts zoomed in by this factor and settles to 1
+  focal?: string; // object-position on a laptop, where a tall photo is cropped to a wide screen (the part that must stay in view)
   focalMobile?: string; // object-position on a phone or tablet, where the wide photo is cropped to a tall screen (the point that must stay in view)
   scrollDistance?: number; // screens of scrolling the expansion takes
   holdDistance?: number; // screens it stays fully open afterwards
@@ -32,6 +33,7 @@ const {
   startRadius = 18,
   endRadius = 0,
   mediaZoom = 1.35,
+  focal = '50% 50%',
   focalMobile = '50% 50%',
   scrollDistance = 1.2,
   holdDistance = 0.35,
@@ -51,7 +53,7 @@ const has = Astro.slots.has('default');
   data-start-radius={startRadius}
   data-end-radius={endRadius}
   data-media-zoom={mediaZoom}
-  style={`--se-focal-m:${focalMobile}`}
+  style={`--se-focal:${focal};--se-focal-m:${focalMobile}`}
   data-scroll-distance={scrollDistance}
   data-hold-distance={holdDistance}
   data-smoothing={smoothing}
@@ -267,6 +269,7 @@ const has = Astro.slots.has('default');
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: var(--se-focal, 50% 50%);
     will-change: transform;
     transform-origin: center;
     user-select: none;

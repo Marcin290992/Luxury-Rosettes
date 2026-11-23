@@ -62,7 +62,7 @@ import { breadcrumb } from '../data/seo';
               <h2 data-line-reveal>{k.name}</h2>
               <p class="line" data-line-reveal>{k.line}</p>
               <p class="about" data-line-reveal>{k.text}</p>
-              <p class="cta"><a href="#">Reserve {k.name} →</a></p>
+              <p class="cta"><a href={`#${k.name.toLowerCase()}`} data-contact-trigger>Reserve {k.name} →</a></p>
             </div>
           </li>
         ))

@@ -23,7 +23,7 @@ import QuoteBand from '../components/QuoteBand.astro';
 import FAQ from '../components/FAQ.astro';
 import Closing from '../components/Closing.astro';
 import Footer from '../components/Footer.astro';
-import expandImg from '../assets/img/expand.webp';
+import expandImg from '../assets/img/New kittens.jpg';
 import { faqSchema } from '../data/seo';
 ---
 
@@ -35,10 +35,11 @@ import { faqSchema } from '../data/seo';
   <Preloader />
   <NavPill />
   <Stage />
-  <ScrollExpand image={expandImg} alt="Bengal kittens" focalMobile="14% 50%" scrollDistance={1} holdDistance={1.3}>
-    <h2 class="se-headline">Meet our kittens</h2>
-    <p class="expand-text">Every kitten grows up in our home among people, health-tested and TICA registered. Meet them, and the parents they come from.</p>
-    <LetterButton label="Available kittens" href="/available-kittens" solid />
+  <ScrollExpand image={expandImg} alt="Two Bengal kittens on a windowsill" focal="50% 19%" focalMobile="38% 50%" mediaZoom={1.2} overlayScrim={0.1} scrollDistance={1} holdDistance={1.3}>
+    <div class="expand-copy">
+      <h2 class="se-headline">Meet our <em>cats</em></h2>
+      <p class="expand-fact"><span class="expand-fact-label">Did you know?</span>The Bengal is named after its wild ancestor, the Asian leopard cat<span class="expand-latin">, whose Latin name is <i>Prionailurus bengalensis</i></span>.</p>
+    </div>
   </ScrollExpand>
   <CatsRow />
   <Corridor />
@@ -65,7 +66,7 @@ import { faqSchema } from '../data/seo';
       </Fragment>
       <p class="kit-text">Each kitten stays with us until it is ready, already used to people, to voices and to the rhythm of family life.</p>
       <p class="kit-actions">
-        <LetterButton label="Our story" href="/about" solid />
+        <LetterButton label="Available kittens" href="/available-kittens" solid />
       </p>
     </TileReveal>
     <QuoteBand
@@ -177,11 +178,83 @@ import { faqSchema } from '../data/seo';
 </script>
 
 <style>
-  .expand-text {
-    max-width: 34rem;
-    font-size: clamp(1.05rem, 1.6vw, 1.35rem);
-    line-height: 1.5;
-    margin: 0 0 1.75rem;
+  /* a low, wide glass card at the bottom edge with the heading and the curiosity: the cats above it stay clear.
+     The overlay is taller than the screen (its padding is added to the 100svh), so the card is anchored from the overlay's top, to the height of the screen. */
+  .expand-copy {
+    position: absolute;
+    left: 50%;
+    top: calc(100vh - clamp(1rem, 3.5vh, 2rem));
+    top: calc(100svh - clamp(1rem, 3.5vh, 2rem));
+    transform: translate(-50%, -100%);
+    width: min(62rem, calc(100% - 3rem));
+    padding: 1rem 1.75rem;
+    box-sizing: border-box;
+    /* a low bar: the heading on the left, the curiosity on the right */
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 1.75rem;
+    text-align: left;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 18px;
+    background: rgba(13, 11, 9, 0.5);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  }
+  h2.se-headline {
+    font-size: clamp(1.8rem, 2.6vw, 2.5rem);
+    margin: 0;
+    white-space: nowrap;
+    text-shadow: none;
+  }
+  .expand-fact {
+    margin: 0;
+    padding-left: 1.75rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.25);
+    font-family: var(--font-body);
+    font-size: clamp(0.82rem, 0.95vw, 0.92rem);
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .expand-fact-label {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  /* phones and narrow windows: the heading above the curiosity */
+  @media (max-width: 760px) {
+    .expand-copy {
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+      padding: 0.9rem 1.25rem 1.05rem;
+      text-align: center;
+      background: rgba(13, 11, 9, 0.66); /* a little denser, so the cat's tail behind the heading is only a shadow */
+    }
+    h2.se-headline {
+      font-size: clamp(1.7rem, 7vw, 2.1rem);
+    }
+    .expand-fact {
+      padding: 0.6rem 0 0;
+      border-left: 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.22);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    /* the Latin name is left out on a phone: two lines of text, not three, so the card stays low */
+    .expand-latin {
+      display: none;
+    }
+    .expand-fact-label {
+      margin-bottom: 0.15rem;
+    }
+  }
+  h2.se-headline em {
+    font-style: italic;
+    color: #f0d9a0;
   }
   .ending {
     position: relative;
